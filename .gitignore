@@ -1,0 +1,71 @@
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ========================
+# Jupyter / IPython
+# ========================
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ========================
+# FastF1 data cache
+# ========================
+f1_cache/
+
+# ========================
+# Generated visualisations (reproducible — regenerate by running the scripts)
+# ========================
+visualizations/
+
+# ========================
+# Generated HTML reports (reproducible)
+# ========================
+reports/
+
+# ========================
+# Season results tracking (auto-generated)
+# ========================
+season_results_2026.json
+
+# ========================
+# Backup files
+# ========================
+*_v1.py
+
+# ========================
+# OS files
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# IDE / Editor
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ========================
+# Virtual environments
+# ========================
+.env
+.venv
+env/
+venv/
+
+# ========================
+# Misc
+# ========================
+*.log
