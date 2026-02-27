@@ -1,0 +1,13 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "hasActual": false,
+      "meanError": null,
+      "exactMatches": null,
+      "within3": null,
+      "accuracyPct": null
+    }
+  ],
+  "overallAccuracy": null
+}

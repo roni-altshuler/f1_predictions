@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-f1-bg: #0F1117;
+  --color-f1-card: #1A1D2B;
+  --color-f1-card-hover: #22263A;
+  --color-f1-border: #2A2E3F;
+  --color-f1-red: #E8002D;
+  --color-f1-red-dark: #B30022;
+  --color-f1-text: #F0F0F0;
+  --color-f1-text-muted: #8B8FA3;
+  --color-f1-accent: #FF1801;
+  --color-f1-gold: #FFD700;
+  --color-f1-silver: #C0C0C0;
+  --color-f1-bronze: #CD7F32;
+  --color-f1-green: #22C55E;
+  --color-f1-surface: #161829;
+}
+
+:root {
+  --background: #0F1117;
+  --foreground: #F0F0F0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: #0F1117;
+  color: #F0F0F0;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0F1117; }
+::-webkit-scrollbar-thumb { background: #2A2E3F; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3A3E5F; }
+
+/* Racing Stripe */
+.racing-stripe {
+  background: linear-gradient(90deg, #E8002D 0%, #FF1801 50%, #E8002D 100%);
+  height: 3px;
+  width: 100%;
+}
+
+/* Hero gradient */
+.hero-gradient {
+  background: radial-gradient(ellipse at 50% 0%, rgba(232, 0, 45, 0.15) 0%, transparent 60%);
+}
+
+/* Cards */
+.card-glow {
+  box-shadow: 0 0 0 1px rgba(232, 0, 45, 0.1), 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+.card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(232, 0, 45, 0.25), 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Podium */
+.podium-1 { color: #FFD700; }
+.podium-2 { color: #C0C0C0; }
+.podium-3 { color: #CD7F32; }
+
+/* Position badge */
+.position-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.position-badge.p1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+.position-badge.p2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: #000; }
+.position-badge.p3 { background: linear-gradient(135deg, #CD7F32, #A0622A); color: #fff; }
+.position-badge.points { background: rgba(232, 0, 45, 0.15); color: #E8002D; }
+.position-badge.no-points { background: rgba(139, 143, 163, 0.1); color: #8B8FA3; }
+
+/* Team color bar */
+.team-color-bar {
+  width: 4px;
+  border-radius: 2px;
+  min-height: 100%;
+}
+
+/* Visualization images */
+.viz-image {
+  border-radius: 12px;
+  border: 1px solid #2A2E3F;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+.viz-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Loading pulse */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.loading-pulse {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}

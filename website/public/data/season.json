@@ -1,0 +1,613 @@
+{
+  "season": 2026,
+  "totalRounds": 24,
+  "calendar": [
+    {
+      "round": 1,
+      "name": "Australian Grand Prix",
+      "gpKey": "Australia",
+      "circuit": "Albert Park",
+      "date": "2026-03-08",
+      "laps": 58,
+      "circuitKm": 5.278,
+      "circuitType": "street-park",
+      "expectedStops": 2,
+      "tyreDeg": 0.55,
+      "overtaking": 0.6,
+      "country": "Australia"
+    },
+    {
+      "round": 2,
+      "name": "Chinese Grand Prix",
+      "gpKey": "China",
+      "circuit": "Shanghai International",
+      "date": "2026-03-22",
+      "laps": 56,
+      "circuitKm": 5.451,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.6,
+      "overtaking": 0.7,
+      "country": "China"
+    },
+    {
+      "round": 3,
+      "name": "Japanese Grand Prix",
+      "gpKey": "Japan",
+      "circuit": "Suzuka",
+      "date": "2026-04-05",
+      "laps": 53,
+      "circuitKm": 5.807,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.65,
+      "overtaking": 0.4,
+      "country": "Japan"
+    },
+    {
+      "round": 4,
+      "name": "Bahrain Grand Prix",
+      "gpKey": "Bahrain",
+      "circuit": "Sakhir",
+      "date": "2026-04-19",
+      "laps": 57,
+      "circuitKm": 5.412,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.7,
+      "overtaking": 0.8,
+      "country": "Bahrain"
+    },
+    {
+      "round": 5,
+      "name": "Saudi Arabian Grand Prix",
+      "gpKey": "Saudi Arabia",
+      "circuit": "Jeddah Corniche",
+      "date": "2026-05-03",
+      "laps": 50,
+      "circuitKm": 6.174,
+      "circuitType": "street",
+      "expectedStops": 2,
+      "tyreDeg": 0.45,
+      "overtaking": 0.5,
+      "country": "Saudi Arabia"
+    },
+    {
+      "round": 6,
+      "name": "Miami Grand Prix",
+      "gpKey": "Miami",
+      "circuit": "Miami International",
+      "date": "2026-05-17",
+      "laps": 57,
+      "circuitKm": 5.412,
+      "circuitType": "street-park",
+      "expectedStops": 2,
+      "tyreDeg": 0.55,
+      "overtaking": 0.6,
+      "country": "Miami"
+    },
+    {
+      "round": 7,
+      "name": "Emilia Romagna Grand Prix",
+      "gpKey": "Emilia Romagna",
+      "circuit": "Imola",
+      "date": "2026-05-31",
+      "laps": 63,
+      "circuitKm": 4.909,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.5,
+      "overtaking": 0.4,
+      "country": "Emilia Romagna"
+    },
+    {
+      "round": 8,
+      "name": "Monaco Grand Prix",
+      "gpKey": "Monaco",
+      "circuit": "Monaco",
+      "date": "2026-06-07",
+      "laps": 78,
+      "circuitKm": 3.337,
+      "circuitType": "street",
+      "expectedStops": 1,
+      "tyreDeg": 0.3,
+      "overtaking": 0.1,
+      "country": "Monaco"
+    },
+    {
+      "round": 9,
+      "name": "Spanish Grand Prix",
+      "gpKey": "Spain",
+      "circuit": "Barcelona-Catalunya",
+      "date": "2026-06-21",
+      "laps": 66,
+      "circuitKm": 4.657,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.7,
+      "overtaking": 0.5,
+      "country": "Spain"
+    },
+    {
+      "round": 10,
+      "name": "Canadian Grand Prix",
+      "gpKey": "Canada",
+      "circuit": "Circuit Gilles Villeneuve",
+      "date": "2026-06-28",
+      "laps": 70,
+      "circuitKm": 4.361,
+      "circuitType": "semi-street",
+      "expectedStops": 2,
+      "tyreDeg": 0.5,
+      "overtaking": 0.7,
+      "country": "Canada"
+    },
+    {
+      "round": 11,
+      "name": "Austrian Grand Prix",
+      "gpKey": "Austria",
+      "circuit": "Red Bull Ring",
+      "date": "2026-07-05",
+      "laps": 71,
+      "circuitKm": 4.318,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.65,
+      "overtaking": 0.7,
+      "country": "Austria"
+    },
+    {
+      "round": 12,
+      "name": "British Grand Prix",
+      "gpKey": "Great Britain",
+      "circuit": "Silverstone",
+      "date": "2026-07-19",
+      "laps": 52,
+      "circuitKm": 5.891,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.6,
+      "overtaking": 0.6,
+      "country": "Great Britain"
+    },
+    {
+      "round": 13,
+      "name": "Belgian Grand Prix",
+      "gpKey": "Belgium",
+      "circuit": "Spa-Francorchamps",
+      "date": "2026-07-26",
+      "laps": 44,
+      "circuitKm": 7.004,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.55,
+      "overtaking": 0.7,
+      "country": "Belgium"
+    },
+    {
+      "round": 14,
+      "name": "Hungarian Grand Prix",
+      "gpKey": "Hungary",
+      "circuit": "Hungaroring",
+      "date": "2026-08-02",
+      "laps": 70,
+      "circuitKm": 4.381,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.6,
+      "overtaking": 0.3,
+      "country": "Hungary"
+    },
+    {
+      "round": 15,
+      "name": "Dutch Grand Prix",
+      "gpKey": "Netherlands",
+      "circuit": "Zandvoort",
+      "date": "2026-08-30",
+      "laps": 72,
+      "circuitKm": 4.259,
+      "circuitType": "permanent",
+      "expectedStops": 1,
+      "tyreDeg": 0.45,
+      "overtaking": 0.3,
+      "country": "Netherlands"
+    },
+    {
+      "round": 16,
+      "name": "Italian Grand Prix",
+      "gpKey": "Italy",
+      "circuit": "Monza",
+      "date": "2026-09-06",
+      "laps": 53,
+      "circuitKm": 5.793,
+      "circuitType": "permanent",
+      "expectedStops": 1,
+      "tyreDeg": 0.4,
+      "overtaking": 0.8,
+      "country": "Italy"
+    },
+    {
+      "round": 17,
+      "name": "Azerbaijan Grand Prix",
+      "gpKey": "Azerbaijan",
+      "circuit": "Baku City Circuit",
+      "date": "2026-09-20",
+      "laps": 51,
+      "circuitKm": 6.003,
+      "circuitType": "street",
+      "expectedStops": 2,
+      "tyreDeg": 0.45,
+      "overtaking": 0.6,
+      "country": "Azerbaijan"
+    },
+    {
+      "round": 18,
+      "name": "Singapore Grand Prix",
+      "gpKey": "Singapore",
+      "circuit": "Marina Bay",
+      "date": "2026-10-04",
+      "laps": 62,
+      "circuitKm": 4.94,
+      "circuitType": "street",
+      "expectedStops": 2,
+      "tyreDeg": 0.5,
+      "overtaking": 0.4,
+      "country": "Singapore"
+    },
+    {
+      "round": 19,
+      "name": "United States Grand Prix",
+      "gpKey": "United States",
+      "circuit": "COTA",
+      "date": "2026-10-18",
+      "laps": 56,
+      "circuitKm": 5.513,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.6,
+      "overtaking": 0.6,
+      "country": "United States"
+    },
+    {
+      "round": 20,
+      "name": "Mexico City Grand Prix",
+      "gpKey": "Mexico",
+      "circuit": "Aut\u00f3dromo Hermanos Rodr\u00edguez",
+      "date": "2026-10-25",
+      "laps": 71,
+      "circuitKm": 4.304,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.55,
+      "overtaking": 0.5,
+      "country": "Mexico"
+    },
+    {
+      "round": 21,
+      "name": "S\u00e3o Paulo Grand Prix",
+      "gpKey": "Brazil",
+      "circuit": "Interlagos",
+      "date": "2026-11-08",
+      "laps": 71,
+      "circuitKm": 4.309,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.55,
+      "overtaking": 0.7,
+      "country": "Brazil"
+    },
+    {
+      "round": 22,
+      "name": "Las Vegas Grand Prix",
+      "gpKey": "Las Vegas",
+      "circuit": "Las Vegas Strip",
+      "date": "2026-11-22",
+      "laps": 50,
+      "circuitKm": 6.201,
+      "circuitType": "street",
+      "expectedStops": 2,
+      "tyreDeg": 0.4,
+      "overtaking": 0.7,
+      "country": "Las Vegas"
+    },
+    {
+      "round": 23,
+      "name": "Qatar Grand Prix",
+      "gpKey": "Qatar",
+      "circuit": "Lusail",
+      "date": "2026-11-29",
+      "laps": 57,
+      "circuitKm": 5.419,
+      "circuitType": "permanent",
+      "expectedStops": 2,
+      "tyreDeg": 0.7,
+      "overtaking": 0.5,
+      "country": "Qatar"
+    },
+    {
+      "round": 24,
+      "name": "Abu Dhabi Grand Prix",
+      "gpKey": "Abu Dhabi",
+      "circuit": "Yas Marina",
+      "date": "2026-12-06",
+      "laps": 58,
+      "circuitKm": 5.281,
+      "circuitType": "semi-street",
+      "expectedStops": 2,
+      "tyreDeg": 0.55,
+      "overtaking": 0.6,
+      "country": "Abu Dhabi"
+    }
+  ],
+  "drivers": [
+    {
+      "code": "VER",
+      "fullName": "Max Verstappen",
+      "number": 3,
+      "team": "Red Bull Racing",
+      "teamColor": "#3671C6"
+    },
+    {
+      "code": "HAD",
+      "fullName": "Isack Hadjar",
+      "number": 6,
+      "team": "Red Bull Racing",
+      "teamColor": "#3671C6"
+    },
+    {
+      "code": "NOR",
+      "fullName": "Lando Norris",
+      "number": 1,
+      "team": "McLaren",
+      "teamColor": "#FF8000"
+    },
+    {
+      "code": "PIA",
+      "fullName": "Oscar Piastri",
+      "number": 81,
+      "team": "McLaren",
+      "teamColor": "#FF8000"
+    },
+    {
+      "code": "LEC",
+      "fullName": "Charles Leclerc",
+      "number": 16,
+      "team": "Ferrari",
+      "teamColor": "#E8002D"
+    },
+    {
+      "code": "HAM",
+      "fullName": "Lewis Hamilton",
+      "number": 44,
+      "team": "Ferrari",
+      "teamColor": "#E8002D"
+    },
+    {
+      "code": "ANT",
+      "fullName": "Kimi Antonelli",
+      "number": 12,
+      "team": "Mercedes",
+      "teamColor": "#27F4D2"
+    },
+    {
+      "code": "RUS",
+      "fullName": "George Russell",
+      "number": 63,
+      "team": "Mercedes",
+      "teamColor": "#27F4D2"
+    },
+    {
+      "code": "ALO",
+      "fullName": "Fernando Alonso",
+      "number": 14,
+      "team": "Aston Martin",
+      "teamColor": "#229971"
+    },
+    {
+      "code": "STR",
+      "fullName": "Lance Stroll",
+      "number": 18,
+      "team": "Aston Martin",
+      "teamColor": "#229971"
+    },
+    {
+      "code": "GAS",
+      "fullName": "Pierre Gasly",
+      "number": 10,
+      "team": "Alpine",
+      "teamColor": "#FF87BC"
+    },
+    {
+      "code": "COL",
+      "fullName": "Franco Colapinto",
+      "number": 43,
+      "team": "Alpine",
+      "teamColor": "#FF87BC"
+    },
+    {
+      "code": "ALB",
+      "fullName": "Alexander Albon",
+      "number": 23,
+      "team": "Williams",
+      "teamColor": "#64C4FF"
+    },
+    {
+      "code": "SAI",
+      "fullName": "Carlos Sainz Jr.",
+      "number": 55,
+      "team": "Williams",
+      "teamColor": "#64C4FF"
+    },
+    {
+      "code": "LAW",
+      "fullName": "Liam Lawson",
+      "number": 30,
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF"
+    },
+    {
+      "code": "LIN",
+      "fullName": "Arvid Lindblad",
+      "number": 41,
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF"
+    },
+    {
+      "code": "OCO",
+      "fullName": "Esteban Ocon",
+      "number": 31,
+      "team": "Haas",
+      "teamColor": "#B6BABD"
+    },
+    {
+      "code": "BEA",
+      "fullName": "Oliver Bearman",
+      "number": 87,
+      "team": "Haas",
+      "teamColor": "#B6BABD"
+    },
+    {
+      "code": "BOR",
+      "fullName": "Gabriel Bortoleto",
+      "number": 5,
+      "team": "Audi",
+      "teamColor": "#1E1E1E"
+    },
+    {
+      "code": "HUL",
+      "fullName": "Nico H\u00fclkenberg",
+      "number": 27,
+      "team": "Audi",
+      "teamColor": "#1E1E1E"
+    },
+    {
+      "code": "PER",
+      "fullName": "Sergio P\u00e9rez",
+      "number": 11,
+      "team": "Cadillac",
+      "teamColor": "#C0C0C0"
+    },
+    {
+      "code": "BOT",
+      "fullName": "Valtteri Bottas",
+      "number": 77,
+      "team": "Cadillac",
+      "teamColor": "#C0C0C0"
+    }
+  ],
+  "teams": [
+    {
+      "name": "Red Bull Racing",
+      "color": "#3671C6",
+      "drivers": [
+        "VER",
+        "HAD"
+      ],
+      "constructorPoints2025": 589,
+      "performanceScore": 0.8844
+    },
+    {
+      "name": "McLaren",
+      "color": "#FF8000",
+      "drivers": [
+        "NOR",
+        "PIA"
+      ],
+      "constructorPoints2025": 666,
+      "performanceScore": 1.0
+    },
+    {
+      "name": "Ferrari",
+      "color": "#E8002D",
+      "drivers": [
+        "LEC",
+        "HAM"
+      ],
+      "constructorPoints2025": 652,
+      "performanceScore": 0.979
+    },
+    {
+      "name": "Mercedes",
+      "color": "#27F4D2",
+      "drivers": [
+        "ANT",
+        "RUS"
+      ],
+      "constructorPoints2025": 468,
+      "performanceScore": 0.7027
+    },
+    {
+      "name": "Aston Martin",
+      "color": "#229971",
+      "drivers": [
+        "ALO",
+        "STR"
+      ],
+      "constructorPoints2025": 94,
+      "performanceScore": 0.1411
+    },
+    {
+      "name": "Alpine",
+      "color": "#FF87BC",
+      "drivers": [
+        "GAS",
+        "COL"
+      ],
+      "constructorPoints2025": 52,
+      "performanceScore": 0.0781
+    },
+    {
+      "name": "Williams",
+      "color": "#64C4FF",
+      "drivers": [
+        "ALB",
+        "SAI"
+      ],
+      "constructorPoints2025": 72,
+      "performanceScore": 0.1081
+    },
+    {
+      "name": "Racing Bulls",
+      "color": "#6692FF",
+      "drivers": [
+        "LAW",
+        "LIN"
+      ],
+      "constructorPoints2025": 64,
+      "performanceScore": 0.0961
+    },
+    {
+      "name": "Haas",
+      "color": "#B6BABD",
+      "drivers": [
+        "OCO",
+        "BEA"
+      ],
+      "constructorPoints2025": 58,
+      "performanceScore": 0.0871
+    },
+    {
+      "name": "Audi",
+      "color": "#1E1E1E",
+      "drivers": [
+        "BOR",
+        "HUL"
+      ],
+      "constructorPoints2025": 12,
+      "performanceScore": 0.018
+    },
+    {
+      "name": "Cadillac",
+      "color": "#C0C0C0",
+      "drivers": [
+        "PER",
+        "BOT"
+      ],
+      "constructorPoints2025": 0,
+      "performanceScore": 0.0
+    }
+  ],
+  "completedRounds": [
+    1
+  ]
+}
