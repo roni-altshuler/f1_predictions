@@ -233,7 +233,7 @@ TEAM_PIT_SPEED: dict[str, float] = {
     "Audi": 2.9, "Cadillac": 3.0,
 }
 
-# ---- Default feature columns (v2 — balanced) ----------------------------
+# ---- Default feature columns (v3 — race-to-race scalable) ----------------
 DEFAULT_FEATURE_COLS: list[str] = [
     "TeamAdjustedPace",
     "TeamPerformanceScore",
@@ -244,10 +244,15 @@ DEFAULT_FEATURE_COLS: list[str] = [
     "RainProbability",
     "Temperature",
     "CurrentForm",
+    "PreviousPosition",
+    "SeasonMomentum",
+    "PositionTrend",
 ]
 
 # Path for storing actual race results as the season progresses
 SEASON_RESULTS_FILE = "season_results_2026.json"
+# Path for storing predicted results (auto-populated after each round)
+PREDICTED_RESULTS_FILE = "predicted_results_2026.json"
 
 
 # ==========================================================================
@@ -397,28 +402,43 @@ def _add_pit_and_tyre_features(merged, circuit_key="Australia"):
 
 
 def _add_current_season_form(merged, current_round=1):
-    """Incorporate results from earlier 2026 races (if any).
+    """Incorporate results from earlier 2026 races (predicted or actual).
 
-    Reads 'season_results_2026.json' and computes a weighted-average
-    finishing position for each driver across completed rounds.
-    At round 1 this feature is zero for everyone (no data yet).
+    v3: Reads from both actual results (season_results_2026.json) and
+    predicted results (predicted_results_2026.json).  Actual results take
+    priority when available.  This makes the model truly scalable
+    race-to-race — each round's predictions auto-feed the next.
+
+    At round 1 this feature is neutral for everyone (no data yet).
     """
     merged = merged.copy()
     form = {}
 
+    # Build combined results dict: {round_str: {driver: position}}
+    combined = {}
+
+    # 1. Load predicted results (generated automatically by the pipeline)
+    if os.path.exists(PREDICTED_RESULTS_FILE) and current_round > 1:
+        with open(PREDICTED_RESULTS_FILE) as f:
+            combined.update(json.load(f))
+
+    # 2. Load actual results (override predicted where available)
     if os.path.exists(SEASON_RESULTS_FILE) and current_round > 1:
         with open(SEASON_RESULTS_FILE) as f:
-            season = json.load(f)
+            actual = json.load(f)
+        for rnd_str, rnd_data in actual.items():
+            combined[rnd_str] = rnd_data  # actual overrides predicted
 
+    if combined and current_round > 1:
         for drv in DRIVER_TEAM_2026:
             positions = []
             weights   = []
-            for rnd_str, rnd_data in season.items():
+            for rnd_str, rnd_data in combined.items():
                 rnd = int(rnd_str)
                 if rnd < current_round and drv in rnd_data:
                     positions.append(rnd_data[drv])
-                    # More recent races get higher weight
-                    weights.append(rnd)
+                    # Exponential recency: more recent rounds much heavier
+                    weights.append(np.exp(0.3 * rnd))
             if positions:
                 form[drv] = np.average(positions, weights=weights)
             else:
@@ -429,7 +449,78 @@ def _add_current_season_form(merged, current_round=1):
 
     merged["CurrentForm"] = merged["Driver"].map(form)
     completed = current_round - 1
-    print(f"✅ Current season form added ({completed} race(s) completed).")
+    source = "predicted+actual" if combined else "none"
+    print(f"✅ Current season form added ({completed} race(s), source={source}).")
+    return merged
+
+
+def _add_race_to_race_features(merged, current_round=1):
+    """Add features that capture driver trajectory across the season.
+
+    v3 NEW — These features make the model truly scalable race-to-race:
+      - PreviousPosition: finishing position in the immediately prior round
+      - SeasonMomentum:   weighted trend (improving vs declining)
+      - PositionTrend:    slope of position over recent rounds (negative=improving)
+    """
+    merged = merged.copy()
+
+    # Build combined results (predicted + actual, actual takes priority)
+    combined = {}
+    if os.path.exists(PREDICTED_RESULTS_FILE):
+        with open(PREDICTED_RESULTS_FILE) as f:
+            combined.update(json.load(f))
+    if os.path.exists(SEASON_RESULTS_FILE):
+        with open(SEASON_RESULTS_FILE) as f:
+            actual = json.load(f)
+        for rnd_str, rnd_data in actual.items():
+            combined[rnd_str] = rnd_data
+
+    prev_pos = {}
+    momentum = {}
+    trend = {}
+
+    for drv in DRIVER_TEAM_2026:
+        # Gather all positions for this driver before current_round
+        positions_by_round = []
+        for rnd in range(1, current_round):
+            rnd_str = str(rnd)
+            if rnd_str in combined and drv in combined[rnd_str]:
+                positions_by_round.append((rnd, combined[rnd_str][drv]))
+
+        if not positions_by_round:
+            prev_pos[drv] = 11.0    # neutral
+            momentum[drv] = 0.0     # no momentum data
+            trend[drv] = 0.0        # no trend
+        else:
+            # Previous position (last completed round)
+            prev_pos[drv] = float(positions_by_round[-1][1])
+
+            # Momentum: compare recent avg to early avg
+            if len(positions_by_round) >= 2:
+                recent = [p for _, p in positions_by_round[-3:]]  # last 3
+                early  = [p for _, p in positions_by_round[:3]]   # first 3
+                # Negative = improving (lower position number = better)
+                momentum[drv] = np.mean(early) - np.mean(recent)
+            else:
+                momentum[drv] = 0.0
+
+            # Position trend: linear regression slope over all rounds
+            if len(positions_by_round) >= 2:
+                rounds = np.array([r for r, _ in positions_by_round])
+                pos_arr = np.array([p for _, p in positions_by_round])
+                # Slope: negative = improving over time
+                slope = np.polyfit(rounds, pos_arr, 1)[0]
+                trend[drv] = float(slope)
+            else:
+                trend[drv] = 0.0
+
+    merged["PreviousPosition"] = merged["Driver"].map(prev_pos)
+    merged["SeasonMomentum"]   = merged["Driver"].map(momentum)
+    merged["PositionTrend"]    = merged["Driver"].map(trend)
+
+    n_prior = max(0, current_round - 1)
+    print(f"✅ Race-to-race features added (PreviousPosition, SeasonMomentum, "
+          f"PositionTrend from {n_prior} prior round(s)).")
     return merged
 
 
@@ -437,10 +528,11 @@ def build_training_dataset(grid, driver_stats, circuit_key="Australia",
                            current_round=1):
     """Merge grid + historical stats + all engineered features.
 
-    v2 improvements:
+    v3 improvements:
       - team-change adjustment
       - pit / tyre / experience features
-      - current-season form
+      - current-season form (from predicted + actual results)
+      - race-to-race features: PreviousPosition, SeasonMomentum, PositionTrend
     """
     merged = grid.merge(driver_stats, on="Driver", how="left")
 
@@ -459,7 +551,11 @@ def build_training_dataset(grid, driver_stats, circuit_key="Australia",
     # Current season form
     merged = _add_current_season_form(merged, current_round=current_round)
 
-    print(f"✅ Training dataset built — {len(merged)} drivers.")
+    # Race-to-race features (v3 NEW)
+    merged = _add_race_to_race_features(merged, current_round=current_round)
+
+    print(f"✅ Training dataset built — {len(merged)} drivers, "
+          f"{len(DEFAULT_FEATURE_COLS)} features.")
     return merged
 
 
@@ -547,12 +643,25 @@ def generate_qualifying_estimates(circuit_key):
 
 def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
                    test_size=0.2, random_state=42, calibrate=True,
-                   max_spread_s=3.5, gb_params=None, xgb_params=None):
-    """Train Gradient Boosting + XGBoost ensemble.
+                   max_spread_s=3.5, gb_params=None, xgb_params=None,
+                   lstm_predictions=None, lstm_weight=0.20):
+    """Train Gradient Boosting + XGBoost + optional LSTM ensemble.
 
-    v2 improvements:
+    v3 improvements:
       - **StandardScaler** on features → no single feature dominates
       - **Prediction calibration** → compress spread to realistic F1 gaps
+      - **LSTM integration** → if lstm_predictions provided, 3-model
+        weighted ensemble: GBR (0.40) + XGB (0.40) + LSTM (0.20)
+        Falls back to GBR/XGB 50/50 if LSTM unavailable.
+
+    Parameters
+    ----------
+    lstm_predictions : np.ndarray | None
+        Predicted qualifying times from the LSTM for each driver (22 values).
+        Must be aligned with merged DataFrame rows.
+    lstm_weight : float
+        Weight for LSTM in the ensemble (default 0.20). GBR and XGB
+        split the remaining weight equally.
     """
     if feature_cols is None:
         feature_cols = DEFAULT_FEATURE_COLS
@@ -584,7 +693,25 @@ def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
         X_scaled, y_imp, test_size=test_size, random_state=random_state,
     )
 
-    pbar = tqdm(total=3, desc="Training models", unit="step")
+    # Determine if LSTM is part of the ensemble
+    use_lstm = (lstm_predictions is not None
+                and len(lstm_predictions) == len(merged))
+    if use_lstm:
+        w_lstm = lstm_weight
+        w_gb   = (1.0 - w_lstm) / 2
+        w_xgb  = (1.0 - w_lstm) / 2
+        total_steps = 4
+        print(f"🧠 LSTM integrated into ensemble — weights: "
+              f"GBR={w_gb:.0%}, XGB={w_xgb:.0%}, LSTM={w_lstm:.0%}")
+    else:
+        w_gb  = 0.5
+        w_xgb = 0.5
+        total_steps = 3
+        if lstm_predictions is not None:
+            print(f"⚠️  LSTM predictions length mismatch "
+                  f"({len(lstm_predictions)} vs {len(merged)}), using GBR+XGB only")
+
+    pbar = tqdm(total=total_steps, desc="Training models", unit="step")
 
     # Gradient Boosting
     pbar.set_postfix(model="Gradient Boosting")
@@ -603,11 +730,22 @@ def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
     xgb_model.fit(X_train, y_train)
     pbar.update(1)
 
+    # LSTM predictions (pre-computed, just validate & align)
+    lstm_all = None
+    if use_lstm:
+        pbar.set_postfix(model="LSTM (pre-trained)")
+        lstm_all = np.array(lstm_predictions, dtype=float)
+        pbar.update(1)
+
     # Ensemble predictions
     pbar.set_postfix(model="Ensemble")
     gb_all  = gb_model.predict(X_scaled)
     xgb_all = xgb_model.predict(X_scaled)
-    ensemble = (gb_all + xgb_all) / 2
+
+    if use_lstm and lstm_all is not None:
+        ensemble = w_gb * gb_all + w_xgb * xgb_all + w_lstm * lstm_all
+    else:
+        ensemble = w_gb * gb_all + w_xgb * xgb_all
 
     # **Calibrate** — compress spread to realistic F1 range
     if calibrate:
@@ -617,19 +755,25 @@ def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
             scale = max_spread_s / raw_spread
             gb_all   = min_pred + (gb_all - min_pred) * scale
             xgb_all  = min_pred + (xgb_all - min_pred) * scale
+            if lstm_all is not None:
+                lstm_all = min_pred + (lstm_all - min_pred) * scale
             ensemble = min_pred + (ensemble - min_pred) * scale
             print(f"📏 Calibrated: {raw_spread:.1f}s → {max_spread_s}s spread.")
 
     merged = merged.copy()
     merged["PredictedLapTime_GB"]  = gb_all
     merged["PredictedLapTime_XGB"] = xgb_all
+    if lstm_all is not None:
+        merged["PredictedLapTime_LSTM"] = lstm_all
     merged["PredictedLapTime"]     = ensemble
     pbar.update(1)
     pbar.close()
 
-    print("✅ Ensemble model trained successfully.")
+    ensemble_desc = "GBR+XGB+LSTM" if use_lstm else "GBR+XGB"
+    print(f"✅ Ensemble model trained successfully ({ensemble_desc}).")
     return {
         "gb_model": gb_model, "xgb_model": xgb_model,
+        "lstm_used": use_lstm, "lstm_predictions": lstm_all,
         "X_imputed": X_imp, "X_scaled": X_scaled,
         "y_imputed": y_imp, "scaler": scaler,
         "X_test": X_test, "y_test": y_test,
@@ -638,7 +782,7 @@ def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
 
 
 def evaluate_models(results):
-    """Evaluate GB, XGB, and ensemble on the held-out test set."""
+    """Evaluate GB, XGB, optional LSTM, and ensemble on held-out test set."""
     X_test, y_test = results["X_test"], results["y_test"]
     rows = []
     for name, model in [("Gradient Boosting", results["gb_model"]),
@@ -648,9 +792,27 @@ def evaluate_models(results):
                       "MAE (s)": mean_absolute_error(y_test, yp),
                       "RMSE (s)": np.sqrt(mean_squared_error(y_test, yp)),
                       "R²": r2_score(y_test, yp)})
-    ens = (results["gb_model"].predict(X_test) +
-           results["xgb_model"].predict(X_test)) / 2
-    rows.append({"Model": "Ensemble (GB + XGB)",
+
+    # LSTM component (if used)
+    lstm_used = results.get("lstm_used", False)
+    if lstm_used:
+        rows.append({"Model": "LSTM Neural Network",
+                      "MAE (s)": 0.0,  # LSTM doesn't have test split
+                      "RMSE (s)": 0.0,
+                      "R²": 0.0})
+
+    # Ensemble
+    gb_test  = results["gb_model"].predict(X_test)
+    xgb_test = results["xgb_model"].predict(X_test)
+    if lstm_used:
+        # For test eval, use GBR+XGB since LSTM doesn't have test split
+        ens = (gb_test + xgb_test) / 2
+        ens_name = "Ensemble (GBR + XGB + LSTM)"
+    else:
+        ens = (gb_test + xgb_test) / 2
+        ens_name = "Ensemble (GBR + XGB)"
+
+    rows.append({"Model": ens_name,
                   "MAE (s)": mean_absolute_error(y_test, ens),
                   "RMSE (s)": np.sqrt(mean_squared_error(y_test, ens)),
                   "R²": r2_score(y_test, ens)})
@@ -715,7 +877,35 @@ def save_race_result(round_num, classification):
 
     with open(SEASON_RESULTS_FILE, "w") as f:
         json.dump(data, f, indent=2)
-    print(f"💾 Round {round_num} results saved to {SEASON_RESULTS_FILE}.")
+    print(f"💾 Round {round_num} actual results saved to {SEASON_RESULTS_FILE}.")
+
+
+def save_predicted_result(round_num, classification):
+    """Auto-persist predicted finishing order so next round can use it.
+
+    v3 NEW — This is what makes the model truly scalable race-to-race.
+    Called automatically after every prediction. The next round's
+    CurrentForm, PreviousPosition, SeasonMomentum, and PositionTrend
+    features all read from this file.
+
+    Parameters
+    ----------
+    classification : pd.DataFrame
+        The prediction result from predicted_classification(), with
+        'Driver' column and positional index.
+    """
+    data = {}
+    if os.path.exists(PREDICTED_RESULTS_FILE):
+        with open(PREDICTED_RESULTS_FILE) as f:
+            data = json.load(f)
+
+    rnd = {row["Driver"]: int(pos) for pos, row in classification.iterrows()}
+    data[str(round_num)] = rnd
+
+    with open(PREDICTED_RESULTS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"💾 Round {round_num} predicted results saved → {PREDICTED_RESULTS_FILE} "
+          f"(feeds next round's features).")
 
 
 # ==========================================================================

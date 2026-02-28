@@ -1,14 +1,14 @@
 export default function AboutPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl sm:text-4xl font-black text-f1-text mb-8">
+      <h1 className="text-3xl sm:text-4xl font-black mb-8" style={{ color: "var(--text)" }}>
         About This Project
       </h1>
 
       <div className="space-y-8">
-        <section className="bg-f1-card rounded-2xl border border-f1-border p-6 card-glow">
+        <section className="card card-glow p-6">
           <h2 className="text-xl font-bold text-f1-red mb-3">Overview</h2>
-          <p className="text-f1-text-muted leading-relaxed">
+          <p className="leading-relaxed" style={{ color: "var(--text-muted)" }}>
             This website hosts machine learning-powered predictions for the 2026 Formula 1
             season. Every Grand Prix is predicted using an ensemble model trained on
             historical qualifying and race data from 2023-2025 via the FastF1 API. The
@@ -17,16 +17,16 @@ export default function AboutPage() {
           </p>
         </section>
 
-        <section className="bg-f1-card rounded-2xl border border-f1-border p-6 card-glow">
+        <section className="card card-glow p-6">
           <h2 className="text-xl font-bold text-f1-red mb-3">Model Architecture</h2>
-          <div className="space-y-4 text-f1-text-muted leading-relaxed">
+          <div className="space-y-4 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             <p>
-              The prediction engine uses an <strong className="text-f1-text">ensemble approach</strong>{" "}
+              The prediction engine uses an <strong style={{ color: "var(--text)" }}>ensemble approach</strong>{" "}
               combining XGBoost and Gradient Boosting Regressors, weighted 50/50 and
               normalized with StandardScaler.
             </p>
             <p>
-              <strong className="text-f1-text">9 balanced features</strong> model each
+              <strong style={{ color: "var(--text)" }}>9 balanced features</strong> model each
               driver&apos;s predicted qualifying time:
             </p>
             <ul className="list-disc list-inside space-y-1 pl-4">
@@ -47,33 +47,56 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="bg-f1-card rounded-2xl border border-f1-border p-6 card-glow">
+        <section className="card card-glow p-6">
+          <h2 className="text-xl font-bold text-f1-red mb-3">Advanced Models</h2>
+          <div className="space-y-4 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            <p>
+              Beyond the core ensemble, the system includes an{" "}
+              <strong style={{ color: "var(--text)" }}>LSTM neural network</strong> (PyTorch) for
+              lap-by-lap pace prediction with 64 hidden units across 2 layers and sequence
+              length of 5.
+            </p>
+            <p>
+              A <strong style={{ color: "var(--text)" }}>Monte-Carlo pit strategy simulator</strong>{" "}
+              evaluates different compound combinations and stop timings to determine optimal
+              race strategies, accounting for compound-specific degradation curves and tyre cliffs.
+            </p>
+            <p>
+              The <strong style={{ color: "var(--text)" }}>Season Tracker</strong> maintains
+              cumulative championships, updating driver and constructor standings after each
+              predicted round with exponentially-weighted form tracking.
+            </p>
+          </div>
+        </section>
+
+        <section className="card card-glow p-6">
           <h2 className="text-xl font-bold text-f1-red mb-3">Tech Stack</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <h3 className="text-f1-text font-semibold mb-2">Prediction Engine</h3>
-              <ul className="text-f1-text-muted text-sm space-y-1">
+              <h3 className="font-semibold mb-2" style={{ color: "var(--text)" }}>Prediction Engine</h3>
+              <ul className="text-sm space-y-1" style={{ color: "var(--text-muted)" }}>
                 <li>• Python 3.11 / FastF1 API</li>
                 <li>• scikit-learn / XGBoost</li>
+                <li>• PyTorch (LSTM)</li>
                 <li>• pandas / NumPy</li>
                 <li>• matplotlib / seaborn</li>
               </ul>
             </div>
             <div>
-              <h3 className="text-f1-text font-semibold mb-2">Website</h3>
-              <ul className="text-f1-text-muted text-sm space-y-1">
-                <li>• Next.js / React / TypeScript</li>
-                <li>• Tailwind CSS</li>
+              <h3 className="font-semibold mb-2" style={{ color: "var(--text)" }}>Website</h3>
+              <ul className="text-sm space-y-1" style={{ color: "var(--text-muted)" }}>
+                <li>• Next.js 16 / React 19 / TypeScript 5</li>
+                <li>• Tailwind CSS v4</li>
                 <li>• Recharts for interactive charts</li>
-                <li>• Static JSON data pipeline</li>
+                <li>• Vercel deployment</li>
               </ul>
             </div>
           </div>
         </section>
 
-        <section className="bg-f1-card rounded-2xl border border-f1-border p-6 card-glow">
+        <section className="card card-glow p-6">
           <h2 className="text-xl font-bold text-f1-red mb-3">Disclaimer</h2>
-          <p className="text-f1-text-muted leading-relaxed">
+          <p className="leading-relaxed" style={{ color: "var(--text-muted)" }}>
             This is a personal project for educational and entertainment purposes.
             Predictions are generated by machine learning models and should not be used
             for betting or any form of gambling. This project is not affiliated with,

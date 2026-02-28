@@ -150,9 +150,11 @@ def export_season_metadata():
 # round_XX.json  →  RoundData
 # ═════════════════════════════════════════════════════════════════════════
 
-def export_round_data(round_num, return_merged=False):
+def export_round_data(round_num, return_merged=False, use_lstm=False):
     """Run prediction pipeline for one round; export JSON + visualisations.
-    If return_merged=True, returns (round_data, merged_df) for advanced models."""
+    If return_merged=True, returns (round_data, merged_df) for advanced models.
+    If use_lstm=True, computes LSTM grid predictions and feeds them into
+    the ensemble as a true 3rd model (v3 architecture)."""
     _ensure_dirs()
     info    = CALENDAR_2026[round_num]
     gp_key  = info["gp_key"]
@@ -178,10 +180,29 @@ def export_round_data(round_num, return_merged=False):
     merged          = apply_qualifying_data(merged, quali,
                                             rain_probability=weather["rain"],
                                             temperature_c=weather["temp"])
-    results         = train_ensemble(merged, max_spread_s=3.5)
+
+    # ── LSTM Grid Predictions (v3: true ensemble member) ──
+    lstm_preds = None
+    if use_lstm:
+        try:
+            from advanced_models import compute_lstm_grid_predictions
+            lstm_preds = compute_lstm_grid_predictions(
+                merged, gp_key, years=years)
+        except Exception as e:
+            print(f"  ⚠️  LSTM grid predictions failed: {e}")
+            lstm_preds = None
+
+    results         = train_ensemble(merged, max_spread_s=3.5,
+                                     lstm_predictions=lstm_preds)
     merged          = results["merged"]
     metrics_df      = evaluate_models(results)
     classification  = predicted_classification(merged, gp_name)
+
+    # ── Auto-save predicted result for race-to-race scaling (v3 NEW) ──
+    try:
+        save_predicted_result(round_num, classification)
+    except Exception as e:
+        print(f"  ⚠️  Could not save predicted result: {e}")
 
     # ── Generate visualisations ──
     round_viz_dir = os.path.join(VIZ_DIR, f"round_{round_num:02d}")
@@ -617,7 +638,9 @@ def main():
     args = parser.parse_args()
 
     if args.round:
-        round_data, merged = export_round_data(args.round, return_merged=True)
+        round_data, merged = export_round_data(args.round,
+                                                return_merged=True,
+                                                use_lstm=args.advanced)
         if args.fastf1:
             gp_key = CALENDAR_2026[args.round]["gp_key"]
             extra = _generate_fastf1_viz(args.round, gp_key, args.fastf1_year)
@@ -631,9 +654,12 @@ def main():
         export_standings()
         export_season_metadata()
     elif args.all:
+        # Process rounds SEQUENTIALLY — each round's prediction feeds the
+        # next round's race-to-race features (v3 architecture).
         for rnd in range(1, 25):
             try:
-                rd, merged = export_round_data(rnd, return_merged=True)
+                rd, merged = export_round_data(rnd, return_merged=True,
+                                                use_lstm=args.advanced)
                 if args.fastf1:
                     gp_key = CALENDAR_2026[rnd]["gp_key"]
                     extra = _generate_fastf1_viz(rnd, gp_key, args.fastf1_year)

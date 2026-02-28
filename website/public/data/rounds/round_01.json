@@ -11,7 +11,7 @@
       "driverFullName": "Oscar Piastri",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "predictedTime": 74.871,
+      "predictedTime": 78.394,
       "gap": "LEADER",
       "points": 25
     },
@@ -21,68 +21,68 @@
       "driverFullName": "Lando Norris",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "predictedTime": 74.95,
-      "gap": "0.079",
+      "predictedTime": 78.432,
+      "gap": "0.038",
       "points": 18
     },
     {
       "position": 3,
-      "driver": "LEC",
-      "driverFullName": "Charles Leclerc",
-      "team": "Ferrari",
-      "teamColor": "#E8002D",
-      "predictedTime": 75.02,
-      "gap": "0.149",
-      "points": 15
-    },
-    {
-      "position": 4,
       "driver": "VER",
       "driverFullName": "Max Verstappen",
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "predictedTime": 75.021,
-      "gap": "0.150",
+      "predictedTime": 78.482,
+      "gap": "0.088",
+      "points": 15
+    },
+    {
+      "position": 4,
+      "driver": "LEC",
+      "driverFullName": "Charles Leclerc",
+      "team": "Ferrari",
+      "teamColor": "#E8002D",
+      "predictedTime": 78.487,
+      "gap": "0.093",
       "points": 12
     },
     {
       "position": 5,
-      "driver": "RUS",
-      "driverFullName": "George Russell",
-      "team": "Mercedes",
-      "teamColor": "#27F4D2",
-      "predictedTime": 75.1,
-      "gap": "0.229",
-      "points": 10
-    },
-    {
-      "position": 6,
       "driver": "HAM",
       "driverFullName": "Lewis Hamilton",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "predictedTime": 75.17,
-      "gap": "0.299",
+      "predictedTime": 78.684,
+      "gap": "0.290",
+      "points": 10
+    },
+    {
+      "position": 6,
+      "driver": "RUS",
+      "driverFullName": "George Russell",
+      "team": "Mercedes",
+      "teamColor": "#27F4D2",
+      "predictedTime": 78.709,
+      "gap": "0.315",
       "points": 8
     },
     {
       "position": 7,
-      "driver": "SAI",
-      "driverFullName": "Carlos Sainz Jr.",
-      "team": "Williams",
-      "teamColor": "#64C4FF",
-      "predictedTime": 75.319,
-      "gap": "0.448",
-      "points": 6
-    },
-    {
-      "position": 8,
       "driver": "ANT",
       "driverFullName": "Kimi Antonelli",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "predictedTime": 75.32,
-      "gap": "0.449",
+      "predictedTime": 79.074,
+      "gap": "0.680",
+      "points": 6
+    },
+    {
+      "position": 8,
+      "driver": "SAI",
+      "driverFullName": "Carlos Sainz Jr.",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
+      "predictedTime": 79.193,
+      "gap": "0.799",
       "points": 4
     },
     {
@@ -91,8 +91,8 @@
       "driverFullName": "Liam Lawson",
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
-      "predictedTime": 75.321,
-      "gap": "0.450",
+      "predictedTime": 79.211,
+      "gap": "0.817",
       "points": 2
     },
     {
@@ -101,8 +101,8 @@
       "driverFullName": "Sergio P\u00e9rez",
       "team": "Cadillac",
       "teamColor": "#C0C0C0",
-      "predictedTime": 75.399,
-      "gap": "0.528",
+      "predictedTime": 79.219,
+      "gap": "0.825",
       "points": 1
     },
     {
@@ -111,28 +111,28 @@
       "driverFullName": "Alexander Albon",
       "team": "Williams",
       "teamColor": "#64C4FF",
-      "predictedTime": 75.619,
-      "gap": "0.748",
+      "predictedTime": 79.5,
+      "gap": "1.106",
       "points": 0
     },
     {
       "position": 12,
-      "driver": "GAS",
-      "driverFullName": "Pierre Gasly",
-      "team": "Alpine",
-      "teamColor": "#FF87BC",
-      "predictedTime": 75.771,
-      "gap": "0.900",
-      "points": 0
-    },
-    {
-      "position": 13,
       "driver": "HAD",
       "driverFullName": "Isack Hadjar",
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "predictedTime": 75.838,
-      "gap": "0.967",
+      "predictedTime": 79.521,
+      "gap": "1.127",
+      "points": 0
+    },
+    {
+      "position": 13,
+      "driver": "GAS",
+      "driverFullName": "Pierre Gasly",
+      "team": "Alpine",
+      "teamColor": "#FF87BC",
+      "predictedTime": 79.659,
+      "gap": "1.265",
       "points": 0
     },
     {
@@ -141,8 +141,8 @@
       "driverFullName": "Fernando Alonso",
       "team": "Aston Martin",
       "teamColor": "#229971",
-      "predictedTime": 75.922,
-      "gap": "1.051",
+      "predictedTime": 79.771,
+      "gap": "1.377",
       "points": 0
     },
     {
@@ -151,8 +151,8 @@
       "driverFullName": "Oliver Bearman",
       "team": "Haas",
       "teamColor": "#B6BABD",
-      "predictedTime": 76.0,
-      "gap": "1.129",
+      "predictedTime": 79.956,
+      "gap": "1.562",
       "points": 0
     },
     {
@@ -161,8 +161,8 @@
       "driverFullName": "Esteban Ocon",
       "team": "Haas",
       "teamColor": "#B6BABD",
-      "predictedTime": 76.07,
-      "gap": "1.199",
+      "predictedTime": 79.963,
+      "gap": "1.569",
       "points": 0
     },
     {
@@ -171,8 +171,8 @@
       "driverFullName": "Nico H\u00fclkenberg",
       "team": "Audi",
       "teamColor": "#1E1E1E",
-      "predictedTime": 76.221,
-      "gap": "1.350",
+      "predictedTime": 80.182,
+      "gap": "1.788",
       "points": 0
     },
     {
@@ -181,8 +181,8 @@
       "driverFullName": "Lance Stroll",
       "team": "Aston Martin",
       "teamColor": "#229971",
-      "predictedTime": 76.299,
-      "gap": "1.428",
+      "predictedTime": 80.206,
+      "gap": "1.812",
       "points": 0
     },
     {
@@ -191,28 +191,28 @@
       "driverFullName": "Franco Colapinto",
       "team": "Alpine",
       "teamColor": "#FF87BC",
-      "predictedTime": 76.369,
-      "gap": "1.499",
+      "predictedTime": 80.213,
+      "gap": "1.819",
       "points": 0
     },
     {
       "position": 20,
-      "driver": "BOT",
-      "driverFullName": "Valtteri Bottas",
-      "team": "Cadillac",
-      "teamColor": "#C0C0C0",
-      "predictedTime": 76.37,
-      "gap": "1.499",
-      "points": 0
-    },
-    {
-      "position": 21,
       "driver": "LIN",
       "driverFullName": "Arvid Lindblad",
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
-      "predictedTime": 76.372,
-      "gap": "1.501",
+      "predictedTime": 80.278,
+      "gap": "1.884",
+      "points": 0
+    },
+    {
+      "position": 21,
+      "driver": "BOT",
+      "driverFullName": "Valtteri Bottas",
+      "team": "Cadillac",
+      "teamColor": "#C0C0C0",
+      "predictedTime": 80.346,
+      "gap": "1.952",
       "points": 0
     },
     {
@@ -221,15 +221,15 @@
       "driverFullName": "Gabriel Bortoleto",
       "team": "Audi",
       "teamColor": "#1E1E1E",
-      "predictedTime": 76.599,
-      "gap": "1.728",
+      "predictedTime": 80.624,
+      "gap": "2.229",
       "points": 0
     }
   ],
   "metrics": {
-    "r2Score": 0.8997,
-    "mae": 0.1665,
-    "maxSpread": 1.728,
+    "r2Score": 0.6743,
+    "mae": 0.1254,
+    "maxSpread": 2.229,
     "trainingYears": [
       2023,
       2024,
@@ -239,30 +239,42 @@
   "featureImportance": [
     {
       "feature": "CleanAirPace",
-      "importance": 0.9622
+      "importance": 0.9616
     },
     {
       "feature": "ExperienceFactor",
-      "importance": 0.0186
+      "importance": 0.0187
     },
     {
       "feature": "TeamAdjustedPace",
-      "importance": 0.0084
-    },
-    {
-      "feature": "TeamPerformanceScore",
-      "importance": 0.0047
+      "importance": 0.0095
     },
     {
       "feature": "PitTimeLoss",
-      "importance": 0.0046
+      "importance": 0.0047
+    },
+    {
+      "feature": "TeamPerformanceScore",
+      "importance": 0.0039
     },
     {
       "feature": "TyreDegFactor",
       "importance": 0.0015
     },
     {
+      "feature": "SeasonMomentum",
+      "importance": 0.0
+    },
+    {
+      "feature": "PositionTrend",
+      "importance": 0.0
+    },
+    {
       "feature": "CurrentForm",
+      "importance": 0.0
+    },
+    {
+      "feature": "PreviousPosition",
       "importance": 0.0
     },
     {
@@ -274,11 +286,11 @@
       "importance": 0.0
     }
   ],
-  "fastestLap": "74.871s",
+  "fastestLap": "78.394s",
   "podium": [
     "PIA",
     "NOR",
-    "LEC"
+    "VER"
   ],
   "visualizations": [
     "predicted_laptimes.png",
@@ -287,10 +299,7 @@
     "pace_vs_predicted.png",
     "laptime_distribution.png",
     "pit_strategy_comparison.png",
-    "tyre_degradation_curves.png",
-    "track_map.png",
-    "laptime_distribution_historical.png",
-    "tyre_strategy.png"
+    "tyre_degradation_curves.png"
   ],
   "circuitInfo": {
     "type": "street-park",
@@ -302,23 +311,23 @@
   },
   "strategyData": {
     "2-Stop: Soft\u2192Medium\u2192Hard": {
-      "meanTime": 4401.05,
-      "stdTime": 0.56,
+      "meanTime": 4605.51,
+      "stdTime": 0.59,
       "numStops": 2
     },
     "2-Stop: Medium\u2192Hard\u2192Medium": {
-      "meanTime": 4404.53,
-      "stdTime": 0.64,
+      "meanTime": 4608.8,
+      "stdTime": 0.56,
       "numStops": 2
     },
     "2-Stop: Soft\u2192Hard\u2192Medium": {
-      "meanTime": 4401.59,
-      "stdTime": 0.67,
+      "meanTime": 4605.94,
+      "stdTime": 0.55,
       "numStops": 2
     },
     "1-Stop: Medium\u2192Hard (risky)": {
-      "meanTime": 4390.94,
-      "stdTime": 0.58,
+      "meanTime": 4595.2,
+      "stdTime": 0.69,
       "numStops": 1
     }
   },

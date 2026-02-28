@@ -33,31 +33,31 @@ export default function StandingsChart({ data, rounds }: Props) {
     <div className="w-full h-80">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#2A2E3F" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
           <XAxis
             dataKey="round"
-            stroke="#8B8FA3"
+            stroke="var(--text-muted)"
             fontSize={12}
             tickLine={false}
           />
           <YAxis
-            stroke="#8B8FA3"
+            stroke="var(--text-muted)"
             fontSize={12}
             tickLine={false}
             axisLine={false}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#1A1D2B",
-              border: "1px solid #2A2E3F",
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid var(--border)",
               borderRadius: "8px",
-              color: "#F0F0F0",
+              color: "var(--text)",
               fontSize: "13px",
             }}
-            labelStyle={{ color: "#8B8FA3", fontWeight: "bold" }}
+            labelStyle={{ color: "var(--text-muted)", fontWeight: "bold" }}
           />
           <Legend
-            wrapperStyle={{ fontSize: "12px", color: "#F0F0F0" }}
+            wrapperStyle={{ fontSize: "12px", color: "var(--text)" }}
           />
           {data.map((d) => (
             <Line

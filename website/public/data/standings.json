@@ -29,10 +29,10 @@
     },
     {
       "position": 3,
-      "driver": "LEC",
-      "driverFullName": "Charles Leclerc",
-      "team": "Ferrari",
-      "teamColor": "#E8002D",
+      "driver": "VER",
+      "driverFullName": "Max Verstappen",
+      "team": "Red Bull Racing",
+      "teamColor": "#3671C6",
       "points": 15,
       "wins": 0,
       "podiums": 1,
@@ -42,10 +42,10 @@
     },
     {
       "position": 4,
-      "driver": "VER",
-      "driverFullName": "Max Verstappen",
-      "team": "Red Bull Racing",
-      "teamColor": "#3671C6",
+      "driver": "LEC",
+      "driverFullName": "Charles Leclerc",
+      "team": "Ferrari",
+      "teamColor": "#E8002D",
       "points": 12,
       "wins": 0,
       "podiums": 0,
@@ -55,10 +55,10 @@
     },
     {
       "position": 5,
-      "driver": "RUS",
-      "driverFullName": "George Russell",
-      "team": "Mercedes",
-      "teamColor": "#27F4D2",
+      "driver": "HAM",
+      "driverFullName": "Lewis Hamilton",
+      "team": "Ferrari",
+      "teamColor": "#E8002D",
       "points": 10,
       "wins": 0,
       "podiums": 0,
@@ -68,10 +68,10 @@
     },
     {
       "position": 6,
-      "driver": "HAM",
-      "driverFullName": "Lewis Hamilton",
-      "team": "Ferrari",
-      "teamColor": "#E8002D",
+      "driver": "RUS",
+      "driverFullName": "George Russell",
+      "team": "Mercedes",
+      "teamColor": "#27F4D2",
       "points": 8,
       "wins": 0,
       "podiums": 0,
@@ -81,10 +81,10 @@
     },
     {
       "position": 7,
-      "driver": "SAI",
-      "driverFullName": "Carlos Sainz Jr.",
-      "team": "Williams",
-      "teamColor": "#64C4FF",
+      "driver": "ANT",
+      "driverFullName": "Kimi Antonelli",
+      "team": "Mercedes",
+      "teamColor": "#27F4D2",
       "points": 6,
       "wins": 0,
       "podiums": 0,
@@ -94,10 +94,10 @@
     },
     {
       "position": 8,
-      "driver": "ANT",
-      "driverFullName": "Kimi Antonelli",
-      "team": "Mercedes",
-      "teamColor": "#27F4D2",
+      "driver": "SAI",
+      "driverFullName": "Carlos Sainz Jr.",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
       "points": 4,
       "wins": 0,
       "podiums": 0,
@@ -307,18 +307,32 @@
       "position": 2,
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "points": 23,
+      "points": 22,
       "wins": 0,
       "drivers": [
         "LEC",
         "HAM"
       ],
       "pointsHistory": [
-        23
+        22
       ]
     },
     {
       "position": 3,
+      "team": "Red Bull Racing",
+      "teamColor": "#3671C6",
+      "points": 15,
+      "wins": 0,
+      "drivers": [
+        "VER",
+        "HAD"
+      ],
+      "pointsHistory": [
+        15
+      ]
+    },
+    {
+      "position": 4,
       "team": "Mercedes",
       "teamColor": "#27F4D2",
       "points": 14,
@@ -332,31 +346,17 @@
       ]
     },
     {
-      "position": 4,
-      "team": "Red Bull Racing",
-      "teamColor": "#3671C6",
-      "points": 12,
-      "wins": 0,
-      "drivers": [
-        "VER",
-        "HAD"
-      ],
-      "pointsHistory": [
-        12
-      ]
-    },
-    {
       "position": 5,
       "team": "Williams",
       "teamColor": "#64C4FF",
-      "points": 6,
+      "points": 4,
       "wins": 0,
       "drivers": [
         "SAI",
         "ALB"
       ],
       "pointsHistory": [
-        6
+        4
       ]
     },
     {
@@ -464,30 +464,21 @@
       "canStillWin": true
     },
     {
-      "driver": "LEC",
-      "driverFullName": "Charles Leclerc",
-      "team": "Ferrari",
-      "teamColor": "#E8002D",
+      "driver": "VER",
+      "driverFullName": "Max Verstappen",
+      "team": "Red Bull Racing",
+      "teamColor": "#3671C6",
       "currentPoints": 15,
       "maxPossiblePoints": 613,
       "canStillWin": true
     },
     {
-      "driver": "VER",
-      "driverFullName": "Max Verstappen",
-      "team": "Red Bull Racing",
-      "teamColor": "#3671C6",
+      "driver": "LEC",
+      "driverFullName": "Charles Leclerc",
+      "team": "Ferrari",
+      "teamColor": "#E8002D",
       "currentPoints": 12,
       "maxPossiblePoints": 610,
-      "canStillWin": true
-    },
-    {
-      "driver": "RUS",
-      "driverFullName": "George Russell",
-      "team": "Mercedes",
-      "teamColor": "#27F4D2",
-      "currentPoints": 10,
-      "maxPossiblePoints": 608,
       "canStillWin": true
     },
     {
@@ -495,17 +486,17 @@
       "driverFullName": "Lewis Hamilton",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "currentPoints": 8,
-      "maxPossiblePoints": 606,
+      "currentPoints": 10,
+      "maxPossiblePoints": 608,
       "canStillWin": true
     },
     {
-      "driver": "SAI",
-      "driverFullName": "Carlos Sainz Jr.",
-      "team": "Williams",
-      "teamColor": "#64C4FF",
-      "currentPoints": 6,
-      "maxPossiblePoints": 604,
+      "driver": "RUS",
+      "driverFullName": "George Russell",
+      "team": "Mercedes",
+      "teamColor": "#27F4D2",
+      "currentPoints": 8,
+      "maxPossiblePoints": 606,
       "canStillWin": true
     },
     {
@@ -513,6 +504,15 @@
       "driverFullName": "Kimi Antonelli",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
+      "currentPoints": 6,
+      "maxPossiblePoints": 604,
+      "canStillWin": true
+    },
+    {
+      "driver": "SAI",
+      "driverFullName": "Carlos Sainz Jr.",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
       "currentPoints": 4,
       "maxPossiblePoints": 602,
       "canStillWin": true

@@ -15,113 +15,97 @@ export default function CalendarPage() {
   if (!season) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-f1-text-muted loading-pulse text-lg">Loading calendar...</div>
+        <div className="loading-pulse text-lg" style={{ color: "var(--text-muted)" }}>Loading calendar...</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl sm:text-4xl font-black text-f1-text mb-2">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="text-center mb-10">
+        <h1 className="text-3xl sm:text-4xl font-black mb-2" style={{ color: "var(--text)" }}>
           2026 Season Calendar
         </h1>
-        <p className="text-f1-text-muted text-lg">
-          {season.totalRounds} Grand Prix races •{" "}
-          {season.completedRounds.length} predictions completed
+        <p style={{ color: "var(--text-muted)" }}>
+          {season.totalRounds} Grand Prix • {season.completedRounds.length} predictions completed
         </p>
       </div>
 
-      {/* Race Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="space-y-3">
         {season.calendar.map((race) => {
-          const hasData = season.completedRounds.includes(race.round);
-          const flag = COUNTRY_FLAGS[race.gpKey] || "🏁";
+          const completed = season.completedRounds.includes(race.round);
+          const raceDate = new Date(race.date + "T00:00:00");
+          const isPast = raceDate < new Date();
 
           return (
             <Link
               key={race.round}
-              href={hasData ? `/race/${race.round}` : "#"}
-              className={`bg-f1-card rounded-2xl border border-f1-border p-6 transition-all card-glow group ${
-                hasData
-                  ? "hover:border-f1-red/40 cursor-pointer"
-                  : "opacity-60 cursor-default"
+              href={completed ? `/race/${race.round}` : "#"}
+              className={`card flex items-center gap-4 sm:gap-6 px-5 py-4 group transition-all ${
+                completed ? "hover:border-f1-red/30 cursor-pointer" : "cursor-default"
               }`}
             >
-              {/* Round header */}
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-widest text-f1-text-muted">
-                  Round {race.round}
-                </span>
-                {hasData ? (
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-f1-green/10 text-f1-green text-xs font-semibold">
-                    <span className="w-1.5 h-1.5 bg-f1-green rounded-full" />
-                    Predicted
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-1 rounded-full bg-f1-text-muted/10 text-f1-text-muted text-xs font-semibold">
-                    Upcoming
-                  </span>
-                )}
+              {/* Round number */}
+              <div className="text-center shrink-0 w-12">
+                <span className="text-xs font-bold uppercase tracking-wider block" style={{ color: "var(--text-muted)" }}>R{race.round}</span>
               </div>
 
-              {/* Race info */}
-              <div className="flex items-start gap-3 mb-4">
-                <span className="text-3xl">{flag}</span>
-                <div>
-                  <h3 className="font-bold text-f1-text text-lg group-hover:text-f1-red transition-colors leading-tight">
+              {/* Flag + Name */}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-2xl shrink-0">{COUNTRY_FLAGS[race.country] || "🏁"}</span>
+                <div className="min-w-0">
+                  <h3
+                    className={`font-bold truncate transition-colors ${completed ? "group-hover:text-f1-red" : ""}`}
+                    style={{ color: "var(--text)" }}
+                  >
                     {race.name}
                   </h3>
-                  <p className="text-sm text-f1-text-muted mt-0.5">{race.circuit}</p>
-                </div>
-              </div>
-
-              {/* Details */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-f1-bg/50 rounded-lg p-2.5">
-                  <p className="text-xs text-f1-text-muted">Date</p>
-                  <p className="font-semibold text-f1-text text-sm">{formatDate(race.date)}</p>
-                </div>
-                <div className="bg-f1-bg/50 rounded-lg p-2.5">
-                  <p className="text-xs text-f1-text-muted">Type</p>
-                  <p className="font-semibold text-f1-text text-sm capitalize">{race.circuitType}</p>
-                </div>
-                <div className="bg-f1-bg/50 rounded-lg p-2.5">
-                  <p className="text-xs text-f1-text-muted">Laps</p>
-                  <p className="font-semibold text-f1-text text-sm">{race.laps}</p>
-                </div>
-                <div className="bg-f1-bg/50 rounded-lg p-2.5">
-                  <p className="text-xs text-f1-text-muted">Length</p>
-                  <p className="font-semibold text-f1-text text-sm">{race.circuitKm} km</p>
+                  <p className="text-sm truncate" style={{ color: "var(--text-muted)" }}>
+                    {race.circuit}
+                  </p>
                 </div>
               </div>
 
               {/* Circuit characteristics */}
-              <div className="mt-4 pt-4 border-t border-f1-border">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-f1-text-muted">Tyre Deg:</span>
-                    <div className="w-16 h-1.5 bg-f1-bg rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-f1-red"
-                        style={{ width: `${(race.tyreDeg || 0.5) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-f1-text-muted">Overtaking:</span>
-                    <div className="w-16 h-1.5 bg-f1-bg rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-f1-green"
-                        style={{ width: `${(race.overtaking || 0.5) * 100}%` }}
-                      />
-                    </div>
+              <div className="hidden lg:flex items-center gap-6 shrink-0">
+                <div className="text-center w-16">
+                  <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Laps</p>
+                  <p className="font-bold text-sm" style={{ color: "var(--text)" }}>{race.laps}</p>
+                </div>
+                <div className="text-center w-16">
+                  <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Length</p>
+                  <p className="font-bold text-sm" style={{ color: "var(--text)" }}>{race.circuitKm} km</p>
+                </div>
+                <div className="w-20">
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Tyre Deg</p>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${race.tyreDeg * 100}%`, background: race.tyreDeg > 0.6 ? "#E8002D" : race.tyreDeg > 0.4 ? "#FF8000" : "#22C55E" }}
+                    />
                   </div>
                 </div>
-                <div className="text-xs text-f1-text-muted mt-2 text-center">
-                  {race.expectedStops} pit stop{race.expectedStops !== 1 ? "s" : ""} expected
+                <div className="w-20">
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Overtaking</p>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${race.overtaking * 100}%`, background: "#3B82F6" }}
+                    />
+                  </div>
                 </div>
+              </div>
+
+              {/* Date + Status */}
+              <div className="text-right shrink-0 w-28">
+                <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{formatDate(race.date)}</p>
+                {completed ? (
+                  <span className="text-xs font-medium text-f1-green">✓ Predicted</span>
+                ) : isPast ? (
+                  <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Awaiting data</span>
+                ) : (
+                  <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Upcoming</span>
+                )}
               </div>
             </Link>
           );
