@@ -225,6 +225,26 @@ python export_website_data.py --round N --fastf1 --advanced
 # 3. Later rounds automatically use CurrentForm from earlier results
 ```
 
+### Automated Updates (GitHub Actions)
+
+The **Update Race Predictions** workflow (`.github/workflows/update_predictions.yml`) automates the full pipeline:
+
+1. Go to **Actions → Update Race Predictions → Run workflow**
+2. Enter the round number (or `all`) and select options
+3. The workflow runs the ML pipeline, generates visualizations, commits results, and redeploys
+
+This makes it easy to update the website before each Grand Prix:
+- The pipeline generates JSON data and PNG visualizations into `website/public/`
+- Any locally generated visualizations in `visualizations/{GP_Name}/` are also imported
+- The deploy workflow rebuilds and publishes the site to GitHub Pages
+
+```
+Race Weekend Flow:
+  1. Before qualifying → Run pipeline with estimated quali times
+  2. After qualifying  → Re-run with real quali data (auto-fetched)
+  3. After race        → Season tracker updates accuracy metrics
+```
+
 ---
 
 ## 📈 Model Performance
@@ -258,6 +278,7 @@ Each round generates up to **10+ visualisations**:
 - [ ] Weather API integration for real-time forecasts
 - [ ] Sprint race predictions
 - [x] Deploy website to GitHub Pages
+- [x] Automated prediction pipeline via GitHub Actions
 - [ ] Add telemetry-based features (speed traps, sector times)
 - [ ] Multi-season accuracy tracking dashboard
 

@@ -1,0 +1,74 @@
+name: Update Race Predictions
+
+on:
+  workflow_dispatch:
+    inputs:
+      round:
+        description: "Round number (1-24), or 'all' for all rounds"
+        required: true
+        default: "1"
+      fastf1:
+        description: "Generate FastF1 historical visualizations"
+        type: boolean
+        default: true
+      advanced:
+        description: "Run advanced models (pit strategy, tyre deg, LSTM)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run prediction pipeline
+        run: |
+          ROUND="${{ github.event.inputs.round }}"
+          FLAGS=""
+          if [ "${{ github.event.inputs.fastf1 }}" = "true" ]; then
+            FLAGS="$FLAGS --fastf1"
+          fi
+          if [ "${{ github.event.inputs.advanced }}" = "true" ]; then
+            FLAGS="$FLAGS --advanced"
+          fi
+
+          if [ "$ROUND" = "all" ]; then
+            python export_website_data.py --all $FLAGS
+          else
+            python export_website_data.py --round "$ROUND" $FLAGS
+          fi
+
+      - name: Commit prediction data & visualizations
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/public/data/ website/public/visualizations/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            ROUND="${{ github.event.inputs.round }}"
+            if [ "$ROUND" = "all" ]; then
+              git commit -m "Update predictions for all rounds"
+            else
+              git commit -m "Update predictions for round $ROUND"
+            fi
+            git push
+          fi
+
+  deploy:
+    needs: predict
+    uses: ./.github/workflows/deploy.yml
