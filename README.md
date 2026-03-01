@@ -229,21 +229,41 @@ python export_website_data.py --round N --fastf1 --advanced
 
 The **Update Race Predictions** workflow (`.github/workflows/update_predictions.yml`) automates the full pipeline:
 
-1. Go to **Actions → Update Race Predictions → Run workflow**
-2. Enter the round number (or `all`) and select options
-3. The workflow runs the ML pipeline, generates visualizations, commits results, and redeploys
+**Scheduled (automatic):** Runs every **Saturday at 23:00 UTC** — after qualifying sessions worldwide. The workflow auto-detects the current race weekend and re-runs the pipeline with real qualifying data from FastF1, then deploys updated predictions to the website before Sunday's race.
 
-This makes it easy to update the website before each Grand Prix:
-- The pipeline generates JSON data and PNG visualizations into `website/public/`
-- Any locally generated visualizations in `visualizations/{GP_Name}/` are also imported
-- The deploy workflow rebuilds and publishes the site to GitHub Pages
+**Manual:** Go to **Actions → Update Race Predictions → Run workflow**, enter a round number (or `next` / `all`), and select options.
+
+The workflow:
+1. Runs the ML pipeline (`export_website_data.py`)
+2. Generates visualizations (PNGs) into `website/public/`
+3. Imports any locally generated visualizations from `visualizations/{GP_Name}/`
+4. Commits data + viz files and redeploys to GitHub Pages
 
 ```
 Race Weekend Flow:
-  1. Before qualifying → Run pipeline with estimated quali times
-  2. After qualifying  → Re-run with real quali data (auto-fetched)
-  3. After race        → Season tracker updates accuracy metrics
+  Friday    → Pipeline runs with estimated quali times (initial prediction)
+  Saturday  → 23:00 UTC cron auto-fetches real quali data + redeploys
+  Sunday    → Website shows updated prediction with real quali for race day
+  Post-race → Season tracker compares prediction vs actual result
 ```
+
+### Sprint Race Weekends
+
+6 rounds in 2026 are **sprint weekends** (China, Miami, Austria, Belgium, USA, Brazil). The calendar data includes `sprint: true` and `sprint_laps` for these rounds. Sprint weekends have a modified schedule with Sprint Qualifying on Friday and the Sprint Race on Saturday before main qualifying.
+
+### Circuit-Specific Features
+
+The ML model incorporates detailed circuit characteristics that vary per track:
+
+| Feature | Description |
+|---------|-------------|
+| **Expected pit stops** | 1-stop (Monaco, Monza, Zandvoort) vs 2-stop (most circuits) |
+| **Tyre degradation** | Circuit-scaled wear factor (0.30 Monaco → 0.70 Bahrain/Qatar) |
+| **Overtaking difficulty** | Track-specific overtaking rating (0.1 Monaco → 0.8 Bahrain/Monza) |
+| **DRS zones** | Number of DRS activation zones (1–3 per circuit) |
+| **Safety car likelihood** | Historical probability of safety car deployment |
+| **Altitude** | Track elevation in metres (affects engine performance — e.g. Mexico at 2240m) |
+| **Pit time loss** | Circuit-specific pit lane transit time (21.5s–23.5s) |
 
 ---
 
@@ -274,11 +294,12 @@ Each round generates up to **10+ visualisations**:
 
 ## 📌 Roadmap
 
-- [ ] Live qualifying data integration (auto-fetch on race weekends)
+- [x] Live qualifying data integration (auto-fetch on race weekends)
 - [ ] Weather API integration for real-time forecasts
-- [ ] Sprint race predictions
+- [x] Sprint race predictions
 - [x] Deploy website to GitHub Pages
 - [x] Automated prediction pipeline via GitHub Actions
+- [x] Circuit-specific features (DRS zones, safety car, altitude, pit stops)
 - [ ] Add telemetry-based features (speed traps, sector times)
 - [ ] Multi-season accuracy tracking dashboard
 

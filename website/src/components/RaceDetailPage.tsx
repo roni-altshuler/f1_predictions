@@ -128,6 +128,11 @@ export default function RaceDetailPage({ round }: Props) {
             <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "rgba(232, 0, 45, 0.1)", color: "#E8002D", border: "1px solid rgba(232, 0, 45, 0.2)" }}>
               Round {data.round}
             </span>
+            {data.sprint && (
+              <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "rgba(255, 128, 0, 0.1)", color: "#FF8000", border: "1px solid rgba(255, 128, 0, 0.2)" }}>
+                Sprint Weekend
+              </span>
+            )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>{data.name}</h1>
         </div>
@@ -252,14 +257,18 @@ export default function RaceDetailPage({ round }: Props) {
           {/* Circuit Info */}
           <div className="card p-6">
             <h3 className="section-heading">🏟️ Circuit Information</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {[
                 { label: "Circuit Type", value: data.circuitInfo.type },
                 { label: "Laps", value: data.circuitInfo.laps },
                 { label: "Length", value: `${data.circuitInfo.circuitKm} km` },
                 { label: "Pit Stops", value: data.circuitInfo.expectedStops },
+                { label: "DRS Zones", value: data.circuitInfo.drsZones || 2 },
                 { label: "Tyre Deg", value: `${Math.round(data.circuitInfo.tyreDeg * 100)}%`, bar: data.circuitInfo.tyreDeg, barColor: data.circuitInfo.tyreDeg > 0.5 ? "#E8002D" : "#22C55E" },
                 { label: "Overtaking", value: `${Math.round(data.circuitInfo.overtaking * 100)}%`, bar: data.circuitInfo.overtaking, barColor: "#3B82F6" },
+                { label: "Safety Car", value: `${Math.round((data.circuitInfo.safetyCarLikelihood || 0.4) * 100)}%`, bar: data.circuitInfo.safetyCarLikelihood || 0.4, barColor: (data.circuitInfo.safetyCarLikelihood || 0.4) > 0.6 ? "#FF8000" : "#22C55E" },
+                { label: "Altitude", value: `${data.circuitInfo.altitudeM || 0} m` },
+                ...(data.sprint ? [{ label: "Sprint Laps", value: data.sprintLaps || 0 }] : []),
               ].map((item) => (
                 <div key={item.label} className="metric-card">
                   <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>{item.label}</p>

@@ -98,6 +98,11 @@ def export_season_metadata():
             "tyreDeg":      char.get("tyre_deg", 0.5),
             "overtaking":   char.get("overtaking", 0.5),
             "country":      info["gp_key"],
+            "sprint":       info.get("sprint", False),
+            "sprintLaps":   info.get("sprint_laps", 0),
+            "drsZones":     char.get("drs_zones", 2),
+            "safetyCarLikelihood": char.get("safety_car_likelihood", 0.4),
+            "altitudeM":    char.get("altitude_m", 0),
         })
 
     # ── Drivers (DriverInfo[]) ──
@@ -269,6 +274,8 @@ def export_round_data(round_num, return_merged=False, use_lstm=False):
         "gpKey":              gp_key,
         "circuit":            info["circuit"],
         "date":               info["date"],
+        "sprint":             info.get("sprint", False),
+        "sprintLaps":         info.get("sprint_laps", 0),
         "classification":     classification_data,
         "metrics":            metrics_obj,
         "featureImportance":  feature_importance,
@@ -282,6 +289,9 @@ def export_round_data(round_num, return_merged=False, use_lstm=False):
             "expectedStops":  char.get("expected_stops", 2),
             "tyreDeg":        char.get("tyre_deg", 0.5),
             "overtaking":     char.get("overtaking", 0.5),
+            "drsZones":       char.get("drs_zones", 2),
+            "safetyCarLikelihood": char.get("safety_car_likelihood", 0.4),
+            "altitudeM":      char.get("altitude_m", 0),
         },
     }
 

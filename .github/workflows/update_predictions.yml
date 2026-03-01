@@ -1,12 +1,15 @@
 name: Update Race Predictions
 
 on:
+  # Scheduled: runs every Saturday at 23:00 UTC (after qualifying worldwide)
+  schedule:
+    - cron: "0 23 * * 6"
   workflow_dispatch:
     inputs:
       round:
-        description: "Round number (1-24), or 'all' for all rounds"
+        description: "Round number (1-24), or 'next' for upcoming round, or 'all'"
         required: true
-        default: "1"
+        default: "next"
       fastf1:
         description: "Generate FastF1 historical visualizations"
         type: boolean
@@ -35,14 +38,45 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      - name: Determine round number
+        id: round
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.round }}" = "next" ]; then
+            # Find the next upcoming round based on current date
+            ROUND=$(python3 -c "
+          import json, os, sys
+          from datetime import datetime, timedelta
+          sys.path.insert(0, '.')
+          from f1_prediction_utils import CALENDAR_2026
+          now = datetime.utcnow()
+          # Find nearest race within ±3 days (covers the race weekend)
+          for rnd, info in sorted(CALENDAR_2026.items()):
+              race_date = datetime.strptime(info['date'], '%Y-%m-%d')
+              if abs((race_date - now).days) <= 3:
+                  print(rnd)
+                  sys.exit(0)
+          # Fallback: next future race
+          for rnd, info in sorted(CALENDAR_2026.items()):
+              race_date = datetime.strptime(info['date'], '%Y-%m-%d')
+              if race_date >= now:
+                  print(rnd)
+                  sys.exit(0)
+          print(1)
+          ")
+            echo "round=$ROUND" >> "$GITHUB_OUTPUT"
+            echo "Detected upcoming round: $ROUND"
+          else
+            echo "round=${{ github.event.inputs.round }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run prediction pipeline
         run: |
-          ROUND="${{ github.event.inputs.round }}"
+          ROUND="${{ steps.round.outputs.round }}"
           FLAGS=""
-          if [ "${{ github.event.inputs.fastf1 }}" = "true" ]; then
+          if [ "${{ github.event.inputs.fastf1 }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
             FLAGS="$FLAGS --fastf1"
           fi
-          if [ "${{ github.event.inputs.advanced }}" = "true" ]; then
+          if [ "${{ github.event.inputs.advanced }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
             FLAGS="$FLAGS --advanced"
           fi
 
@@ -60,11 +94,11 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            ROUND="${{ github.event.inputs.round }}"
+            ROUND="${{ steps.round.outputs.round }}"
             if [ "$ROUND" = "all" ]; then
               git commit -m "Update predictions for all rounds"
             else
-              git commit -m "Update predictions for round $ROUND"
+              git commit -m "Update predictions for round $ROUND ($(date -u +%Y-%m-%d))"
             fi
             git push
           fi
