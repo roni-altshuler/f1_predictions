@@ -23,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/configure-pages@v5
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -34,8 +36,6 @@ jobs:
 
       - name: Build static site
         run: npm run build
-        env:
-          NEXT_PUBLIC_BASE_PATH: /f1_predictions
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
