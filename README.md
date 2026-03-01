@@ -257,7 +257,7 @@ Each round generates up to **10+ visualisations**:
 - [ ] Live qualifying data integration (auto-fetch on race weekends)
 - [ ] Weather API integration for real-time forecasts
 - [ ] Sprint race predictions
-- [ ] Deploy website to Vercel
+- [x] Deploy website to GitHub Pages
 - [ ] Add telemetry-based features (speed traps, sector times)
 - [ ] Multi-season accuracy tracking dashboard
 

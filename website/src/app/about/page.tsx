@@ -88,7 +88,7 @@ export default function AboutPage() {
                 <li>• Next.js 16 / React 19 / TypeScript 5</li>
                 <li>• Tailwind CSS v4</li>
                 <li>• Recharts for interactive charts</li>
-                <li>• Vercel deployment</li>
+                <li>• GitHub Pages deployment</li>
               </ul>
             </div>
           </div>
