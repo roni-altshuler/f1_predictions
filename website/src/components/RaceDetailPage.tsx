@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { RoundData, SeasonData, COUNTRY_FLAGS } from "@/types";
 import { fetchRoundData, fetchSeasonData, getVisualizationPath, formatDate, formatGap } from "@/lib/data";
 
@@ -36,7 +37,10 @@ export default function RaceDetailPage({ round }: Props) {
   if (!data) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="loading-pulse text-lg" style={{ color: "var(--text-muted)" }}>Loading race data...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-f1-red border-t-transparent rounded-full animate-spin" />
+          <div className="text-lg" style={{ color: "var(--text-muted)" }}>Loading race data...</div>
+        </div>
       </div>
     );
   }
@@ -74,7 +78,12 @@ export default function RaceDetailPage({ round }: Props) {
       )}
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-2">
+      <motion.div
+        className="flex items-center gap-3 mb-2"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <span className="text-3xl">{COUNTRY_FLAGS[data.gpKey] || "🏁"}</span>
         <div>
           <div className="flex items-center gap-2">
@@ -84,13 +93,18 @@ export default function RaceDetailPage({ round }: Props) {
           </div>
           <h1 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>{data.name}</h1>
         </div>
-      </div>
+      </motion.div>
       <p className="mb-6" style={{ color: "var(--text-muted)" }}>
         {data.circuit} • {formatDate(data.date)}
       </p>
 
       {/* Podium */}
-      <div className="card overflow-hidden mb-8">
+      <motion.div
+        className="card overflow-hidden mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+      >
         <div className="grid grid-cols-3">
           {data.classification.slice(0, 3).map((entry, i) => (
             <div key={entry.driver} className="p-5 sm:p-8 text-center border-r last:border-r-0" style={{ borderColor: "var(--border)" }}>
@@ -106,7 +120,7 @@ export default function RaceDetailPage({ round }: Props) {
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">

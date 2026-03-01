@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { SeasonData, COUNTRY_FLAGS } from "@/types";
 import { fetchSeasonData, formatDate } from "@/lib/data";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0 },
+};
 
 export default function CalendarPage() {
   const [season, setSeason] = useState<SeasonData | null>(null);
@@ -15,7 +21,10 @@ export default function CalendarPage() {
   if (!season) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="loading-pulse text-lg" style={{ color: "var(--text-muted)" }}>Loading calendar...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-f1-red border-t-transparent rounded-full animate-spin" />
+          <div className="text-lg" style={{ color: "var(--text-muted)" }}>Loading calendar...</div>
+        </div>
       </div>
     );
   }
@@ -32,13 +41,20 @@ export default function CalendarPage() {
       </div>
 
       <div className="space-y-3">
-        {season.calendar.map((race) => {
+        {season.calendar.map((race, index) => {
           const completed = season.completedRounds.includes(race.round);
           const raceDate = new Date(race.date + "T00:00:00");
           const isPast = raceDate < new Date();
 
           return (
-            <Link
+            <motion.div
+              key={race.round}
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              transition={{ delay: index * 0.03, duration: 0.4 }}
+            >
+              <Link
               key={race.round}
               href={completed ? `/race/${race.round}` : "#"}
               className={`card flex items-center gap-4 sm:gap-6 px-5 py-4 group transition-all ${
@@ -107,7 +123,8 @@ export default function CalendarPage() {
                   <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Upcoming</span>
                 )}
               </div>
-            </Link>
+              </Link>
+            </motion.div>
           );
         })}
       </div>

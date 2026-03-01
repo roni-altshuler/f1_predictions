@@ -2,8 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { SeasonData, StandingsData, RoundData, COUNTRY_FLAGS } from "@/types";
 import { fetchSeasonData, fetchStandingsData, fetchRoundData, formatDate } from "@/lib/data";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const stagger = {
+  visible: { transition: { staggerChildren: 0.08 } },
+};
 
 export default function HomePage() {
   const [season, setSeason] = useState<SeasonData | null>(null);
@@ -25,8 +35,11 @@ export default function HomePage() {
   if (!season) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="loading-pulse text-lg" style={{ color: "var(--text-muted)" }}>
-          Loading season data...
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-f1-red border-t-transparent rounded-full animate-spin" />
+          <div className="text-lg" style={{ color: "var(--text-muted)" }}>
+            Loading season data...
+          </div>
         </div>
       </div>
     );
@@ -36,46 +49,56 @@ export default function HomePage() {
     <div className="hero-gradient">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* ── Hero ── */}
-        <section className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-f1-red/10 text-f1-red text-sm font-semibold mb-6">
+        <motion.section
+          className="text-center mb-16"
+          initial="hidden"
+          animate="visible"
+          variants={stagger}
+        >
+          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-f1-red/10 text-f1-red text-sm font-semibold mb-6">
             <span className="w-2 h-2 bg-f1-red rounded-full animate-pulse" />
             2026 Season
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-4 tracking-tight" style={{ color: "var(--text)" }}>
+          </motion.div>
+          <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-6xl font-black mb-4 tracking-tight" style={{ color: "var(--text)" }}>
             Formula 1 Predictions
-          </h1>
-          <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-8" style={{ color: "var(--text-muted)" }}>
+          </motion.h1>
+          <motion.p variants={fadeUp} className="text-lg sm:text-xl max-w-2xl mx-auto mb-8" style={{ color: "var(--text-muted)" }}>
             Machine learning-powered race predictions for every Grand Prix.
             Built with ensemble models, LSTM forecasting, and FastF1 telemetry.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/calendar" className="px-6 py-3 bg-f1-red hover:bg-f1-red-dark text-white font-semibold rounded-xl transition-colors">
+          </motion.p>
+          <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-4">
+            <Link href="/calendar" className="px-6 py-3 bg-f1-red hover:bg-f1-red-dark text-white font-semibold rounded-xl transition-all hover:scale-105 active:scale-95">
               View All Races
             </Link>
             <Link
               href="/standings"
-              className="px-6 py-3 font-semibold rounded-xl border transition-colors"
+              className="px-6 py-3 font-semibold rounded-xl border transition-all hover:scale-105 active:scale-95"
               style={{ background: "var(--bg-card)", color: "var(--text)", borderColor: "var(--border)" }}
             >
               Championship Standings
             </Link>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
         {/* ── Stats ── */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-16">
+        <motion.section
+          className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-16"
+          initial="hidden"
+          animate="visible"
+          variants={stagger}
+        >
           {[
             { value: season.totalRounds, label: "Grand Prix" },
             { value: season.drivers.length, label: "Drivers" },
             { value: season.teams.length, label: "Constructors" },
             { value: season.completedRounds.length, label: "Predicted" },
           ].map((s) => (
-            <div key={s.label} className="card p-5 text-center">
+            <motion.div key={s.label} variants={fadeUp} className="card p-5 text-center hover:border-f1-red/20 transition-all">
               <p className="text-3xl font-black" style={{ color: "var(--text)" }}>{s.value}</p>
               <p className="text-xs mt-1 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{s.label}</p>
-            </div>
+            </motion.div>
           ))}
-        </section>
+        </motion.section>
 
         {/* ── Latest Race ── */}
         {latestRace && (
@@ -148,7 +171,13 @@ export default function HomePage() {
         )}
 
         {/* ── Calendar Preview ── */}
-        <section className="mb-16">
+        <motion.section
+          className="mb-16"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={stagger}
+        >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Season Calendar</h2>
             <Link href="/calendar" className="text-f1-red hover:text-f1-accent text-sm font-medium transition-colors">
@@ -159,25 +188,27 @@ export default function HomePage() {
             {season.calendar.slice(0, 6).map((race) => {
               const hasData = season.completedRounds.includes(race.round);
               return (
-                <Link key={race.round} href={hasData ? `/race/${race.round}` : "/calendar"} className="card p-5 group transition-all hover:border-f1-red/30">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Round {race.round}</span>
-                    {hasData ? (
-                      <span className="px-2 py-0.5 rounded-full bg-f1-green/10 text-f1-green text-xs font-medium">Predicted</span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "var(--bg-surface)", color: "var(--text-muted)" }}>Upcoming</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">{COUNTRY_FLAGS[race.country] || "🏁"}</span>
-                    <h3 className="font-bold group-hover:text-f1-red transition-colors" style={{ color: "var(--text)" }}>{race.name}</h3>
-                  </div>
-                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>{race.circuit} • {formatDate(race.date)}</p>
-                </Link>
+                <motion.div key={race.round} variants={fadeUp}>
+                  <Link href={hasData ? `/race/${race.round}` : "/calendar"} className="card p-5 group transition-all hover:border-f1-red/30 block">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Round {race.round}</span>
+                      {hasData ? (
+                        <span className="px-2 py-0.5 rounded-full bg-f1-green/10 text-f1-green text-xs font-medium">Predicted</span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "var(--bg-surface)", color: "var(--text-muted)" }}>Upcoming</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">{COUNTRY_FLAGS[race.country] || "🏁"}</span>
+                      <h3 className="font-bold group-hover:text-f1-red transition-colors" style={{ color: "var(--text)" }}>{race.name}</h3>
+                    </div>
+                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>{race.circuit} • {formatDate(race.date)}</p>
+                  </Link>
+                </motion.div>
               );
             })}
           </div>
-        </section>
+        </motion.section>
 
         {/* ── Championships ── */}
         {standings && (
@@ -230,7 +261,13 @@ export default function HomePage() {
         )}
 
         {/* ── Model Overview ── */}
-        <section className="mb-8">
+        <motion.section
+          className="mb-8"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={stagger}
+        >
           <h2 className="text-2xl font-bold mb-6" style={{ color: "var(--text)" }}>About the Model</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
@@ -238,14 +275,14 @@ export default function HomePage() {
               { icon: "📊", title: "9 Balanced Features", desc: "TeamPerformance, AdjustedPace, CleanAirPace, PitTimeLoss, TyreDegFactor, Experience, CurrentForm, Rain, Temperature." },
               { icon: "🏎️", title: "FastF1 Telemetry", desc: "Trained on 2023–2025 historical race data. Monte-Carlo pit strategy simulation, compound-specific degradation curves, and team-change adjustments." },
             ].map((item) => (
-              <div key={item.title} className="card p-6">
+              <motion.div key={item.title} variants={fadeUp} className="card p-6 hover:border-f1-red/20 transition-all">
                 <span className="text-2xl mb-3 block">{item.icon}</span>
                 <h3 className="font-bold mb-2" style={{ color: "var(--text)" }}>{item.title}</h3>
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>{item.desc}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
       </div>
     </div>
   );

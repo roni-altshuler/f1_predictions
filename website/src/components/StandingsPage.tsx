@@ -40,7 +40,10 @@ export default function StandingsPage() {
   if (!data) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="loading-pulse text-lg" style={{ color: "var(--text-muted)" }}>Loading standings...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-f1-red border-t-transparent rounded-full animate-spin" />
+          <div className="text-lg" style={{ color: "var(--text-muted)" }}>Loading standings...</div>
+        </div>
       </div>
     );
   }
