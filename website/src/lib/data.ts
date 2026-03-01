@@ -1,6 +1,7 @@
 import { SeasonData, RoundData, StandingsData } from "@/types";
 
-const BASE_PATH = "/data";
+const PREFIX = process.env.NEXT_PUBLIC_BASE_PATH || "";
+const BASE_PATH = PREFIX + "/data";
 
 export async function fetchSeasonData(): Promise<SeasonData> {
   const res = await fetch(`${BASE_PATH}/season.json`);
@@ -23,7 +24,7 @@ export async function fetchStandingsData(): Promise<StandingsData> {
 
 export function getVisualizationPath(round: number, filename: string): string {
   const pad = round.toString().padStart(2, "0");
-  return `/visualizations/round_${pad}/${filename}`;
+  return `${PREFIX}/visualizations/round_${pad}/${filename}`;
 }
 
 /**
