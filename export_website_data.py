@@ -155,17 +155,36 @@ def export_season_metadata():
 # round_XX.json  →  RoundData
 # ═════════════════════════════════════════════════════════════════════════
 
-def export_round_data(round_num, return_merged=False, use_lstm=False):
+def export_round_data(round_num, return_merged=False, use_lstm=False,
+                      use_weather_api=False, use_telemetry=False):
     """Run prediction pipeline for one round; export JSON + visualisations.
     If return_merged=True, returns (round_data, merged_df) for advanced models.
     If use_lstm=True, computes LSTM grid predictions and feeds them into
-    the ensemble as a true 3rd model (v3 architecture)."""
+    the ensemble as a true 3rd model (v3 architecture).
+    If use_weather_api=True, fetches real-time weather from Open-Meteo API.
+    If use_telemetry=True, extracts speed trap and sector time data from FastF1."""
     _ensure_dirs()
     info    = CALENDAR_2026[round_num]
     gp_key  = info["gp_key"]
     gp_name = info["name"]
     weather = GP_WEATHER.get(gp_key, {"rain": 0.10, "temp": 22})
+    weather_full = None  # extended weather data for website
     years   = GP_DATA_YEARS.get(gp_key, [2023, 2024, 2025])
+
+    # ── Weather: real-time API or static fallback ──
+    if use_weather_api:
+        try:
+            from weather_api import WeatherService
+            ws = WeatherService()
+            forecast = ws.get_race_forecast(gp_key, info["date"])
+            weather = {"rain": forecast["rain_probability"],
+                       "temp": forecast["temperature_c"]}
+            weather_full = forecast  # keep all fields for the website
+            print(f"  🌤️  Weather ({forecast.get('source', 'api')}): "
+                  f"Rain {weather['rain']:.0%}, Temp {weather['temp']:.0f}°C"
+                  f" — {forecast.get('weather_description', '')}")
+        except Exception as e:
+            print(f"  ⚠️  Weather API failed, using static: {e}")
 
     print(f"\n{'='*70}")
     print(f"  Round {round_num}: {gp_name}")
@@ -293,7 +312,28 @@ def export_round_data(round_num, return_merged=False, use_lstm=False):
             "safetyCarLikelihood": char.get("safety_car_likelihood", 0.4),
             "altitudeM":      char.get("altitude_m", 0),
         },
+        "weatherData": {
+            "rainProbability": weather["rain"],
+            "temperatureC":    weather["temp"],
+            "humidity":         weather_full.get("humidity", None) if weather_full else None,
+            "windSpeedKmh":     weather_full.get("wind_speed_kmh", None) if weather_full else None,
+            "windDirection":    weather_full.get("wind_direction", None) if weather_full else None,
+            "cloudCover":       weather_full.get("cloud_cover", None) if weather_full else None,
+            "precipitationMm":  weather_full.get("precipitation_mm", None) if weather_full else None,
+            "weatherDescription": weather_full.get("weather_description", None) if weather_full else None,
+            "source":           weather_full.get("source", "static") if weather_full else "static",
+        },
     }
+
+    # ── Telemetry: speed traps & sector times from FastF1 ──
+    if use_telemetry:
+        try:
+            from telemetry_features import extract_telemetry_for_round
+            telemetry = extract_telemetry_for_round(round_num, year=years[-1] if years else 2025)
+            if telemetry:
+                round_data["telemetryData"] = telemetry
+        except Exception as e:
+            print(f"  ⚠️  Telemetry extraction failed: {e}")
 
     path = os.path.join(ROUNDS_DIR, f"round_{round_num:02d}.json")
     with open(path, "w") as f:
@@ -676,6 +716,10 @@ def main():
                         help="Also generate FastF1 historical visualisations")
     parser.add_argument("--advanced", action="store_true",
                         help="Run advanced models (pit strategy, tyre deg, LSTM, tracker)")
+    parser.add_argument("--weather",  action="store_true",
+                        help="Use real-time weather API (Open-Meteo) instead of static estimates")
+    parser.add_argument("--telemetry", action="store_true",
+                        help="Extract speed trap and sector time data from FastF1")
     parser.add_argument("--fastf1-year", type=int, default=2024,
                         help="Year for FastF1 historical data (default 2024)")
     args = parser.parse_args()
@@ -683,7 +727,9 @@ def main():
     if args.round:
         round_data, merged = export_round_data(args.round,
                                                 return_merged=True,
-                                                use_lstm=args.advanced)
+                                                use_lstm=args.advanced,
+                                                use_weather_api=args.weather,
+                                                use_telemetry=args.telemetry)
         if args.fastf1:
             gp_key = CALENDAR_2026[args.round]["gp_key"]
             extra = _generate_fastf1_viz(args.round, gp_key, args.fastf1_year)
@@ -694,6 +740,12 @@ def main():
                     json.dump(round_data, f, indent=2)
         if args.advanced:
             _run_advanced(round_data, merged)
+        if args.weather:
+            try:
+                from weather_api import export_weather_for_website
+                export_weather_for_website(CALENDAR_2026)
+            except Exception as e:
+                print(f"  ⚠️  Weather export failed: {e}")
         export_standings()
         export_season_metadata()
     elif args.all:
@@ -702,7 +754,9 @@ def main():
         for rnd in range(1, 25):
             try:
                 rd, merged = export_round_data(rnd, return_merged=True,
-                                                use_lstm=args.advanced)
+                                                use_lstm=args.advanced,
+                                                use_weather_api=args.weather,
+                                                use_telemetry=args.telemetry)
                 if args.fastf1:
                     gp_key = CALENDAR_2026[rnd]["gp_key"]
                     extra = _generate_fastf1_viz(rnd, gp_key, args.fastf1_year)
@@ -715,6 +769,12 @@ def main():
                     _run_advanced(rd, merged)
             except Exception as e:
                 print(f"⚠️  Round {rnd} failed: {e}")
+        if args.weather:
+            try:
+                from weather_api import export_weather_for_website
+                export_weather_for_website(CALENDAR_2026)
+            except Exception as e:
+                print(f"  ⚠️  Weather export failed: {e}")
         export_standings()
         export_season_metadata()
     elif args.metadata:

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { SeasonData, StandingsData, RoundData, COUNTRY_FLAGS } from "@/types";
+import { SeasonData, StandingsData, RoundData } from "@/types";
+import CountryFlag from "@/components/CountryFlag";
 import { fetchSeasonData, fetchStandingsData, fetchRoundData, formatDate } from "@/lib/data";
 
 const fadeUp = {
@@ -131,7 +132,7 @@ export default function HomePage() {
             <motion.div variants={fadeUp} className="card overflow-hidden card-glow">
               <div className="p-6 sm:p-8 border-b" style={{ borderColor: "var(--border)" }}>
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="text-3xl">{COUNTRY_FLAGS[latestRace.gpKey] || "🏁"}</span>
+                  <CountryFlag country={latestRace.gpKey} size={36} />
                   <div>
                     <h3 className="text-xl sm:text-2xl font-black" style={{ color: "var(--text)" }}>
                       {latestRace.name}
@@ -231,7 +232,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">{COUNTRY_FLAGS[race.country] || "🏁"}</span>
+                      <CountryFlag country={race.country} size={24} />
                       <h3 className="font-bold group-hover:text-f1-red transition-colors" style={{ color: "var(--text)" }}>{race.name}</h3>
                     </div>
                     <p className="text-sm" style={{ color: "var(--text-muted)" }}>{race.circuit} • {formatDate(race.date)}</p>

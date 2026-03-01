@@ -93,6 +93,86 @@ export interface RoundData {
     safetyCarLikelihood: number;
     altitudeM: number;
   };
+  weatherData?: {
+    rainProbability: number;
+    temperatureC: number;
+    humidity?: number | null;
+    windSpeedKmh?: number | null;
+    windDirection?: number | null;
+    cloudCover?: number | null;
+    precipitationMm?: number | null;
+    weatherDescription?: string | null;
+    source?: string;
+  };
+  telemetryData?: {
+    speedTraps: SpeedTrapEntry[];
+    sectorTimes: SectorTimeEntry[];
+  };
+}
+
+export interface SpeedTrapEntry {
+  driver: string;
+  team: string;
+  teamColor: string;
+  speedKmh: number;
+  sector: number;
+}
+
+export interface SectorTimeEntry {
+  driver: string;
+  team: string;
+  teamColor: string;
+  sector1: number;
+  sector2: number;
+  sector3: number;
+  idealLap: number;
+}
+
+export interface WeatherForecast {
+  round: number;
+  gpKey: string;
+  name: string;
+  date: string;
+  rainProbability: number;
+  temperatureC: number;
+  humidity: number;
+  windSpeedKmh: number;
+  windDirection: number;
+  cloudCover: number;
+  precipitationMm: number;
+  weatherDescription: string;
+  source: string;
+  forecastDetail: {
+    time: string;
+    temperature_c: number;
+    rain_probability: number;
+    precipitation_mm: number;
+    wind_speed_kmh: number;
+    cloud_cover: number;
+  }[];
+}
+
+export interface WeatherData {
+  lastUpdated: string;
+  races: WeatherForecast[];
+}
+
+export interface SeasonTrackerRound {
+  round: number;
+  hasActual: boolean;
+  meanError: number | null;
+  exactMatches: number | null;
+  within3: number | null;
+  accuracyPct: number | null;
+}
+
+export interface SeasonTrackerData {
+  rounds: SeasonTrackerRound[];
+  overallAccuracy: {
+    seasonMeanError: number;
+    seasonAccuracyPct: number;
+    roundsWithActual: number;
+  } | null;
 }
 
 export interface DriverStanding {

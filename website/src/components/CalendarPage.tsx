@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { SeasonData, COUNTRY_FLAGS } from "@/types";
+import { SeasonData } from "@/types";
+import CountryFlag from "@/components/CountryFlag";
 import { fetchSeasonData, formatDate } from "@/lib/data";
 
 const fadeUp = {
@@ -67,7 +68,7 @@ export default function CalendarPage() {
 
               {/* Flag + Name */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-2xl shrink-0">{COUNTRY_FLAGS[race.country] || "🏁"}</span>
+                <CountryFlag country={race.country} size={28} className="shrink-0" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <h3

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "./ThemeProvider";
-import { SeasonData, COUNTRY_FLAGS } from "@/types";
+import { SeasonData } from "@/types";
+import CountryFlag from "@/components/CountryFlag";
 import { fetchSeasonData } from "@/lib/data";
 
 export default function Navbar() {
@@ -117,8 +118,8 @@ export default function Navbar() {
                           onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-card-hover)")}
                           onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                         >
-                          <span className="text-base w-6 text-center">
-                            {COUNTRY_FLAGS[race.country] || "🏁"}
+                          <span className="w-6 flex items-center justify-center">
+                            <CountryFlag country={race.country} size={20} />
                           </span>
                           <div className="flex-1 min-w-0">
                             <span className="truncate block">{race.name}</span>
@@ -173,6 +174,7 @@ export default function Navbar() {
               )}
             </div>
 
+            <Link href="/accuracy" className={linkClass("/accuracy")}>Accuracy</Link>
             <Link href="/about" className={linkClass("/about")}>About</Link>
 
             {/* Theme Toggle */}
@@ -252,7 +254,7 @@ export default function Navbar() {
                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    <span>{COUNTRY_FLAGS[race.country] || "🏁"}</span>
+                    <CountryFlag country={race.country} size={18} />
                     {race.name}
                   </Link>
                 ))}
@@ -260,6 +262,9 @@ export default function Navbar() {
             )}
             <Link href="/standings" className="block px-4 py-2.5 rounded-lg text-sm font-medium" style={{ color: isActive("/standings") ? "#E8002D" : "var(--text)" }}>
               Standings
+            </Link>
+            <Link href="/accuracy" className="block px-4 py-2.5 rounded-lg text-sm font-medium" style={{ color: isActive("/accuracy") ? "#E8002D" : "var(--text)" }}>
+              Accuracy
             </Link>
             <Link href="/about" className="block px-4 py-2.5 rounded-lg text-sm font-medium" style={{ color: isActive("/about") ? "#E8002D" : "var(--text)" }}>
               About

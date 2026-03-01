@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { RoundData, SeasonData, COUNTRY_FLAGS } from "@/types";
+import { RoundData, SeasonData } from "@/types";
+import CountryFlag from "@/components/CountryFlag";
 import { fetchRoundData, fetchSeasonData, getVisualizationPath, formatDate, formatGap } from "@/lib/data";
 
 type Tab = "classification" | "analysis" | "strategy" | "visualizations";
@@ -146,7 +147,7 @@ export default function RaceDetailPage({ round }: Props) {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
-        <span className="text-4xl">{COUNTRY_FLAGS[data.gpKey] || "🏁"}</span>
+        <CountryFlag country={data.gpKey} size={40} />
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "rgba(232, 0, 45, 0.1)", color: "#E8002D", border: "1px solid rgba(232, 0, 45, 0.2)" }}>
@@ -306,6 +307,135 @@ export default function RaceDetailPage({ round }: Props) {
               ))}
             </div>
           </div>
+
+          {/* Weather Conditions */}
+          {data.weatherData && (
+            <div className="card p-6 sm:p-8">
+              <h3 className="section-heading">🌤️ Weather Conditions</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="metric-card">
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Rain Probability</p>
+                  <p className="text-2xl font-black" style={{ color: data.weatherData.rainProbability > 0.5 ? "#3B82F6" : data.weatherData.rainProbability > 0.25 ? "#FF8000" : "#22C55E" }}>
+                    {Math.round(data.weatherData.rainProbability * 100)}%
+                  </p>
+                  <div className="progress-bar mt-2">
+                    <div className="progress-bar-fill" style={{ width: `${data.weatherData.rainProbability * 100}%`, background: data.weatherData.rainProbability > 0.5 ? "#3B82F6" : data.weatherData.rainProbability > 0.25 ? "#FF8000" : "#22C55E" }} />
+                  </div>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Temperature</p>
+                  <p className="text-2xl font-black" style={{ color: data.weatherData.temperatureC > 35 ? "#E8002D" : data.weatherData.temperatureC < 15 ? "#3B82F6" : "var(--text)" }}>
+                    {Math.round(data.weatherData.temperatureC)}°C
+                  </p>
+                </div>
+                {data.weatherData.humidity != null && (
+                  <div className="metric-card">
+                    <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Humidity</p>
+                    <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{Math.round(data.weatherData.humidity)}%</p>
+                  </div>
+                )}
+                {data.weatherData.windSpeedKmh != null && (
+                  <div className="metric-card">
+                    <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Wind Speed</p>
+                    <p className="text-2xl font-black" style={{ color: data.weatherData.windSpeedKmh > 30 ? "#FF8000" : "var(--text)" }}>
+                      {Math.round(data.weatherData.windSpeedKmh)} km/h
+                    </p>
+                  </div>
+                )}
+                {data.weatherData.cloudCover != null && (
+                  <div className="metric-card">
+                    <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Cloud Cover</p>
+                    <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{Math.round(data.weatherData.cloudCover)}%</p>
+                  </div>
+                )}
+                {data.weatherData.precipitationMm != null && data.weatherData.precipitationMm > 0 && (
+                  <div className="metric-card">
+                    <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Precipitation</p>
+                    <p className="text-2xl font-black" style={{ color: "#3B82F6" }}>{data.weatherData.precipitationMm.toFixed(1)} mm</p>
+                  </div>
+                )}
+              </div>
+              {data.weatherData.weatherDescription && (
+                <p className="mt-4 text-sm" style={{ color: "var(--text-muted)" }}>
+                  Forecast: <span className="font-medium" style={{ color: "var(--text)" }}>{data.weatherData.weatherDescription}</span>
+                </p>
+              )}
+              {data.weatherData.source && (
+                <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
+                  Source: {data.weatherData.source === "static" ? "Historical estimates" : "Open-Meteo API"}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Telemetry Data */}
+          {data.telemetryData && (
+            <div className="card p-6 sm:p-8">
+              <h3 className="section-heading">⚡ Speed Traps & Sector Times</h3>
+              {data.telemetryData.speedTraps && data.telemetryData.speedTraps.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>Speed Traps</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                          {["#", "Driver", "Team", "Speed", "Sector"].map((h) => (
+                            <th key={h} className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.telemetryData.speedTraps.slice(0, 10).map((st, i) => (
+                          <tr key={`${st.driver}-${st.sector}`} style={{ borderBottom: "1px solid var(--border)" }}>
+                            <td className="px-3 py-2 font-bold" style={{ color: "var(--text-muted)" }}>{i + 1}</td>
+                            <td className="px-3 py-2 font-bold" style={{ color: "var(--text)" }}>{st.driver}</td>
+                            <td className="px-3 py-2 flex items-center gap-2">
+                              <div className="w-1 h-4 rounded" style={{ backgroundColor: st.teamColor }} />
+                              <span style={{ color: "var(--text-muted)" }}>{st.team}</span>
+                            </td>
+                            <td className="px-3 py-2 font-mono font-bold" style={{ color: i === 0 ? "#E8002D" : "var(--text)" }}>{st.speedKmh} km/h</td>
+                            <td className="px-3 py-2" style={{ color: "var(--text-muted)" }}>S{st.sector}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {data.telemetryData.sectorTimes && data.telemetryData.sectorTimes.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>Best Sector Times</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                          {["#", "Driver", "Team", "S1", "S2", "S3", "Ideal Lap"].map((h) => (
+                            <th key={h} className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.telemetryData.sectorTimes.slice(0, 10).map((st, i) => (
+                          <tr key={st.driver} style={{ borderBottom: "1px solid var(--border)" }}>
+                            <td className="px-3 py-2 font-bold" style={{ color: "var(--text-muted)" }}>{i + 1}</td>
+                            <td className="px-3 py-2 font-bold" style={{ color: "var(--text)" }}>{st.driver}</td>
+                            <td className="px-3 py-2 flex items-center gap-2">
+                              <div className="w-1 h-4 rounded" style={{ backgroundColor: st.teamColor }} />
+                              <span style={{ color: "var(--text-muted)" }}>{st.team}</span>
+                            </td>
+                            <td className="px-3 py-2 font-mono" style={{ color: "var(--text)" }}>{st.sector1.toFixed(3)}s</td>
+                            <td className="px-3 py-2 font-mono" style={{ color: "var(--text)" }}>{st.sector2.toFixed(3)}s</td>
+                            <td className="px-3 py-2 font-mono" style={{ color: "var(--text)" }}>{st.sector3.toFixed(3)}s</td>
+                            <td className="px-3 py-2 font-mono font-bold" style={{ color: i === 0 ? "#22C55E" : "var(--text)" }}>{st.idealLap.toFixed(3)}s</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Model Metrics */}
           <div className="card p-6">

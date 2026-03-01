@@ -1,4 +1,4 @@
-import { SeasonData, RoundData, StandingsData } from "@/types";
+import { SeasonData, RoundData, StandingsData, WeatherData, SeasonTrackerData } from "@/types";
 
 const PREFIX = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const BASE_PATH = PREFIX + "/data";
@@ -68,4 +68,24 @@ export function formatDate(dateStr: string): string {
 export function getStatusForRound(date: string, completedRounds: number[]): "completed" | "upcoming" | "next" {
   // This is for prediction status - all predictions might be available even for future races
   return "completed";
+}
+
+export async function fetchWeatherData(): Promise<WeatherData | null> {
+  try {
+    const res = await fetch(`${BASE_PATH}/weather.json`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchSeasonTrackerData(): Promise<SeasonTrackerData | null> {
+  try {
+    const res = await fetch(`${BASE_PATH}/season_tracker.json`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
