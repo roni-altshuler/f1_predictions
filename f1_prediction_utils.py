@@ -164,7 +164,7 @@ CALENDAR_2026 = {
 CIRCUIT_CHARACTERISTICS: dict[str, dict] = {
     "Australia":      {"type": "street-park",  "base_quali_s": 74.8,  "expected_stops": 2, "pit_loss_s": 22.5, "tyre_deg": 0.55, "overtaking": 0.6, "drs_zones": 3, "safety_car_likelihood": 0.65, "altitude_m": 10},
     "China":          {"type": "permanent",    "base_quali_s": 93.0,  "expected_stops": 2, "pit_loss_s": 23.0, "tyre_deg": 0.60, "overtaking": 0.7, "drs_zones": 2, "safety_car_likelihood": 0.45, "altitude_m": 5},
-    "Japan":          {"type": "permanent",    "base_quali_s": 88.0,  "expected_stops": 2, "pit_loss_s": 22.0, "tyre_deg": 0.65, "overtaking": 0.4, "drs_zones": 1, "safety_car_likelihood": 0.35, "altitude_m": 60},
+    "Japan":          {"type": "permanent",    "base_quali_s": 88.0,  "expected_stops": 2, "pit_loss_s": 22.0, "tyre_deg": 0.65, "overtaking": 0.4, "drs_zones": 2, "safety_car_likelihood": 0.35, "altitude_m": 60},
     "Bahrain":        {"type": "permanent",    "base_quali_s": 87.0,  "expected_stops": 2, "pit_loss_s": 23.5, "tyre_deg": 0.70, "overtaking": 0.8, "drs_zones": 3, "safety_car_likelihood": 0.40, "altitude_m": 10},
     "Saudi Arabia":   {"type": "street",       "base_quali_s": 87.5,  "expected_stops": 2, "pit_loss_s": 22.0, "tyre_deg": 0.45, "overtaking": 0.5, "drs_zones": 3, "safety_car_likelihood": 0.70, "altitude_m": 15},
     "Miami":          {"type": "street-park",  "base_quali_s": 88.0,  "expected_stops": 2, "pit_loss_s": 23.0, "tyre_deg": 0.55, "overtaking": 0.6, "drs_zones": 3, "safety_car_likelihood": 0.55, "altitude_m": 2},

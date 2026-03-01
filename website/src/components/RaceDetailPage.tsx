@@ -257,7 +257,7 @@ export default function RaceDetailPage({ round }: Props) {
           {/* Circuit Info */}
           <div className="card p-6">
             <h3 className="section-heading">🏟️ Circuit Information</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-4">
               {[
                 { label: "Circuit Type", value: data.circuitInfo.type },
                 { label: "Laps", value: data.circuitInfo.laps },
