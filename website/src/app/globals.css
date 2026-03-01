@@ -194,6 +194,36 @@ html, body {
   animation: pulse-glow 1.5s ease-in-out infinite;
 }
 
+/* ── Loading spinner ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Skeleton shimmer ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-card-hover) 50%, var(--bg-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Focus rings for accessibility ── */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid #E8002D;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Interactive button press effect ── */
+.card:active {
+  transform: scale(0.99);
+}
+
 /* ── Tabs ── */
 .tab-button {
   padding: 0.5rem 1.25rem;
