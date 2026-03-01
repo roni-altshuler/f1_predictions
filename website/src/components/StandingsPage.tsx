@@ -51,9 +51,9 @@ export default function StandingsPage() {
   const completedRounds = season?.completedRounds || [];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
       {/* Header */}
-      <div className="mb-8 text-center">
+      <div className="mb-10 text-center">
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2" style={{ color: "var(--text)" }}>
           2026 Championship Standings
         </h1>
@@ -69,7 +69,7 @@ export default function StandingsPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex justify-center gap-2 mb-8">
+      <div className="flex justify-center gap-2 mb-10">
         {[
           { key: "drivers" as Tab, label: "Drivers", icon: "👤" },
           { key: "constructors" as Tab, label: "Constructors", icon: "🏎️" },

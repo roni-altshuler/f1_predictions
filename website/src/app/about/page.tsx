@@ -32,12 +32,13 @@ export default function AboutPage() {
           </div>
           <div className="space-y-4 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             <p>
-              The prediction engine uses an <strong style={{ color: "var(--text)" }}>ensemble approach</strong>{" "}
-              combining XGBoost and Gradient Boosting Regressors, weighted 50/50 and
-              normalized with StandardScaler.
+              The prediction engine uses a <strong style={{ color: "var(--text)" }}>3-model weighted ensemble</strong>:{" "}
+              Gradient Boosting (40%) + XGBoost (40%) + LSTM Neural Network (20%),
+              normalized with StandardScaler. When LSTM is unavailable, the system
+              falls back gracefully to a 50/50 GBR+XGB ensemble.
             </p>
             <p>
-              <strong style={{ color: "var(--text)" }}>9 balanced features</strong> model each
+              <strong style={{ color: "var(--text)" }}>12 balanced features</strong> model each
               driver&apos;s predicted qualifying time:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-2">
@@ -51,6 +52,9 @@ export default function AboutPage() {
                 "TyreDegFactor – circuit tyre degradation rating",
                 "RainProbability – expected weather conditions",
                 "Temperature – race-day temperature estimate",
+                "PreviousPosition – last predicted/actual finishing position",
+                "SeasonMomentum – improvement trend (early vs recent races)",
+                "PositionTrend – linear regression slope of recent positions",
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2 text-sm py-1">
                   <span className="text-f1-red mt-0.5 shrink-0">▸</span>

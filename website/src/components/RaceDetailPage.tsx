@@ -43,6 +43,21 @@ const VIZ_CATEGORIES = [
   },
 ];
 
+// All known visualization files — discovers images not listed in JSON
+const ALL_KNOWN_VIZ_FILENAMES = [
+  "predicted_laptimes.png",
+  "feature_importance.png",
+  "team_vs_pace.png",
+  "pace_vs_predicted.png",
+  "laptime_distribution.png",
+  "track_map.png",
+  "laptime_distribution_historical.png",
+  "tyre_strategy.png",
+  "pit_strategy_comparison.png",
+  "tyre_degradation_curves.png",
+  "lstm_pace_prediction.png",
+];
+
 export default function RaceDetailPage({ round }: Props) {
   const [data, setData] = useState<RoundData | null>(null);
   const [season, setSeason] = useState<SeasonData | null>(null);
@@ -89,16 +104,18 @@ export default function RaceDetailPage({ round }: Props) {
     { key: "visualizations", label: "Visualizations", icon: "📈" },
   ];
 
-  // Separate viz categories
-  const vizFiles = data.visualizations || [];
+  // Merge JSON-listed viz with known filenames to discover all available images
+  const vizFiles = [...new Set([...(data.visualizations || []), ...ALL_KNOWN_VIZ_FILENAMES])];
+
+  // Categorize by exact filename match (avoids substring collisions)
   const mlViz = vizFiles.filter(f =>
-    ["predicted_laptimes", "feature_importance", "team_vs_pace", "pace_vs_predicted", "laptime_distribution"].some(k => f.includes(k))
-  );
-  const advancedViz = vizFiles.filter(f =>
-    ["pit_strategy", "tyre_degradation", "lstm"].some(k => f.includes(k))
+    ["predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png", "pace_vs_predicted.png", "laptime_distribution.png"].includes(f)
   );
   const fastf1Viz = vizFiles.filter(f =>
-    ["track_map", "laptime_distribution_historical", "tyre_strategy"].some(k => f.includes(k))
+    ["track_map.png", "laptime_distribution_historical.png", "tyre_strategy.png"].includes(f)
+  );
+  const advancedViz = vizFiles.filter(f =>
+    ["pit_strategy_comparison.png", "tyre_degradation_curves.png", "lstm_pace_prediction.png"].includes(f)
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,11 +124,18 @@ export default function RaceDetailPage({ round }: Props) {
   const tyreDegData = (data as any).tyreDegData;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
       {/* Lightbox */}
       {lightboxImg && (
         <div className="lightbox-overlay" onClick={() => setLightboxImg(null)}>
-          <img src={lightboxImg} alt="Visualization" onClick={e => e.stopPropagation()} />
+          <button
+            className="absolute top-6 right-6 w-10 h-10 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors text-2xl font-light z-10"
+            onClick={() => setLightboxImg(null)}
+            aria-label="Close lightbox"
+          >
+            ✕
+          </button>
+          <img src={lightboxImg} alt="Visualization" className="lightbox-image" onClick={e => e.stopPropagation()} />
         </div>
       )}
 
@@ -137,13 +161,13 @@ export default function RaceDetailPage({ round }: Props) {
           <h1 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>{data.name}</h1>
         </div>
       </motion.div>
-      <p className="mb-8 text-sm" style={{ color: "var(--text-muted)" }}>
+      <p className="mb-10 text-sm" style={{ color: "var(--text-muted)" }}>
         {data.circuit} • {formatDate(data.date)}
       </p>
 
       {/* Podium */}
       <motion.div
-        className="card overflow-hidden mb-8"
+        className="card overflow-hidden mb-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.15, ease: [0.4, 0, 0.2, 1] }}
@@ -173,7 +197,7 @@ export default function RaceDetailPage({ round }: Props) {
       </motion.div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-1">
+      <div className="flex gap-2 mb-10 overflow-x-auto pb-2">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -249,13 +273,13 @@ export default function RaceDetailPage({ round }: Props) {
       {/* ═══ Analysis Tab ═══ */}
       {activeTab === "analysis" && (
         <motion.div
-          className="space-y-6"
+          className="space-y-8"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
           {/* Circuit Info */}
-          <div className="card p-6">
+          <div className="card p-6 sm:p-8">
             <h3 className="section-heading">🏟️ Circuit Information</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-4">
               {[
@@ -340,14 +364,14 @@ export default function RaceDetailPage({ round }: Props) {
       {/* ═══ Strategy Tab ═══ */}
       {activeTab === "strategy" && (
         <motion.div
-          className="space-y-6"
+          className="space-y-8"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
           {/* Pit Strategy */}
           {strategyData ? (
-            <div className="card p-6">
+            <div className="card p-6 sm:p-8">
               <h3 className="section-heading">⛽ Pit Strategy Comparison</h3>
               <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
                 Monte-Carlo simulation of {data.circuitInfo.laps} laps with different pit strategies
@@ -592,7 +616,7 @@ export default function RaceDetailPage({ round }: Props) {
       })()}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between mt-12 pt-6" style={{ borderTop: "1px solid var(--border)" }}>
+      <div className="flex items-center justify-between mt-16 pt-8" style={{ borderTop: "1px solid var(--border)" }}>
         {round > 1 ? (
           <Link href={`/race/${round - 1}`} className="group text-f1-red hover:text-f1-accent font-medium transition-colors inline-flex items-center gap-1">
             <span className="inline-block transition-transform group-hover:-translate-x-1">←</span>

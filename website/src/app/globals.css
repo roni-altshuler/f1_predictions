@@ -191,14 +191,22 @@ html, body {
 
 /* ── Visualization images ── */
 .viz-image {
+  display: block;
   border-radius: 12px;
   border: 1px solid var(--border);
+  background: #FFFFFF;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
   cursor: pointer;
 }
 .viz-image:hover {
-  transform: scale(1.03);
+  transform: scale(1.02);
   box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+[data-theme="light"] .viz-image {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+[data-theme="light"] .viz-image:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
 }
 
 /* ── Lightbox overlay ── */
@@ -206,19 +214,22 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0,0,0,0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: zoom-out;
   animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2rem;
 }
-.lightbox-overlay img {
+.lightbox-overlay .lightbox-image {
   max-width: 92vw;
-  max-height: 90vh;
+  max-height: 88vh;
   border-radius: 12px;
   box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  background: #FFFFFF;
+  cursor: default;
 }
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.95); }

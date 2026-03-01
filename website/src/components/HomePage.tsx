@@ -323,7 +323,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             {[
               { icon: "🤖", title: "Ensemble ML + LSTM", desc: "Blends XGBoost, GradientBoosting, and LSTM neural network with StandardScaler normalization and prediction calibration (max 3.5s spread).", color: "rgba(232, 0, 45, 0.1)" },
-              { icon: "📊", title: "9 Balanced Features", desc: "TeamPerformance, AdjustedPace, CleanAirPace, PitTimeLoss, TyreDegFactor, Experience, CurrentForm, Rain, Temperature.", color: "rgba(59, 130, 246, 0.1)" },
+              { icon: "📊", title: "12 Balanced Features", desc: "TeamPerformance, AdjustedPace, CleanAirPace, PitTimeLoss, TyreDeg, Experience, CurrentForm, Rain, Temperature, PreviousPosition, SeasonMomentum, PositionTrend.", color: "rgba(59, 130, 246, 0.1)" },
               { icon: "🏎️", title: "FastF1 Telemetry", desc: "Trained on 2023–2025 historical race data. Monte-Carlo pit strategy simulation, compound-specific degradation curves, and team-change adjustments.", color: "rgba(34, 197, 94, 0.1)" },
             ].map((item) => (
               <motion.div key={item.title} variants={fadeUp} className="card p-6 group">
