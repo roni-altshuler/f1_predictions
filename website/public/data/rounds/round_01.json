@@ -307,7 +307,10 @@
     "circuitKm": 5.278,
     "expectedStops": 2,
     "tyreDeg": 0.55,
-    "overtaking": 0.6
+    "overtaking": 0.6,
+    "drsZones": 3,
+    "safetyCarLikelihood": 0.65,
+    "altitudeM": 10
   },
   "strategyData": {
     "2-Stop: Soft\u2192Medium\u2192Hard": {
@@ -364,5 +367,7 @@
       }
     ],
     "overallAccuracy": null
-  }
+  },
+  "sprint": false,
+  "sprintLaps": 0
 }

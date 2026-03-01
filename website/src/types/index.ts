@@ -13,6 +13,11 @@ export interface RaceCalendarEntry {
   tyreDeg: number;
   overtaking: number;
   country: string;
+  sprint: boolean;
+  sprintLaps: number;
+  drsZones: number;
+  safetyCarLikelihood: number;
+  altitudeM: number;
 }
 
 export interface DriverInfo {
@@ -69,6 +74,8 @@ export interface RoundData {
   gpKey: string;
   circuit: string;
   date: string;
+  sprint: boolean;
+  sprintLaps: number;
   classification: ClassificationEntry[];
   metrics: ModelMetrics;
   featureImportance: FeatureImportance[];
@@ -82,6 +89,9 @@ export interface RoundData {
     expectedStops: number;
     tyreDeg: number;
     overtaking: number;
+    drsZones: number;
+    safetyCarLikelihood: number;
+    altitudeM: number;
   };
 }
 

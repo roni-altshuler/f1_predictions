@@ -22,15 +22,24 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Data Pipeline
 
-The website reads static JSON from `public/data/`. To regenerate:
+The website reads static JSON and PNG files from `public/data/` and `public/visualizations/`. To regenerate:
 
 ```bash
 # From f1_predictions root:
-python export_website_data.py --metadata
-python export_website_data.py --round 1
-python export_website_data.py --all
-python generate_fastf1_viz.py --all-circuits --year 2025
+python export_website_data.py --round 1 --fastf1 --advanced   # Single round
+python export_website_data.py --all --fastf1 --advanced        # All rounds
+python export_website_data.py --metadata                       # Season + standings only
 ```
+
+### Automated Updates
+
+Use the **Update Race Predictions** GitHub Actions workflow to run the pipeline in CI:
+
+1. Go to **Actions → Update Race Predictions → Run workflow**
+2. Enter the round number (or `all`)
+3. The workflow generates predictions + visualizations, commits them, and triggers a deploy
+
+This keeps the website up-to-date as the 2026 season progresses — each round's predictions, visualizations, and standings are regenerated and published automatically.
 
 ## Tech Stack
 
@@ -63,8 +72,6 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This site is deployed to **GitHub Pages** via the GitHub Actions workflow in `.github/workflows/deploy.yml`. On every push to `main`, the site is built as a static export and published automatically.

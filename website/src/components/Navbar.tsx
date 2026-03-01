@@ -54,10 +54,10 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 backdrop-blur-md border-b"
+      className="sticky top-0 z-50 backdrop-blur-xl border-b"
       style={{
-        background: theme === "dark" ? "rgba(15,17,23,0.95)" : "rgba(255,255,255,0.95)",
-        borderColor: "var(--border)",
+        background: theme === "dark" ? "rgba(10,12,20,0.85)" : "rgba(255,255,255,0.85)",
+        borderColor: "var(--glass-border)",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

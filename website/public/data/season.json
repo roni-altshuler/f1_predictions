@@ -14,7 +14,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.55,
       "overtaking": 0.6,
-      "country": "Australia"
+      "country": "Australia",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 3,
+      "safetyCarLikelihood": 0.65,
+      "altitudeM": 10
     },
     {
       "round": 2,
@@ -28,7 +33,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.6,
       "overtaking": 0.7,
-      "country": "China"
+      "country": "China",
+      "sprint": true,
+      "sprintLaps": 21,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.45,
+      "altitudeM": 5
     },
     {
       "round": 3,
@@ -42,7 +52,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.65,
       "overtaking": 0.4,
-      "country": "Japan"
+      "country": "Japan",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.35,
+      "altitudeM": 60
     },
     {
       "round": 4,
@@ -56,7 +71,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.7,
       "overtaking": 0.8,
-      "country": "Bahrain"
+      "country": "Bahrain",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 3,
+      "safetyCarLikelihood": 0.4,
+      "altitudeM": 10
     },
     {
       "round": 5,
@@ -70,7 +90,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.45,
       "overtaking": 0.5,
-      "country": "Saudi Arabia"
+      "country": "Saudi Arabia",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 3,
+      "safetyCarLikelihood": 0.7,
+      "altitudeM": 15
     },
     {
       "round": 6,
@@ -84,7 +109,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.55,
       "overtaking": 0.6,
-      "country": "Miami"
+      "country": "Miami",
+      "sprint": true,
+      "sprintLaps": 21,
+      "drsZones": 3,
+      "safetyCarLikelihood": 0.55,
+      "altitudeM": 2
     },
     {
       "round": 7,
@@ -98,7 +128,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.5,
       "overtaking": 0.4,
-      "country": "Emilia Romagna"
+      "country": "Emilia Romagna",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 1,
+      "safetyCarLikelihood": 0.4,
+      "altitudeM": 47
     },
     {
       "round": 8,
@@ -112,7 +147,12 @@
       "expectedStops": 1,
       "tyreDeg": 0.3,
       "overtaking": 0.1,
-      "country": "Monaco"
+      "country": "Monaco",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 1,
+      "safetyCarLikelihood": 0.75,
+      "altitudeM": 30
     },
     {
       "round": 9,
@@ -126,7 +166,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.7,
       "overtaking": 0.5,
-      "country": "Spain"
+      "country": "Spain",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.3,
+      "altitudeM": 150
     },
     {
       "round": 10,
@@ -140,7 +185,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.5,
       "overtaking": 0.7,
-      "country": "Canada"
+      "country": "Canada",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.7,
+      "altitudeM": 13
     },
     {
       "round": 11,
@@ -154,7 +204,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.65,
       "overtaking": 0.7,
-      "country": "Austria"
+      "country": "Austria",
+      "sprint": true,
+      "sprintLaps": 24,
+      "drsZones": 3,
+      "safetyCarLikelihood": 0.35,
+      "altitudeM": 700
     },
     {
       "round": 12,
@@ -168,7 +223,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.6,
       "overtaking": 0.6,
-      "country": "Great Britain"
+      "country": "Great Britain",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.3,
+      "altitudeM": 153
     },
     {
       "round": 13,
@@ -182,7 +242,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.55,
       "overtaking": 0.7,
-      "country": "Belgium"
+      "country": "Belgium",
+      "sprint": true,
+      "sprintLaps": 15,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.4,
+      "altitudeM": 420
     },
     {
       "round": 14,
@@ -196,7 +261,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.6,
       "overtaking": 0.3,
-      "country": "Hungary"
+      "country": "Hungary",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 1,
+      "safetyCarLikelihood": 0.3,
+      "altitudeM": 264
     },
     {
       "round": 15,
@@ -210,7 +280,12 @@
       "expectedStops": 1,
       "tyreDeg": 0.45,
       "overtaking": 0.3,
-      "country": "Netherlands"
+      "country": "Netherlands",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 1,
+      "safetyCarLikelihood": 0.35,
+      "altitudeM": 0
     },
     {
       "round": 16,
@@ -224,7 +299,12 @@
       "expectedStops": 1,
       "tyreDeg": 0.4,
       "overtaking": 0.8,
-      "country": "Italy"
+      "country": "Italy",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.25,
+      "altitudeM": 162
     },
     {
       "round": 17,
@@ -238,7 +318,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.45,
       "overtaking": 0.6,
-      "country": "Azerbaijan"
+      "country": "Azerbaijan",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.75,
+      "altitudeM": -28
     },
     {
       "round": 18,
@@ -252,7 +337,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.5,
       "overtaking": 0.4,
-      "country": "Singapore"
+      "country": "Singapore",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 3,
+      "safetyCarLikelihood": 0.8,
+      "altitudeM": 15
     },
     {
       "round": 19,
@@ -266,7 +356,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.6,
       "overtaking": 0.6,
-      "country": "United States"
+      "country": "United States",
+      "sprint": true,
+      "sprintLaps": 19,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.35,
+      "altitudeM": 228
     },
     {
       "round": 20,
@@ -280,7 +375,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.55,
       "overtaking": 0.5,
-      "country": "Mexico"
+      "country": "Mexico",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 3,
+      "safetyCarLikelihood": 0.4,
+      "altitudeM": 2240
     },
     {
       "round": 21,
@@ -294,7 +394,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.55,
       "overtaking": 0.7,
-      "country": "Brazil"
+      "country": "Brazil",
+      "sprint": true,
+      "sprintLaps": 24,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.55,
+      "altitudeM": 760
     },
     {
       "round": 22,
@@ -308,7 +413,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.4,
       "overtaking": 0.7,
-      "country": "Las Vegas"
+      "country": "Las Vegas",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.5,
+      "altitudeM": 620
     },
     {
       "round": 23,
@@ -322,7 +432,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.7,
       "overtaking": 0.5,
-      "country": "Qatar"
+      "country": "Qatar",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.25,
+      "altitudeM": 12
     },
     {
       "round": 24,
@@ -336,7 +451,12 @@
       "expectedStops": 2,
       "tyreDeg": 0.55,
       "overtaking": 0.6,
-      "country": "Abu Dhabi"
+      "country": "Abu Dhabi",
+      "sprint": false,
+      "sprintLaps": 0,
+      "drsZones": 2,
+      "safetyCarLikelihood": 0.35,
+      "altitudeM": 5
     }
   ],
   "drivers": [

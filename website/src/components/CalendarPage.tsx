@@ -69,14 +69,21 @@ export default function CalendarPage() {
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className="text-2xl shrink-0">{COUNTRY_FLAGS[race.country] || "🏁"}</span>
                 <div className="min-w-0">
-                  <h3
-                    className={`font-bold truncate transition-colors ${completed ? "group-hover:text-f1-red" : ""}`}
-                    style={{ color: "var(--text)" }}
-                  >
-                    {race.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3
+                      className={`font-bold truncate transition-colors ${completed ? "group-hover:text-f1-red" : ""}`}
+                      style={{ color: "var(--text)" }}
+                    >
+                      {race.name}
+                    </h3>
+                    {race.sprint && (
+                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: "rgba(255, 128, 0, 0.15)", color: "#FF8000", border: "1px solid rgba(255, 128, 0, 0.3)" }}>
+                        Sprint
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm truncate" style={{ color: "var(--text-muted)" }}>
-                    {race.circuit}
+                    {race.circuit} • {race.expectedStops === 1 ? "1 stop" : `${race.expectedStops} stops`} • {race.drsZones} DRS zone{race.drsZones !== 1 ? "s" : ""}
                   </p>
                 </div>
               </div>

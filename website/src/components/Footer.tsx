@@ -2,20 +2,24 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="border-t mt-12" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <footer className="border-t mt-12 relative" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(232, 0, 45, 0.3), transparent)" }} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-f1-red rounded-md flex items-center justify-center font-black text-white text-xs">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 bg-f1-red rounded-lg flex items-center justify-center font-black text-white text-xs shadow-lg shadow-f1-red/20">
                 F1
               </div>
-              <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
-                2026 Predictions
-              </p>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
+                  2026 Predictions
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>ML-Powered Forecasts</p>
+              </div>
             </div>
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
               ML-powered Formula 1 race predictions using XGBoost,
               GradientBoosting, and LSTM models trained on FastF1 telemetry data.
             </p>
@@ -23,10 +27,10 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
+            <h4 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>
               Navigation
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {[
                 { href: "/", label: "Home" },
                 { href: "/calendar", label: "Season Calendar" },
@@ -47,15 +51,15 @@ export default function Footer() {
 
           {/* Tech Stack */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
+            <h4 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>
               Tech Stack
             </h4>
             <div className="flex flex-wrap gap-2">
               {["XGBoost", "GradientBoosting", "LSTM", "FastF1", "Next.js", "React", "Tailwind"].map(tag => (
                 <span
                   key={tag}
-                  className="px-2.5 py-1 text-xs rounded-full font-medium"
-                  style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+                  className="px-2.5 py-1 text-xs rounded-full font-medium transition-colors"
+                  style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--glass-border)" }}
                 >
                   {tag}
                 </span>
@@ -64,7 +68,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ borderTop: "1px solid var(--border)", color: "var(--text-muted)" }}>
+        <div className="mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ borderTop: "1px solid var(--border)", color: "var(--text-muted)" }}>
           <span>© 2026 F1 Predictions. Not affiliated with Formula 1.</span>
           <div className="flex items-center gap-4">
             <span>Data via FastF1 API</span>
