@@ -55,7 +55,6 @@ export default function CalendarPage() {
               transition={{ delay: index * 0.03, duration: 0.4 }}
             >
               <Link
-              key={race.round}
               href={completed ? `/race/${race.round}` : "#"}
               className={`card flex items-center gap-4 sm:gap-6 px-5 py-4 group transition-all ${
                 completed ? "hover:border-f1-red/30 cursor-pointer" : "cursor-default"
