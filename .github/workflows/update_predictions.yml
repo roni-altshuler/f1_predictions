@@ -1,23 +1,27 @@
 name: Update Race Predictions
 
 on:
-  # Scheduled: runs every Saturday at 23:00 UTC (after qualifying worldwide)
   schedule:
-    - cron: "0 23 * * 6"
+    # Three cron jobs covering the entire GP weekend:
+    - cron: "0 18 * * 5"   # Friday  18:00 UTC – pre-weekend predictions
+    - cron: "0 23 * * 6"   # Saturday 23:00 UTC – post-qualifying update
+    - cron: "0 20 * * 0"   # Sunday  20:00 UTC – post-race results
   workflow_dispatch:
     inputs:
       round:
-        description: "Round number (1-24), or 'next' for upcoming round, or 'all'"
+        description: "Round number (1-24), or 'next' for upcoming round"
         required: true
         default: "next"
-      fastf1:
-        description: "Generate FastF1 historical visualizations"
-        type: boolean
-        default: true
-      advanced:
-        description: "Run advanced models (pit strategy, tyre deg, LSTM)"
-        type: boolean
-        default: true
+      phase:
+        description: "GP weekend phase"
+        type: choice
+        options:
+          - auto
+          - pre
+          - post-quali
+          - post-race
+          - full
+        default: "auto"
 
 permissions:
   contents: write
@@ -38,68 +42,97 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Determine round number
-        id: round
+      - name: Determine round and phase
+        id: config
         run: |
+          # ── Detect round ──
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.round }}" = "next" ]; then
-            # Find the next upcoming round based on current date
             ROUND=$(python3 -c "
-          import json, os, sys
-          from datetime import datetime, timedelta
+          import sys, os
           sys.path.insert(0, '.')
+          from datetime import datetime
           from f1_prediction_utils import CALENDAR_2026
           now = datetime.utcnow()
-          # Find nearest race within ±3 days (covers the race weekend)
           for rnd, info in sorted(CALENDAR_2026.items()):
               race_date = datetime.strptime(info['date'], '%Y-%m-%d')
               if abs((race_date - now).days) <= 3:
-                  print(rnd)
-                  sys.exit(0)
-          # Fallback: next future race
+                  print(rnd); sys.exit(0)
           for rnd, info in sorted(CALENDAR_2026.items()):
               race_date = datetime.strptime(info['date'], '%Y-%m-%d')
               if race_date >= now:
-                  print(rnd)
-                  sys.exit(0)
+                  print(rnd); sys.exit(0)
           print(1)
           ")
-            echo "round=$ROUND" >> "$GITHUB_OUTPUT"
-            echo "Detected upcoming round: $ROUND"
           else
-            echo "round=${{ github.event.inputs.round }}" >> "$GITHUB_OUTPUT"
+            ROUND="${{ github.event.inputs.round }}"
           fi
+          echo "round=$ROUND" >> "$GITHUB_OUTPUT"
 
-      - name: Run prediction pipeline
+          # ── Detect phase ──
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            DOW=$(date -u +%u)  # 1=Mon … 7=Sun
+            case $DOW in
+              5) PHASE="pre" ;;
+              6) PHASE="post-quali" ;;
+              7) PHASE="post-race" ;;
+              *) PHASE="pre" ;;
+            esac
+          else
+            PHASE="${{ github.event.inputs.phase }}"
+            PHASE="${PHASE:-auto}"
+          fi
+          echo "phase=$PHASE" >> "$GITHUB_OUTPUT"
+
+          echo "Round: $ROUND  |  Phase: $PHASE"
+
+      - name: Check if it's a race weekend
+        id: check
+        if: github.event_name == 'schedule'
         run: |
-          ROUND="${{ steps.round.outputs.round }}"
-          FLAGS=""
-          if [ "${{ github.event.inputs.fastf1 }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
-            FLAGS="$FLAGS --fastf1"
-          fi
-          if [ "${{ github.event.inputs.advanced }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then
-            FLAGS="$FLAGS --advanced"
+          IS_RACE_WEEKEND=$(python3 -c "
+          import sys, os
+          sys.path.insert(0, '.')
+          from datetime import datetime
+          from f1_prediction_utils import CALENDAR_2026
+          now = datetime.utcnow()
+          for rnd, info in sorted(CALENDAR_2026.items()):
+              race_date = datetime.strptime(info['date'], '%Y-%m-%d')
+              if abs((race_date - now).days) <= 3:
+                  print('true'); sys.exit(0)
+          print('false')
+          ")
+          echo "is_race_weekend=$IS_RACE_WEEKEND" >> "$GITHUB_OUTPUT"
+          if [ "$IS_RACE_WEEKEND" = "false" ]; then
+            echo "⏭️  Not a race weekend — skipping."
           fi
 
-          if [ "$ROUND" = "all" ]; then
-            python export_website_data.py --all $FLAGS
+      - name: Run GP weekend pipeline
+        if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
+        run: |
+          ROUND="${{ steps.config.outputs.round }}"
+          PHASE="${{ steps.config.outputs.phase }}"
+
+          if [ "$PHASE" = "full" ]; then
+            python gp_weekend.py --round "$ROUND" --full --no-build
+          elif [ "$PHASE" = "auto" ]; then
+            python gp_weekend.py --round "$ROUND" --no-build
           else
-            python export_website_data.py --round "$ROUND" $FLAGS
+            python gp_weekend.py --round "$ROUND" --phase "$PHASE" --no-build
           fi
 
-      - name: Commit prediction data & visualizations
+      - name: Commit updated data
+        if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add website/public/data/ website/public/visualizations/
+          git add -A website/public/data/ website/public/visualizations/ \
+                     races/ season_tracker_2026.json predicted_results_2026.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            ROUND="${{ steps.round.outputs.round }}"
-            if [ "$ROUND" = "all" ]; then
-              git commit -m "Update predictions for all rounds"
-            else
-              git commit -m "Update predictions for round $ROUND ($(date -u +%Y-%m-%d))"
-            fi
+            ROUND="${{ steps.config.outputs.round }}"
+            PHASE="${{ steps.config.outputs.phase }}"
+            git commit -m "[$PHASE] Update round $ROUND ($(date -u +%Y-%m-%d))"
             git push
           fi
 
