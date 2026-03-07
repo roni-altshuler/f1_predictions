@@ -94,10 +94,10 @@
     },
     {
       "position": 8,
-      "driver": "SAI",
-      "driverFullName": "Carlos Sainz Jr.",
-      "team": "Williams",
-      "teamColor": "#64C4FF",
+      "driver": "LAW",
+      "driverFullName": "Liam Lawson",
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF",
       "points": 4,
       "wins": 0,
       "podiums": 0,
@@ -107,10 +107,10 @@
     },
     {
       "position": 9,
-      "driver": "LAW",
-      "driverFullName": "Liam Lawson",
-      "team": "Racing Bulls",
-      "teamColor": "#6692FF",
+      "driver": "SAI",
+      "driverFullName": "Carlos Sainz Jr.",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
       "points": 2,
       "wins": 0,
       "podiums": 0,
@@ -347,13 +347,13 @@
     },
     {
       "position": 5,
-      "team": "Williams",
-      "teamColor": "#64C4FF",
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF",
       "points": 4,
       "wins": 0,
       "drivers": [
-        "SAI",
-        "ALB"
+        "LAW",
+        "LIN"
       ],
       "pointsHistory": [
         4
@@ -361,13 +361,13 @@
     },
     {
       "position": 6,
-      "team": "Racing Bulls",
-      "teamColor": "#6692FF",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
       "points": 2,
       "wins": 0,
       "drivers": [
-        "LAW",
-        "LIN"
+        "SAI",
+        "ALB"
       ],
       "pointsHistory": [
         2
@@ -509,19 +509,19 @@
       "canStillWin": true
     },
     {
-      "driver": "SAI",
-      "driverFullName": "Carlos Sainz Jr.",
-      "team": "Williams",
-      "teamColor": "#64C4FF",
+      "driver": "LAW",
+      "driverFullName": "Liam Lawson",
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF",
       "currentPoints": 4,
       "maxPossiblePoints": 602,
       "canStillWin": true
     },
     {
-      "driver": "LAW",
-      "driverFullName": "Liam Lawson",
-      "team": "Racing Bulls",
-      "teamColor": "#6692FF",
+      "driver": "SAI",
+      "driverFullName": "Carlos Sainz Jr.",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
       "currentPoints": 2,
       "maxPossiblePoints": 600,
       "canStillWin": true
