@@ -1,0 +1,49 @@
+{
+  "rain_probability": 0.29,
+  "temperature_c": 19.9,
+  "humidity": 44.8,
+  "wind_speed_kmh": 14.1,
+  "wind_direction": 150,
+  "cloud_cover": 63,
+  "precipitation_mm": 0.0,
+  "weather_code": 1,
+  "weather_description": "Mainly clear",
+  "source": "api",
+  "gp_key": "China",
+  "race_date": "2026-03-22",
+  "forecast_detail": [
+    {
+      "time": "2026-03-22T14:00",
+      "temperature_c": 21.2,
+      "rain_probability": 0.29,
+      "precipitation_mm": 0.0,
+      "wind_speed_kmh": 13.5,
+      "cloud_cover": 26
+    },
+    {
+      "time": "2026-03-22T15:00",
+      "temperature_c": 20.6,
+      "rain_probability": 0.29,
+      "precipitation_mm": 0.0,
+      "wind_speed_kmh": 13.8,
+      "cloud_cover": 49
+    },
+    {
+      "time": "2026-03-22T16:00",
+      "temperature_c": 19.5,
+      "rain_probability": 0.29,
+      "precipitation_mm": 0.0,
+      "wind_speed_kmh": 14.4,
+      "cloud_cover": 78
+    },
+    {
+      "time": "2026-03-22T17:00",
+      "temperature_c": 18.3,
+      "rain_probability": 0.28,
+      "precipitation_mm": 0.0,
+      "wind_speed_kmh": 14.5,
+      "cloud_cover": 100
+    }
+  ],
+  "cached_at": "2026-03-07T09:09:07.896710"
+}

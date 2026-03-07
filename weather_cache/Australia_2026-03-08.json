@@ -1,0 +1,49 @@
+{
+  "rain_probability": 0.0,
+  "temperature_c": 26.6,
+  "humidity": 42.0,
+  "wind_speed_kmh": 13.9,
+  "wind_direction": 142,
+  "cloud_cover": 53,
+  "precipitation_mm": 0.0,
+  "weather_code": 2,
+  "weather_description": "Partly cloudy",
+  "source": "api",
+  "gp_key": "Australia",
+  "race_date": "2026-03-08",
+  "forecast_detail": [
+    {
+      "time": "2026-03-08T14:00",
+      "temperature_c": 25.9,
+      "rain_probability": 0.0,
+      "precipitation_mm": 0.0,
+      "wind_speed_kmh": 15.1,
+      "cloud_cover": 36
+    },
+    {
+      "time": "2026-03-08T15:00",
+      "temperature_c": 26.7,
+      "rain_probability": 0.0,
+      "precipitation_mm": 0.0,
+      "wind_speed_kmh": 14.6,
+      "cloud_cover": 60
+    },
+    {
+      "time": "2026-03-08T16:00",
+      "temperature_c": 27.0,
+      "rain_probability": 0.0,
+      "precipitation_mm": 0.0,
+      "wind_speed_kmh": 13.4,
+      "cloud_cover": 59
+    },
+    {
+      "time": "2026-03-08T17:00",
+      "temperature_c": 26.9,
+      "rain_probability": 0.0,
+      "precipitation_mm": 0.0,
+      "wind_speed_kmh": 12.6,
+      "cloud_cover": 60
+    }
+  ],
+  "cached_at": "2026-03-07T09:08:40.746392"
+}
