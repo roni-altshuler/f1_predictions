@@ -25,6 +25,8 @@ f1_cache/
 # Generated visualisations (reproducible — regenerate by running the scripts)
 # ========================
 visualizations/
+# Keep website copies (committed by CI)
+!website/public/visualizations/
 
 # ========================
 # Generated HTML reports (reproducible)
@@ -36,6 +38,8 @@ reports/
 # ========================
 season_results_2026.json
 season_tracker_2026.json
+# Keep the website copy committed by CI
+!website/public/data/season_tracker.json
 
 # ========================
 # Backup files

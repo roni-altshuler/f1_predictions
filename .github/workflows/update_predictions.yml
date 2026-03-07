@@ -130,8 +130,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A website/public/data/ website/public/visualizations/ \
-                     races/ season_tracker_2026.json predicted_results_2026.json
+          git add -f website/public/data/ website/public/visualizations/ \
+                     predicted_results_2026.json
+          git add races/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
