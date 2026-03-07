@@ -55,10 +55,10 @@
     },
     {
       "position": 5,
-      "driver": "HAM",
-      "driverFullName": "Lewis Hamilton",
-      "team": "Ferrari",
-      "teamColor": "#E8002D",
+      "driver": "RUS",
+      "driverFullName": "George Russell",
+      "team": "Mercedes",
+      "teamColor": "#27F4D2",
       "points": 10,
       "wins": 0,
       "podiums": 0,
@@ -68,10 +68,10 @@
     },
     {
       "position": 6,
-      "driver": "RUS",
-      "driverFullName": "George Russell",
-      "team": "Mercedes",
-      "teamColor": "#27F4D2",
+      "driver": "HAM",
+      "driverFullName": "Lewis Hamilton",
+      "team": "Ferrari",
+      "teamColor": "#E8002D",
       "points": 8,
       "wins": 0,
       "podiums": 0,
@@ -94,10 +94,10 @@
     },
     {
       "position": 8,
-      "driver": "SAI",
-      "driverFullName": "Carlos Sainz Jr.",
-      "team": "Williams",
-      "teamColor": "#64C4FF",
+      "driver": "LAW",
+      "driverFullName": "Liam Lawson",
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF",
       "points": 4,
       "wins": 0,
       "podiums": 0,
@@ -107,10 +107,10 @@
     },
     {
       "position": 9,
-      "driver": "LAW",
-      "driverFullName": "Liam Lawson",
-      "team": "Racing Bulls",
-      "teamColor": "#6692FF",
+      "driver": "SAI",
+      "driverFullName": "Carlos Sainz Jr.",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
       "points": 2,
       "wins": 0,
       "podiums": 0,
@@ -307,18 +307,32 @@
       "position": 2,
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "points": 22,
+      "points": 20,
       "wins": 0,
       "drivers": [
         "LEC",
         "HAM"
       ],
       "pointsHistory": [
-        22
+        20
       ]
     },
     {
       "position": 3,
+      "team": "Mercedes",
+      "teamColor": "#27F4D2",
+      "points": 16,
+      "wins": 0,
+      "drivers": [
+        "RUS",
+        "ANT"
+      ],
+      "pointsHistory": [
+        16
+      ]
+    },
+    {
+      "position": 4,
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
       "points": 15,
@@ -332,28 +346,14 @@
       ]
     },
     {
-      "position": 4,
-      "team": "Mercedes",
-      "teamColor": "#27F4D2",
-      "points": 14,
-      "wins": 0,
-      "drivers": [
-        "RUS",
-        "ANT"
-      ],
-      "pointsHistory": [
-        14
-      ]
-    },
-    {
       "position": 5,
-      "team": "Williams",
-      "teamColor": "#64C4FF",
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF",
       "points": 4,
       "wins": 0,
       "drivers": [
-        "SAI",
-        "ALB"
+        "LAW",
+        "LIN"
       ],
       "pointsHistory": [
         4
@@ -361,13 +361,13 @@
     },
     {
       "position": 6,
-      "team": "Racing Bulls",
-      "teamColor": "#6692FF",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
       "points": 2,
       "wins": 0,
       "drivers": [
-        "LAW",
-        "LIN"
+        "SAI",
+        "ALB"
       ],
       "pointsHistory": [
         2
@@ -482,19 +482,19 @@
       "canStillWin": true
     },
     {
-      "driver": "HAM",
-      "driverFullName": "Lewis Hamilton",
-      "team": "Ferrari",
-      "teamColor": "#E8002D",
+      "driver": "RUS",
+      "driverFullName": "George Russell",
+      "team": "Mercedes",
+      "teamColor": "#27F4D2",
       "currentPoints": 10,
       "maxPossiblePoints": 608,
       "canStillWin": true
     },
     {
-      "driver": "RUS",
-      "driverFullName": "George Russell",
-      "team": "Mercedes",
-      "teamColor": "#27F4D2",
+      "driver": "HAM",
+      "driverFullName": "Lewis Hamilton",
+      "team": "Ferrari",
+      "teamColor": "#E8002D",
       "currentPoints": 8,
       "maxPossiblePoints": 606,
       "canStillWin": true
@@ -509,19 +509,19 @@
       "canStillWin": true
     },
     {
-      "driver": "SAI",
-      "driverFullName": "Carlos Sainz Jr.",
-      "team": "Williams",
-      "teamColor": "#64C4FF",
+      "driver": "LAW",
+      "driverFullName": "Liam Lawson",
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF",
       "currentPoints": 4,
       "maxPossiblePoints": 602,
       "canStillWin": true
     },
     {
-      "driver": "LAW",
-      "driverFullName": "Liam Lawson",
-      "team": "Racing Bulls",
-      "teamColor": "#6692FF",
+      "driver": "SAI",
+      "driverFullName": "Carlos Sainz Jr.",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
       "currentPoints": 2,
       "maxPossiblePoints": 600,
       "canStillWin": true
