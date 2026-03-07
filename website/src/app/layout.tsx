@@ -5,11 +5,11 @@ import Footer from "@/components/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "F1 2026 Predictions | ML-Powered Race Forecasts",
+  title: "F1 2026 Predictions | AI-Powered Race Forecasts",
   description:
-    "Machine learning-powered Formula 1 2026 season predictions. " +
-    "Race classifications, driver standings, constructor championships, " +
-    "and FastF1-powered visualizations for every Grand Prix.",
+    "AI and machine learning-powered Formula 1 2026 season predictions. " +
+    "Race classifications, championship standings, pit strategy simulations, " +
+    "and professional visualizations for every Grand Prix.",
 };
 
 export default function RootLayout({
@@ -24,7 +24,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
-        {/* Prevent flash of wrong theme */}
         <script
           dangerouslySetInnerHTML={{
             __html: `try{const t=localStorage.getItem('f1-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}`,
