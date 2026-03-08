@@ -2,7 +2,7 @@
   "rounds": [
     {
       "round": 1,
-      "hasActual": false,
+      "hasActual": true,
       "meanError": null,
       "exactMatches": null,
       "within3": null,
