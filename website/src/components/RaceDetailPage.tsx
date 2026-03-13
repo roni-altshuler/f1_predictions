@@ -3,6 +3,17 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  LineChart,
+  Line,
+} from "recharts";
 import { RoundData, SeasonData } from "@/types";
 import CountryFlag from "@/components/CountryFlag";
 import { fetchRoundData, fetchSeasonData, getVisualizationPath, formatDate, formatGap } from "@/lib/data";
@@ -183,13 +194,56 @@ export default function RaceDetailPage({ round }: Props) {
     { key: "visualizations", label: "Visualizations" },
   ];
 
-  const vizFiles = [...new Set([...(data.visualizations || []), ...ALL_KNOWN_VIZ_FILENAMES])];
+  const vizFiles = [...new Set([...(data.visualizations || [])])];
   const mlViz = vizFiles.filter(f => ["predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png", "pace_vs_predicted.png", "laptime_distribution.png"].includes(f));
-  const fastf1Viz = vizFiles.filter(f => ["track_map.png", "laptime_distribution_historical.png", "tyre_strategy.png"].includes(f));
+  const fastf1Viz = vizFiles.filter(f => ["laptime_distribution_historical.png", "tyre_strategy.png"].includes(f));
   const advancedViz = vizFiles.filter(f => ["pit_strategy_comparison.png", "tyre_degradation_curves.png", "lstm_pace_prediction.png"].includes(f));
   const trackMapSrc = failedImages.has("track_map.png") ? null : getVisualizationPath(round, "track_map.png");
   const actualRows = data.actualResults ? Object.entries(data.actualResults).sort((a, b) => a[1] - b[1]) : [];
   const predictedByDriver = new Map(data.classification.map((e) => [e.driver, e]));
+  const comparisonChartData = actualRows
+    .map(([driver, actualPos]) => {
+      const pred = predictedByDriver.get(driver);
+      if (!pred) return null;
+      return {
+        driver,
+        predicted: pred.position,
+        actual: actualPos,
+        delta: pred.position - actualPos,
+      };
+    })
+    .filter((x): x is { driver: string; predicted: number; actual: number; delta: number } => x !== null)
+    .slice(0, 12);
+  const teamErrorBars = Array.from(
+    actualRows
+      .map(([driver, actualPos]) => {
+        const pred = predictedByDriver.get(driver);
+        if (!pred) return null;
+        return {
+          team: pred.team,
+          absDelta: Math.abs(pred.position - actualPos),
+        };
+      })
+      .filter((x): x is { team: string; absDelta: number } => x !== null)
+      .reduce((acc, cur) => {
+        const prev = acc.get(cur.team) || { sum: 0, count: 0 };
+        prev.sum += cur.absDelta;
+        prev.count += 1;
+        acc.set(cur.team, prev);
+        return acc;
+      }, new Map<string, { sum: number; count: number }>())
+      .entries()
+  )
+    .map(([team, v]) => ({ team, meanError: Number((v.sum / v.count).toFixed(2)) }))
+    .sort((a, b) => a.meanError - b.meanError)
+    .slice(0, 10);
+  const speedTrapChartData = (data.telemetryData?.speedTraps || [])
+    .slice(0, 10)
+    .map((st) => ({
+      driver: st.driver,
+      speed: st.speedKmh,
+      sector: `S${st.sector}`,
+    }));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const strategyData = (data as any).strategyData;
@@ -385,6 +439,52 @@ export default function RaceDetailPage({ round }: Props) {
                   </tbody>
                 </table>
               </div>
+
+              {comparisonChartData.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
+                    Interactive Position Comparison (Top 12)
+                  </h4>
+                  <div className="h-72 w-full" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "12px" }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={comparisonChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.12)" />
+                        <XAxis dataKey="driver" stroke="#9ca3af" />
+                        <YAxis reversed allowDecimals={false} domain={[1, "dataMax"]} stroke="#9ca3af" />
+                        <Tooltip
+                          contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 8 }}
+                          labelStyle={{ color: "#f3f4f6" }}
+                        />
+                        <Bar dataKey="actual" fill="#00D2BE" name="Actual" />
+                        <Bar dataKey="predicted" fill="#E10600" name="Predicted" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {teamErrorBars.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
+                    Team-Level Mean Prediction Error
+                  </h4>
+                  <div className="h-72 w-full" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "12px" }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={teamErrorBars} layout="vertical" margin={{ left: 40 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.12)" />
+                        <XAxis type="number" stroke="#9ca3af" />
+                        <YAxis type="category" dataKey="team" stroke="#9ca3af" width={120} />
+                        <Tooltip
+                          formatter={(value) => [`${value} positions`, "Mean absolute error"]}
+                          contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 8 }}
+                          labelStyle={{ color: "#f3f4f6" }}
+                        />
+                        <Bar dataKey="meanError" fill="#FF8000" radius={[0, 6, 6, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -536,6 +636,28 @@ export default function RaceDetailPage({ round }: Props) {
           {data.telemetryData && (
             <div className="card p-6 sm:p-8">
               <h3 className="section-heading">Speed Traps & Sector Times</h3>
+              {speedTrapChartData.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
+                    Interactive Speed Trap Trend
+                  </h4>
+                  <div className="h-72 w-full" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "12px" }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={speedTrapChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.12)" />
+                        <XAxis dataKey="driver" stroke="#9ca3af" />
+                        <YAxis stroke="#9ca3af" />
+                        <Tooltip
+                          formatter={(value, _name, props) => [`${value} km/h`, `Speed (${props?.payload?.sector})`]}
+                          contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 8 }}
+                          labelStyle={{ color: "#f3f4f6" }}
+                        />
+                        <Line type="monotone" dataKey="speed" stroke="#E10600" strokeWidth={2.5} dot={{ r: 4, fill: "#E10600" }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
               {data.telemetryData.speedTraps && data.telemetryData.speedTraps.length > 0 && (
                 <div className="mb-6">
                   <h4 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>Speed Traps</h4>
@@ -710,23 +832,7 @@ export default function RaceDetailPage({ round }: Props) {
             </div>
           )}
 
-          {advancedViz.filter(f => !failedImages.has(f)).length > 0 && (
-            <div className="card p-6">
-              <h3 className="section-heading">Strategy Visualizations</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {advancedViz.filter(f => !failedImages.has(f)).map((filename) => {
-                  const src = getVisualizationPath(round, filename);
-                  const title = filename.replace(/_/g, " ").replace(".png", "");
-                  return (
-                    <div key={filename} className="cursor-pointer" onClick={() => setLightboxImg(src)}>
-                      <img src={src} alt={title} className="viz-image w-full" onError={() => handleImageError(filename)} />
-                      <p className="text-xs text-center mt-2 capitalize" style={{ color: "var(--text-muted)" }}>{title}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Intentionally keep image galleries in one place (Visualizations tab) to avoid duplicates. */}
         </motion.div>
       )}
 
