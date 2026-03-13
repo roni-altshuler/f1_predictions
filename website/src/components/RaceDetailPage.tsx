@@ -61,7 +61,6 @@ export default function RaceDetailPage({ round }: Props) {
   const [season, setSeason] = useState<SeasonData | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("classification");
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
-  const [error, setError] = useState(false);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   const handleImageError = useCallback((filename: string) => {
@@ -69,28 +68,110 @@ export default function RaceDetailPage({ round }: Props) {
   }, []);
 
   useEffect(() => {
-    fetchRoundData(round).then(setData).catch(() => setError(true));
+    fetchRoundData(round).then(setData).catch(() => setData(null));
     fetchSeasonData().then(setSeason).catch(() => {});
   }, [round]);
 
-  if (error) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-        <div className="text-5xl mb-6">🏁</div>
-        <h1 className="text-3xl font-black mb-4" style={{ color: "var(--text)" }}>Prediction Not Available</h1>
-        <p className="mb-6" style={{ color: "var(--text-muted)" }}>Round {round} has not been predicted yet.</p>
-        <Link href="/calendar" className="text-f1-red font-bold hover:underline">← Back to Calendar</Link>
-      </div>
-    );
-  }
-
-  if (!data) {
+  if (!season && !data) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-3 border-f1-red border-t-transparent rounded-full animate-spin" />
           <p style={{ color: "var(--text-muted)" }}>Loading race data...</p>
         </div>
+      </div>
+    );
+  }
+
+  const seasonRace = season?.calendar.find((r) => r.round === round) || null;
+
+  if (!data && seasonRace) {
+    const previewTrackMapSrc = failedImages.has("track_map.png") ? null : getVisualizationPath(round, "track_map.png");
+    const raceName = seasonRace.name;
+
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center gap-4 mb-2">
+            <CountryFlag country={seasonRace.country} size={44} />
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "rgba(225,6,0,0.1)", color: "#E10600", border: "1px solid rgba(225,6,0,0.2)" }}>
+                  Round {seasonRace.round}
+                </span>
+                <span className="text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                  Prediction Pending
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>{seasonRace.name}</h1>
+            </div>
+          </div>
+          <p className="mb-6 text-sm" style={{ color: "var(--text-muted)" }}>
+            {seasonRace.circuit} • {formatDate(seasonRace.date)}
+          </p>
+
+          <div className="card p-6 mb-8">
+            <h3 className="section-heading">Race Preview</h3>
+            <p style={{ color: "var(--text-muted)" }}>
+              This Grand Prix page is available now, but the model has not published predictions yet.
+              Once the workflow runs for this round, predicted classification, real outcome comparison,
+              accuracy metrics, and strategy visualizations will automatically appear here.
+            </p>
+          </div>
+
+          {previewTrackMapSrc && (
+            <div className="card p-4 mb-8">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="section-heading mb-0">Circuit Plot</h3>
+                <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Track Map</span>
+              </div>
+              <img
+                src={previewTrackMapSrc}
+                alt={`${raceName} circuit plot`}
+                className="viz-image w-full"
+                onError={() => handleImageError("track_map.png")}
+              />
+            </div>
+          )}
+
+          <div className="card p-6 mb-8">
+            <h3 className="section-heading">Circuit Profile</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="metric-card"><p className="text-xs" style={{ color: "var(--text-muted)" }}>Circuit</p><p className="text-lg font-black" style={{ color: "var(--text)" }}>{seasonRace.circuit}</p></div>
+              <div className="metric-card"><p className="text-xs" style={{ color: "var(--text-muted)" }}>Length</p><p className="text-lg font-black" style={{ color: "var(--text)" }}>{seasonRace.circuitKm} km</p></div>
+              <div className="metric-card"><p className="text-xs" style={{ color: "var(--text-muted)" }}>Laps</p><p className="text-lg font-black" style={{ color: "var(--text)" }}>{seasonRace.laps}</p></div>
+              <div className="metric-card"><p className="text-xs" style={{ color: "var(--text-muted)" }}>DRS Zones</p><p className="text-lg font-black" style={{ color: "var(--text)" }}>{seasonRace.drsZones}</p></div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 mb-8">
+            {["Free Practice", "Qualifying", "Race"].map((type) => (
+              <a
+                key={type}
+                href={getYouTubeSearchUrl(raceName, type)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:scale-[1.03]"
+                style={{ background: "var(--bg-card)", color: "var(--text)", border: "1px solid var(--glass-border)" }}
+              >
+                {type} Highlights
+              </a>
+            ))}
+          </div>
+
+          <Link href="/calendar" className="text-f1-red font-bold hover:underline">← Back to Calendar</Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-20 text-center">
+        <div className="text-5xl mb-6">🏁</div>
+        <h1 className="text-3xl font-black mb-4" style={{ color: "var(--text)" }}>Race Not Found</h1>
+        <p className="mb-6" style={{ color: "var(--text-muted)" }}>Round {round} is outside the 2026 calendar.</p>
+        <Link href="/calendar" className="text-f1-red font-bold hover:underline">← Back to Calendar</Link>
       </div>
     );
   }
@@ -106,6 +187,9 @@ export default function RaceDetailPage({ round }: Props) {
   const mlViz = vizFiles.filter(f => ["predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png", "pace_vs_predicted.png", "laptime_distribution.png"].includes(f));
   const fastf1Viz = vizFiles.filter(f => ["track_map.png", "laptime_distribution_historical.png", "tyre_strategy.png"].includes(f));
   const advancedViz = vizFiles.filter(f => ["pit_strategy_comparison.png", "tyre_degradation_curves.png", "lstm_pace_prediction.png"].includes(f));
+  const trackMapSrc = failedImages.has("track_map.png") ? null : getVisualizationPath(round, "track_map.png");
+  const actualRows = data.actualResults ? Object.entries(data.actualResults).sort((a, b) => a[1] - b[1]) : [];
+  const predictedByDriver = new Map(data.classification.map((e) => [e.driver, e]));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const strategyData = (data as any).strategyData;
@@ -155,6 +239,27 @@ export default function RaceDetailPage({ round }: Props) {
       <p className="mb-6 text-sm" style={{ color: "var(--text-muted)" }}>
         {data.circuit} • {formatDate(data.date)}
       </p>
+
+      {trackMapSrc && (
+        <motion.div
+          className="card p-4 mb-8"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="section-heading mb-0">Circuit Plot</h3>
+            <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Track Map</span>
+          </div>
+          <img
+            src={trackMapSrc}
+            alt={`${data.name} circuit plot`}
+            className="viz-image w-full cursor-pointer"
+            onClick={() => setLightboxImg(trackMapSrc)}
+            onError={() => handleImageError("track_map.png")}
+          />
+        </motion.div>
+      )}
 
       {/* ━━━ YouTube Highlight Links ━━━ */}
       <motion.div
@@ -222,37 +327,102 @@ export default function RaceDetailPage({ round }: Props) {
 
       {/* ═══ Classification Tab ═══ */}
       {activeTab === "classification" && (
-        <motion.div className="card overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                  {["POS", "DRIVER", "", "TEAM", "TIME", "GAP", "PTS"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data.classification.map((entry) => (
-                  <tr key={entry.driver} className="transition-colors hover:bg-[var(--bg-card-hover)]" style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td className="px-4 py-3">
-                      <span className={`position-badge ${entry.position === 1 ? "p1" : entry.position === 2 ? "p2" : entry.position === 3 ? "p3" : entry.position <= 10 ? "points" : "no-points"}`}>{entry.position}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-bold" style={{ color: "var(--text)" }}>{entry.driver}</span>
-                      <span className="ml-2 text-xs" style={{ color: "var(--text-muted)" }}>{entry.driverFullName}</span>
-                    </td>
-                    <td className="px-1 py-3"><div className="w-1 h-6 rounded" style={{ backgroundColor: entry.teamColor }} /></td>
-                    <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{entry.team}</td>
-                    <td className="px-4 py-3 font-mono text-sm" style={{ color: "var(--text)" }}>{entry.predictedTime}s</td>
-                    <td className="px-4 py-3 font-mono text-sm" style={{ color: "var(--text-muted)" }}>{formatGap(entry.gap)}</td>
-                    <td className="px-4 py-3">
-                      {entry.points > 0 ? <span className="font-bold text-f1-red">{entry.points}</span> : <span style={{ color: "var(--text-muted)" }}>—</span>}
-                    </td>
+        <motion.div className="space-y-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          {actualRows.length > 0 && (
+            <div className="card p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 className="section-heading mb-0">Predicted vs Actual Race Outcome</h3>
+                {data.accuracy?.accuracy_pct != null && (
+                  <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "rgba(225,6,0,0.1)", color: "#E10600", border: "1px solid rgba(225,6,0,0.2)" }}>
+                    Within 3 Positions: {data.accuracy.accuracy_pct}%
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <div className="metric-card">
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Mean Position Error</p>
+                  <p className="text-xl font-black" style={{ color: "var(--text)" }}>{data.accuracy?.mean_position_error ?? "-"}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Exact Matches</p>
+                  <p className="text-xl font-black" style={{ color: "var(--text)" }}>{data.accuracy?.exact_matches ?? 0}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Within 3</p>
+                  <p className="text-xl font-black" style={{ color: "var(--text)" }}>{data.accuracy?.within_3_positions ?? 0}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Drivers Compared</p>
+                  <p className="text-xl font-black" style={{ color: "var(--text)" }}>{data.accuracy?.total_drivers ?? actualRows.length}</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                      {["ACTUAL", "PRED", "Δ", "DRIVER", "TEAM"].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {actualRows.map(([drv, actualPos]) => {
+                      const pred = predictedByDriver.get(drv);
+                      const predPos = pred?.position;
+                      const delta = predPos != null ? predPos - actualPos : null;
+                      return (
+                        <tr key={`cmp-${drv}`} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td className="px-3 py-2 font-mono font-bold" style={{ color: "var(--text)" }}>P{actualPos}</td>
+                          <td className="px-3 py-2 font-mono" style={{ color: "var(--text)" }}>{predPos != null ? `P${predPos}` : "-"}</td>
+                          <td className="px-3 py-2 font-mono" style={{ color: delta == null ? "var(--text-muted)" : Math.abs(delta) <= 2 ? "#00D2BE" : "#E10600" }}>
+                            {delta == null ? "-" : delta === 0 ? "0" : delta > 0 ? `+${delta}` : `${delta}`}
+                          </td>
+                          <td className="px-3 py-2 font-bold" style={{ color: "var(--text)" }}>{drv}</td>
+                          <td className="px-3 py-2" style={{ color: "var(--text-muted)" }}>{pred?.team ?? "-"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="card overflow-hidden">
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+              <h3 className="section-heading mb-0">Model Predicted Classification</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                    {["POS", "DRIVER", "", "TEAM", "TIME", "GAP", "PTS"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.classification.map((entry) => (
+                    <tr key={entry.driver} className="transition-colors hover:bg-[var(--bg-card-hover)]" style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td className="px-4 py-3">
+                        <span className={`position-badge ${entry.position === 1 ? "p1" : entry.position === 2 ? "p2" : entry.position === 3 ? "p3" : entry.position <= 10 ? "points" : "no-points"}`}>{entry.position}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-bold" style={{ color: "var(--text)" }}>{entry.driver}</span>
+                        <span className="ml-2 text-xs" style={{ color: "var(--text-muted)" }}>{entry.driverFullName}</span>
+                      </td>
+                      <td className="px-1 py-3"><div className="w-1 h-6 rounded" style={{ backgroundColor: entry.teamColor }} /></td>
+                      <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{entry.team}</td>
+                      <td className="px-4 py-3 font-mono text-sm" style={{ color: "var(--text)" }}>{entry.predictedTime}s</td>
+                      <td className="px-4 py-3 font-mono text-sm" style={{ color: "var(--text-muted)" }}>{formatGap(entry.gap)}</td>
+                      <td className="px-4 py-3">
+                        {entry.points > 0 ? <span className="font-bold text-f1-red">{entry.points}</span> : <span style={{ color: "var(--text-muted)" }}>—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </motion.div>
       )}
@@ -260,6 +430,19 @@ export default function RaceDetailPage({ round }: Props) {
       {/* ═══ Analysis Tab ═══ */}
       {activeTab === "analysis" && (
         <motion.div className="space-y-8" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          {trackMapSrc && (
+            <div className="card p-6">
+              <h3 className="section-heading">Circuit Plot</h3>
+              <img
+                src={trackMapSrc}
+                alt={`${data.name} track map`}
+                className="viz-image w-full cursor-pointer"
+                onClick={() => setLightboxImg(trackMapSrc)}
+                onError={() => handleImageError("track_map.png")}
+              />
+            </div>
+          )}
+
           {/* Circuit Info */}
           <div className="card p-6 sm:p-8">
             <h3 className="section-heading">Circuit Information</h3>

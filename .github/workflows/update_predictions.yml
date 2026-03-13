@@ -6,6 +6,7 @@ on:
     - cron: "0 18 * * 5"   # Friday  18:00 UTC – pre-weekend predictions
     - cron: "0 23 * * 6"   # Saturday 23:00 UTC – post-qualifying update
     - cron: "0 20 * * 0"   # Sunday  20:00 UTC – post-race results
+    - cron: "0 06 * * 1"   # Monday  06:00 UTC – post-race retry window
   workflow_dispatch:
     inputs:
       round:
@@ -75,6 +76,7 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then
             DOW=$(date -u +%u)  # 1=Mon … 7=Sun
             case $DOW in
+              1) PHASE="post-race" ;;
               5) PHASE="pre" ;;
               6) PHASE="post-quali" ;;
               7) PHASE="post-race" ;;

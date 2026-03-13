@@ -72,14 +72,12 @@ export default function CalendarPage() {
               transition={{ delay: index * 0.02, duration: 0.35 }}
             >
               <Link
-                href={completed ? `/race/${race.round}` : "#"}
-                className={`card flex items-center gap-4 sm:gap-6 px-5 py-4 group transition-all ${
-                  completed ? "hover:border-f1-red/30 cursor-pointer" : "cursor-default"
-                }`}
+                href={`/race/${race.round}`}
+                className="card flex items-center gap-4 sm:gap-6 px-5 py-4 group transition-all hover:border-f1-red/30 cursor-pointer"
               >
                 {/* Round number */}
                 <div className="text-center shrink-0 w-12">
-                  <span className="text-2xl font-black stat-number" style={{ color: completed ? "#E10600" : "var(--text-muted)" }}>{race.round}</span>
+                  <span className="text-2xl font-black stat-number" style={{ color: completed ? "#E10600" : "var(--text)" }}>{race.round}</span>
                 </div>
 
                 {/* Flag + Name */}
@@ -133,11 +131,11 @@ export default function CalendarPage() {
                 <div className="text-right shrink-0 w-28">
                   <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{formatDate(race.date)}</p>
                   {completed ? (
-                    <span className="text-xs font-bold" style={{ color: "#00D2BE" }}>✓ Predicted</span>
+                    <span className="text-xs font-bold" style={{ color: "#00D2BE" }}>✓ Data Ready</span>
                   ) : isPast ? (
-                    <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Awaiting data</span>
+                    <span className="text-xs font-medium" style={{ color: "#FF8000" }}>Race complete, results syncing</span>
                   ) : (
-                    <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Upcoming</span>
+                    <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Upcoming (Preview Available)</span>
                   )}
                 </div>
               </Link>

@@ -40,6 +40,11 @@ export default function HomePage() {
   const [standings, setStandings] = useState<StandingsData | null>(null);
   const [latestRace, setLatestRace] = useState<RoundData | null>(null);
 
+  const actualRows = latestRace?.actualResults
+    ? Object.entries(latestRace.actualResults).sort((a, b) => a[1] - b[1])
+    : [];
+  const predictedByDriver = new Map(latestRace?.classification.map((e) => [e.driver, e]) || []);
+
   useEffect(() => {
     fetchSeasonData().then(setSeason).catch(console.error);
     fetchStandingsData()
@@ -106,13 +111,19 @@ export default function HomePage() {
           ))}
         </motion.section>
 
-        {/* ━━━ LATEST RACE PREDICTION ━━━ */}
+        {/* ━━━ LATEST RACE RESULT / PREDICTION ━━━ */}
         {latestRace && (
           <motion.section className="mb-20" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={stagger}>
             <motion.div variants={fadeUp} className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>Latest Prediction</h2>
-                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>AI-predicted race classification</p>
+                <h2 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>
+                  {actualRows.length > 0 ? "Latest Grand Prix Result" : "Latest Prediction"}
+                </h2>
+                <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+                  {actualRows.length > 0
+                    ? "Official race outcome with model comparison"
+                    : "AI-predicted race classification"}
+                </p>
               </div>
               <Link href={`/race/${latestRace.round}`} className="group text-f1-red text-sm font-bold transition-colors inline-flex items-center gap-1 hover:underline">
                 Full Race Details <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
@@ -131,16 +142,25 @@ export default function HomePage() {
               </div>
               {/* Podium */}
               <div className="grid grid-cols-3">
-                {latestRace.classification.slice(0, 3).map((entry, i) => (
+                {(actualRows.length > 0 ? actualRows.slice(0, 3).map(([driver, position]) => ({
+                  driver,
+                  position,
+                  predicted: predictedByDriver.get(driver),
+                })) : latestRace.classification.slice(0, 3).map((entry) => ({
+                  driver: entry.driver,
+                  position: entry.position,
+                  predicted: entry,
+                }))).map((entry, i) => (
                   <div key={entry.driver} className="p-6 sm:p-8 text-center border-r last:border-r-0 relative group" style={{ borderColor: "var(--border)" }}>
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `radial-gradient(circle at 50% 100%, ${entry.teamColor}15, transparent 70%)` }} />
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `radial-gradient(circle at 50% 100%, ${(entry.predicted?.teamColor || "#888")}15, transparent 70%)` }} />
                     <div className="relative">
                       <div className={`text-4xl font-black mb-2 ${i === 0 ? "podium-1" : i === 1 ? "podium-2" : "podium-3"}`}>P{entry.position}</div>
-                      <div className="w-10 h-1 rounded-full mx-auto mb-3" style={{ backgroundColor: entry.teamColor }} />
+                      <div className="w-10 h-1 rounded-full mx-auto mb-3" style={{ backgroundColor: entry.predicted?.teamColor || "#888" }} />
                       <p className="font-black text-lg" style={{ color: "var(--text)" }}>{entry.driver}</p>
-                      <p className="text-sm" style={{ color: "var(--text-muted)" }}>{entry.driverFullName}</p>
-                      <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{entry.team}</p>
-                      <p className="text-f1-red font-bold mt-3 text-sm">+{entry.points} pts</p>
+                      <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{entry.predicted?.team || "Team"}</p>
+                      <p className="text-f1-red font-bold mt-3 text-sm">
+                        {actualRows.length > 0 ? "Official Result" : `+${entry.predicted?.points || 0} pts`}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -148,18 +168,33 @@ export default function HomePage() {
               {/* P4-P10 */}
               <div className="p-6 border-t" style={{ borderColor: "var(--border)" }}>
                 <div className="grid gap-1">
-                  {latestRace.classification.slice(3, 10).map((entry) => (
+                  {(actualRows.length > 0
+                    ? actualRows.slice(3, 10).map(([driver, position]) => ({
+                        driver,
+                        position,
+                        predicted: predictedByDriver.get(driver),
+                      }))
+                    : latestRace.classification.slice(3, 10).map((entry) => ({
+                        driver: entry.driver,
+                        position: entry.position,
+                        predicted: entry,
+                      }))
+                  ).map((entry) => (
                     <div key={entry.driver} className="flex items-center gap-4 py-2.5 px-4 rounded-xl transition-colors hover:bg-[var(--bg-card-hover)]">
                       <span className={`position-badge ${entry.position <= 10 ? "points" : "no-points"}`}>{entry.position}</span>
-                      <div className="team-color-bar h-8" style={{ backgroundColor: entry.teamColor }} />
+                        <div className="team-color-bar h-8" style={{ backgroundColor: entry.predicted?.teamColor || "#888" }} />
                       <div className="flex-1">
                         <span className="font-semibold" style={{ color: "var(--text)" }}>{entry.driver}</span>
-                        <span className="ml-2 text-sm" style={{ color: "var(--text-muted)" }}>{entry.team}</span>
+                          <span className="ml-2 text-sm" style={{ color: "var(--text-muted)" }}>{entry.predicted?.team || "Team"}</span>
                       </div>
-                      <span className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>
-                        {entry.gap === "LEADER" ? "—" : `+${entry.gap}s`}
-                      </span>
-                      {entry.points > 0 && <span className="text-f1-red text-sm font-bold">+{entry.points}</span>}
+                        {actualRows.length === 0 && (
+                          <span className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>
+                            {entry.predicted?.gap === "LEADER" ? "—" : `+${entry.predicted?.gap}s`}
+                          </span>
+                        )}
+                        <span className="text-f1-red text-sm font-bold">
+                          {actualRows.length > 0 ? "Official" : `+${entry.predicted?.points || 0}`}
+                        </span>
                     </div>
                   ))}
                 </div>
@@ -286,17 +321,14 @@ export default function HomePage() {
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {season.calendar.slice(0, 6).map((race) => {
-              const hasData = season.completedRounds.includes(race.round);
               return (
                 <motion.div key={race.round} variants={fadeUp}>
-                  <Link href={hasData ? `/race/${race.round}` : "/calendar"} className="card p-5 group block">
+                  <Link href={`/race/${race.round}`} className="card p-5 group block">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Round {race.round}</span>
-                      {hasData ? (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold" style={{ background: "rgba(0,210,190,0.1)", color: "#00D2BE", border: "1px solid rgba(0,210,190,0.2)" }}>Predicted</span>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: "var(--bg-surface)", color: "var(--text-muted)" }}>Upcoming</span>
-                      )}
+                      {season.completedRounds.includes(race.round) ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold" style={{ background: "rgba(0,210,190,0.1)", color: "#00D2BE", border: "1px solid rgba(0,210,190,0.2)" }}>Data Ready</span>
+                      ) : <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ background: "var(--bg-surface)", color: "var(--text-muted)" }}>Preview Available</span>}
                     </div>
                     <div className="flex items-center gap-2 mb-1">
                       <CountryFlag country={race.country} size={24} />

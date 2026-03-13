@@ -108,6 +108,15 @@ export interface RoundData {
     speedTraps: SpeedTrapEntry[];
     sectorTimes: SectorTimeEntry[];
   };
+  actualResults?: Record<string, number>;
+  accuracy?: {
+    mean_position_error?: number;
+    median_position_error?: number;
+    exact_matches?: number;
+    within_3_positions?: number;
+    total_drivers?: number;
+    accuracy_pct?: number;
+  };
 }
 
 export interface SpeedTrapEntry {

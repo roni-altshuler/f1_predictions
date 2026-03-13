@@ -545,6 +545,12 @@ def export_standings():
     """Export cumulative standings matching the StandingsData TS interface."""
     _ensure_dirs()
 
+    def _ensure_team(team_name):
+        if team_name not in constructor_pts:
+            constructor_pts[team_name] = 0
+            constructor_wins[team_name] = 0
+            constructor_pts_per_rnd[team_name] = []
+
     # Accumulators
     driver_pts         = {code: 0 for code in DRIVER_TEAM_2026}
     driver_wins        = {code: 0 for code in DRIVER_TEAM_2026}
@@ -564,23 +570,39 @@ def export_standings():
             data = json.load(f)
         last_round = rnd
 
-        for entry in data["classification"]:
-            pts  = entry["points"]
-            drv  = entry["driver"]
-            team = entry["team"]
-            pos  = entry["position"]
-            driver_pts[drv]       = driver_pts.get(drv, 0) + pts
-            constructor_pts[team] = constructor_pts.get(team, 0) + pts
-            if pos == 1:
-                driver_wins[drv]       = driver_wins.get(drv, 0) + 1
-                constructor_wins[team] = constructor_wins.get(team, 0) + 1
-            if pos <= 3:
-                driver_podiums[drv] = driver_podiums.get(drv, 0) + 1
+        # Completed rounds should use actual race outcomes when available.
+        if isinstance(data.get("actualResults"), dict) and data["actualResults"]:
+            actual_rows = sorted(data["actualResults"].items(), key=lambda x: x[1])
+            for drv, pos in actual_rows:
+                team = DRIVER_TEAM_2026.get(drv, "Unknown")
+                pts = F1_POINTS.get(int(pos), 0)
+                _ensure_team(team)
+                driver_pts[drv] = driver_pts.get(drv, 0) + pts
+                constructor_pts[team] = constructor_pts.get(team, 0) + pts
+                if int(pos) == 1:
+                    driver_wins[drv] = driver_wins.get(drv, 0) + 1
+                    constructor_wins[team] = constructor_wins.get(team, 0) + 1
+                if int(pos) <= 3:
+                    driver_podiums[drv] = driver_podiums.get(drv, 0) + 1
+        else:
+            for entry in data["classification"]:
+                pts  = entry["points"]
+                drv  = entry["driver"]
+                team = entry["team"]
+                pos  = entry["position"]
+                _ensure_team(team)
+                driver_pts[drv]       = driver_pts.get(drv, 0) + pts
+                constructor_pts[team] = constructor_pts.get(team, 0) + pts
+                if pos == 1:
+                    driver_wins[drv]       = driver_wins.get(drv, 0) + 1
+                    constructor_wins[team] = constructor_wins.get(team, 0) + 1
+                if pos <= 3:
+                    driver_podiums[drv] = driver_podiums.get(drv, 0) + 1
 
         # Record cumulative snapshot after this round
         for code in DRIVER_TEAM_2026:
             driver_pts_per_rnd[code].append(driver_pts[code])
-        for team in TEAM_COLOURS:
+        for team in constructor_pts:
             constructor_pts_per_rnd[team].append(constructor_pts[team])
 
     # ── DriverStanding[] ──
@@ -603,7 +625,7 @@ def export_standings():
 
     # ── ConstructorStanding[] ──
     constructor_list = []
-    sorted_constructors = sorted(TEAM_COLOURS.keys(),
+    sorted_constructors = sorted(constructor_pts.keys(),
                                  key=lambda t: (-constructor_pts[t],
                                                 -constructor_wins[t]))
     for i, team in enumerate(sorted_constructors, start=1):

@@ -984,5 +984,12 @@
     "PIA": 21,
     "HUL": 22
   },
-  "accuracy": {}
+  "accuracy": {
+    "mean_position_error": 5.55,
+    "median_position_error": 4.5,
+    "exact_matches": 0,
+    "within_3_positions": 8,
+    "total_drivers": 22,
+    "accuracy_pct": 36.4
+  }
 }

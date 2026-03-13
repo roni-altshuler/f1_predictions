@@ -3,11 +3,15 @@
     {
       "round": 1,
       "hasActual": true,
-      "meanError": null,
-      "exactMatches": null,
-      "within3": null,
-      "accuracyPct": null
+      "meanError": 5.55,
+      "exactMatches": 0,
+      "within3": 8,
+      "accuracyPct": 36.4
     }
   ],
-  "overallAccuracy": null
+  "overallAccuracy": {
+    "seasonMeanError": 5.55,
+    "seasonAccuracyPct": 36.4,
+    "roundsWithActual": 1
+  }
 }
