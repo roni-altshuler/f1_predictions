@@ -244,6 +244,19 @@ export default function RaceDetailPage({ round }: Props) {
       speed: st.speedKmh,
       sector: `S${st.sector}`,
     }));
+  const pitImpactChartData = (data.telemetryData?.pitStopImpact || [])
+    .slice(0, 12)
+    .map((p) => ({
+      label: `${p.driver} L${p.lap}`,
+      outlapDelta: p.outlapDelta,
+      pitTimeLoss: p.pitTimeLoss ?? 0,
+      driver: p.driver,
+      team: p.team,
+    }));
+  const trackStatusEvents = data.telemetryData?.trackStatusEvents || [];
+  const raceControlEvents = data.telemetryData?.raceControlEvents || [];
+  const sectorDominance = data.telemetryData?.sectorDominance || [];
+  const stintTimeline = data.telemetryData?.stintTimeline || [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const strategyData = (data as any).strategyData;
@@ -720,6 +733,148 @@ export default function RaceDetailPage({ round }: Props) {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {stintTimeline.length > 0 && (
+            <div className="card p-6 sm:p-8">
+              <h3 className="section-heading">Stint Timeline (Compounds by Driver)</h3>
+              <div className="space-y-3">
+                {stintTimeline.slice(0, 12).map((row) => {
+                  const totalLaps = Math.max(1, row.stints.reduce((acc, s) => Math.max(acc, s.endLap), 0));
+                  return (
+                    <div key={`stint-${row.driver}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-bold" style={{ color: "var(--text)" }}>{row.driver}</span>
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>{row.team}</span>
+                      </div>
+                      <div className="h-6 rounded-md overflow-hidden flex" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+                        {row.stints.map((s, idx) => {
+                          const widthPct = Math.max(3, (s.laps / totalLaps) * 100);
+                          const compoundColor = s.compound.toLowerCase().includes("soft")
+                            ? "#E10600"
+                            : s.compound.toLowerCase().includes("medium")
+                            ? "#FBBF24"
+                            : s.compound.toLowerCase().includes("hard")
+                            ? "#e5e7eb"
+                            : s.compound.toLowerCase().includes("inter")
+                            ? "#22c55e"
+                            : s.compound.toLowerCase().includes("wet")
+                            ? "#3b82f6"
+                            : row.teamColor;
+                          return (
+                            <div
+                              key={`${row.driver}-st-${idx}`}
+                              title={`${s.compound}: L${s.startLap}-L${s.endLap}`}
+                              className="h-full"
+                              style={{ width: `${widthPct}%`, background: compoundColor, borderRight: "1px solid rgba(0,0,0,0.2)" }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {(trackStatusEvents.length > 0 || raceControlEvents.length > 0) && (
+            <div className="card p-6 sm:p-8">
+              <h3 className="section-heading">Track Status & Race Control Timeline</h3>
+              {trackStatusEvents.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    Safety Car / VSC / Flag Events
+                  </h4>
+                  <div className="space-y-2">
+                    {trackStatusEvents.slice(0, 20).map((e, i) => (
+                      <div key={`status-${i}`} className="flex items-center gap-3 p-2 rounded" style={{ background: "var(--bg-surface)" }}>
+                        <span className="text-xs font-mono" style={{ color: "var(--text-muted)", minWidth: 82 }}>{e.time || "--:--"}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: "rgba(225,6,0,0.12)", color: "#E10600" }}>{e.statusLabel}</span>
+                        <span className="text-sm" style={{ color: "var(--text)" }}>{e.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {raceControlEvents.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                    Race Control Messages
+                  </h4>
+                  <div className="space-y-2 max-h-72 overflow-auto pr-1">
+                    {raceControlEvents.slice(0, 40).map((e, i) => (
+                      <div key={`rcm-${i}`} className="p-2 rounded" style={{ background: "var(--bg-surface)" }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{e.time || "--:--"}</span>
+                          {e.lap > 0 && <span className="text-xs" style={{ color: "var(--text-muted)" }}>Lap {e.lap}</span>}
+                          <span className="text-xs font-semibold" style={{ color: "#FF8000" }}>{e.category}</span>
+                        </div>
+                        <p className="text-sm" style={{ color: "var(--text)" }}>{e.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {pitImpactChartData.length > 0 && (
+            <div className="card p-6 sm:p-8">
+              <h3 className="section-heading">Pit Stop Delta Impact</h3>
+              <div className="h-72 w-full" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "12px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={pitImpactChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.12)" />
+                    <XAxis dataKey="label" stroke="#9ca3af" tick={{ fontSize: 11 }} />
+                    <YAxis stroke="#9ca3af" />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        `${value} s`,
+                        name === "outlapDelta" ? "Out-lap Delta" : "Pit Time Loss"
+                      ]}
+                      contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 8 }}
+                      labelStyle={{ color: "#f3f4f6" }}
+                    />
+                    <Bar dataKey="outlapDelta" fill="#E10600" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="pitTimeLoss" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {sectorDominance.length > 0 && (
+            <div className="card p-6 sm:p-8">
+              <h3 className="section-heading">Sector Dominance Heatmap</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                      {['Driver', 'Team', 'S1 Rank', 'S2 Rank', 'S3 Rank', 'Overall'].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sectorDominance.slice(0, 12).map((row) => {
+                      const rankColor = (r: number) => r <= 3 ? '#00D2BE' : r <= 8 ? '#FF8000' : '#E10600';
+                      return (
+                        <tr key={`dom-${row.driver}`} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td className="px-3 py-2 font-bold" style={{ color: "var(--text)" }}>{row.driver}</td>
+                          <td className="px-3 py-2" style={{ color: "var(--text-muted)" }}>{row.team}</td>
+                          <td className="px-3 py-2 font-mono" style={{ color: rankColor(row.sector1Rank) }}>#{row.sector1Rank}</td>
+                          <td className="px-3 py-2 font-mono" style={{ color: rankColor(row.sector2Rank) }}>#{row.sector2Rank}</td>
+                          <td className="px-3 py-2 font-mono" style={{ color: rankColor(row.sector3Rank) }}>#{row.sector3Rank}</td>
+                          <td className="px-3 py-2 font-mono font-bold" style={{ color: rankColor(row.overallRank) }}>#{row.overallRank}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 

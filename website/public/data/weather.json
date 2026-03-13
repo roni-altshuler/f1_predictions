@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-03-07T09:13:48.755647",
+  "lastUpdated": "2026-03-13T10:53:41.025372",
   "races": [
     {
       "round": 1,
@@ -7,46 +7,46 @@
       "name": "Australian Grand Prix",
       "date": "2026-03-08",
       "rainProbability": 0.0,
-      "temperatureC": 26.6,
-      "humidity": 42.0,
-      "windSpeedKmh": 13.9,
-      "windDirection": 142,
-      "cloudCover": 53,
+      "temperatureC": 25.8,
+      "humidity": 46.5,
+      "windSpeedKmh": 14.1,
+      "windDirection": 144,
+      "cloudCover": 77,
       "precipitationMm": 0.0,
       "weatherDescription": "Partly cloudy",
       "source": "cache",
       "forecastDetail": [
         {
           "time": "2026-03-08T14:00",
-          "temperature_c": 25.9,
+          "temperature_c": 25.3,
           "rain_probability": 0.0,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 15.1,
-          "cloud_cover": 36
+          "wind_speed_kmh": 14.3,
+          "cloud_cover": 73
         },
         {
           "time": "2026-03-08T15:00",
-          "temperature_c": 26.7,
+          "temperature_c": 26.2,
           "rain_probability": 0.0,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 14.6,
-          "cloud_cover": 60
+          "wind_speed_kmh": 12.7,
+          "cloud_cover": 89
         },
         {
           "time": "2026-03-08T16:00",
-          "temperature_c": 27.0,
+          "temperature_c": 26.8,
           "rain_probability": 0.0,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 13.4,
-          "cloud_cover": 59
+          "wind_speed_kmh": 13.2,
+          "cloud_cover": 90
         },
         {
           "time": "2026-03-08T17:00",
-          "temperature_c": 26.9,
+          "temperature_c": 24.8,
           "rain_probability": 0.0,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 12.6,
-          "cloud_cover": 60
+          "wind_speed_kmh": 16.2,
+          "cloud_cover": 58
         }
       ]
     },
@@ -55,47 +55,47 @@
       "gpKey": "China",
       "name": "Chinese Grand Prix",
       "date": "2026-03-22",
-      "rainProbability": 0.29,
-      "temperatureC": 19.9,
-      "humidity": 44.8,
-      "windSpeedKmh": 14.1,
-      "windDirection": 150,
-      "cloudCover": 63,
+      "rainProbability": 0.23,
+      "temperatureC": 12.5,
+      "humidity": 80.8,
+      "windSpeedKmh": 15.6,
+      "windDirection": 130,
+      "cloudCover": 98,
       "precipitationMm": 0.0,
-      "weatherDescription": "Mainly clear",
+      "weatherDescription": "Overcast",
       "source": "cache",
       "forecastDetail": [
         {
           "time": "2026-03-22T14:00",
-          "temperature_c": 21.2,
-          "rain_probability": 0.29,
+          "temperature_c": 12.2,
+          "rain_probability": 0.16,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 13.5,
-          "cloud_cover": 26
+          "wind_speed_kmh": 14.4,
+          "cloud_cover": 100
         },
         {
           "time": "2026-03-22T15:00",
-          "temperature_c": 20.6,
-          "rain_probability": 0.29,
+          "temperature_c": 12.4,
+          "rain_probability": 0.19,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 13.8,
-          "cloud_cover": 49
+          "wind_speed_kmh": 15.1,
+          "cloud_cover": 99
         },
         {
           "time": "2026-03-22T16:00",
-          "temperature_c": 19.5,
-          "rain_probability": 0.29,
+          "temperature_c": 12.6,
+          "rain_probability": 0.22,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 14.4,
-          "cloud_cover": 78
+          "wind_speed_kmh": 16.3,
+          "cloud_cover": 98
         },
         {
           "time": "2026-03-22T17:00",
-          "temperature_c": 18.3,
-          "rain_probability": 0.28,
+          "temperature_c": 12.6,
+          "rain_probability": 0.23,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 14.5,
-          "cloud_cover": 100
+          "wind_speed_kmh": 16.5,
+          "cloud_cover": 97
         }
       ]
     },

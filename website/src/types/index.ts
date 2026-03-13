@@ -107,6 +107,11 @@ export interface RoundData {
   telemetryData?: {
     speedTraps: SpeedTrapEntry[];
     sectorTimes: SectorTimeEntry[];
+    stintTimeline?: StintTimelineEntry[];
+    trackStatusEvents?: TrackStatusEvent[];
+    pitStopImpact?: PitStopImpactEntry[];
+    sectorDominance?: SectorDominanceEntry[];
+    raceControlEvents?: RaceControlEvent[];
   };
   actualResults?: Record<string, number>;
   accuracy?: {
@@ -135,6 +140,55 @@ export interface SectorTimeEntry {
   sector2: number;
   sector3: number;
   idealLap: number;
+}
+
+export interface StintSegment {
+  stint: number;
+  compound: string;
+  startLap: number;
+  endLap: number;
+  laps: number;
+}
+
+export interface StintTimelineEntry {
+  driver: string;
+  team: string;
+  teamColor: string;
+  stints: StintSegment[];
+}
+
+export interface TrackStatusEvent {
+  time: string;
+  statusCode: string;
+  statusLabel: string;
+  message: string;
+}
+
+export interface PitStopImpactEntry {
+  driver: string;
+  team: string;
+  teamColor: string;
+  lap: number;
+  pitTimeLoss?: number | null;
+  outlapDelta: number;
+}
+
+export interface SectorDominanceEntry {
+  driver: string;
+  team: string;
+  teamColor: string;
+  sector1Rank: number;
+  sector2Rank: number;
+  sector3Rank: number;
+  overallRank: number;
+}
+
+export interface RaceControlEvent {
+  time: string;
+  category: string;
+  message: string;
+  lap: number;
+  driver?: string | null;
 }
 
 export interface WeatherForecast {
