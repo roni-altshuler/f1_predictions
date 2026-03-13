@@ -13,28 +13,28 @@
       "driverFullName": "George Russell",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "predictedTime": 81.482,
+      "predictedTime": 78.525,
       "gap": "LEADER",
       "points": 25
     },
     {
       "position": 2,
-      "driver": "VER",
-      "driverFullName": "Max Verstappen",
-      "team": "Red Bull Racing",
-      "teamColor": "#3671C6",
-      "predictedTime": 81.744,
-      "gap": "0.262",
-      "points": 18
-    },
-    {
-      "position": 3,
       "driver": "ANT",
       "driverFullName": "Kimi Antonelli",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "predictedTime": 81.819,
-      "gap": "0.337",
+      "predictedTime": 78.737,
+      "gap": "0.212",
+      "points": 18
+    },
+    {
+      "position": 3,
+      "driver": "VER",
+      "driverFullName": "Max Verstappen",
+      "team": "Red Bull Racing",
+      "teamColor": "#3671C6",
+      "predictedTime": 79.03,
+      "gap": "0.504",
       "points": 15
     },
     {
@@ -43,8 +43,8 @@
       "driverFullName": "Charles Leclerc",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "predictedTime": 81.873,
-      "gap": "0.390",
+      "predictedTime": 79.119,
+      "gap": "0.594",
       "points": 12
     },
     {
@@ -53,8 +53,8 @@
       "driverFullName": "Oscar Piastri",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "predictedTime": 81.898,
-      "gap": "0.416",
+      "predictedTime": 79.16,
+      "gap": "0.635",
       "points": 10
     },
     {
@@ -63,8 +63,8 @@
       "driverFullName": "Lando Norris",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "predictedTime": 81.917,
-      "gap": "0.435",
+      "predictedTime": 79.229,
+      "gap": "0.704",
       "points": 8
     },
     {
@@ -73,8 +73,8 @@
       "driverFullName": "Lewis Hamilton",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "predictedTime": 81.999,
-      "gap": "0.516",
+      "predictedTime": 79.232,
+      "gap": "0.707",
       "points": 6
     },
     {
@@ -83,8 +83,8 @@
       "driverFullName": "Isack Hadjar",
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "predictedTime": 82.474,
-      "gap": "0.992",
+      "predictedTime": 79.524,
+      "gap": "0.999",
       "points": 4
     },
     {
@@ -93,8 +93,8 @@
       "driverFullName": "Liam Lawson",
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
-      "predictedTime": 82.652,
-      "gap": "1.170",
+      "predictedTime": 79.616,
+      "gap": "1.091",
       "points": 2
     },
     {
@@ -103,98 +103,98 @@
       "driverFullName": "Carlos Sainz Jr.",
       "team": "Williams",
       "teamColor": "#64C4FF",
-      "predictedTime": 82.776,
-      "gap": "1.294",
+      "predictedTime": 79.745,
+      "gap": "1.220",
       "points": 1
     },
     {
       "position": 11,
-      "driver": "STR",
-      "driverFullName": "Lance Stroll",
-      "team": "Aston Martin",
-      "teamColor": "#229971",
-      "predictedTime": 82.981,
-      "gap": "1.499",
-      "points": 0
-    },
-    {
-      "position": 12,
-      "driver": "BEA",
-      "driverFullName": "Oliver Bearman",
-      "team": "Haas",
-      "teamColor": "#B6BABD",
-      "predictedTime": 83.015,
-      "gap": "1.533",
-      "points": 0
-    },
-    {
-      "position": 13,
-      "driver": "GAS",
-      "driverFullName": "Pierre Gasly",
-      "team": "Alpine",
-      "teamColor": "#FF87BC",
-      "predictedTime": 83.045,
-      "gap": "1.563",
-      "points": 0
-    },
-    {
-      "position": 14,
-      "driver": "HUL",
-      "driverFullName": "Nico H\u00fclkenberg",
-      "team": "Audi",
-      "teamColor": "#1E1E1E",
-      "predictedTime": 83.078,
-      "gap": "1.596",
-      "points": 0
-    },
-    {
-      "position": 15,
-      "driver": "ALO",
-      "driverFullName": "Fernando Alonso",
-      "team": "Aston Martin",
-      "teamColor": "#229971",
-      "predictedTime": 83.085,
-      "gap": "1.603",
-      "points": 0
-    },
-    {
-      "position": 16,
-      "driver": "OCO",
-      "driverFullName": "Esteban Ocon",
-      "team": "Haas",
-      "teamColor": "#B6BABD",
-      "predictedTime": 83.099,
-      "gap": "1.616",
-      "points": 0
-    },
-    {
-      "position": 17,
       "driver": "BOR",
       "driverFullName": "Gabriel Bortoleto",
       "team": "Audi",
       "teamColor": "#1E1E1E",
-      "predictedTime": 83.114,
-      "gap": "1.632",
+      "predictedTime": 79.787,
+      "gap": "1.262",
+      "points": 0
+    },
+    {
+      "position": 12,
+      "driver": "STR",
+      "driverFullName": "Lance Stroll",
+      "team": "Aston Martin",
+      "teamColor": "#229971",
+      "predictedTime": 79.814,
+      "gap": "1.289",
+      "points": 0
+    },
+    {
+      "position": 13,
+      "driver": "HUL",
+      "driverFullName": "Nico H\u00fclkenberg",
+      "team": "Audi",
+      "teamColor": "#1E1E1E",
+      "predictedTime": 79.845,
+      "gap": "1.320",
+      "points": 0
+    },
+    {
+      "position": 14,
+      "driver": "BEA",
+      "driverFullName": "Oliver Bearman",
+      "team": "Haas",
+      "teamColor": "#B6BABD",
+      "predictedTime": 79.85,
+      "gap": "1.325",
+      "points": 0
+    },
+    {
+      "position": 15,
+      "driver": "OCO",
+      "driverFullName": "Esteban Ocon",
+      "team": "Haas",
+      "teamColor": "#B6BABD",
+      "predictedTime": 79.984,
+      "gap": "1.459",
+      "points": 0
+    },
+    {
+      "position": 16,
+      "driver": "GAS",
+      "driverFullName": "Pierre Gasly",
+      "team": "Alpine",
+      "teamColor": "#FF87BC",
+      "predictedTime": 79.997,
+      "gap": "1.472",
+      "points": 0
+    },
+    {
+      "position": 17,
+      "driver": "ALO",
+      "driverFullName": "Fernando Alonso",
+      "team": "Aston Martin",
+      "teamColor": "#229971",
+      "predictedTime": 80.036,
+      "gap": "1.511",
       "points": 0
     },
     {
       "position": 18,
-      "driver": "ALB",
-      "driverFullName": "Alexander Albon",
-      "team": "Williams",
-      "teamColor": "#64C4FF",
-      "predictedTime": 83.3,
-      "gap": "1.818",
-      "points": 0
-    },
-    {
-      "position": 19,
       "driver": "LIN",
       "driverFullName": "Arvid Lindblad",
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
-      "predictedTime": 83.394,
-      "gap": "1.912",
+      "predictedTime": 80.233,
+      "gap": "1.708",
+      "points": 0
+    },
+    {
+      "position": 19,
+      "driver": "ALB",
+      "driverFullName": "Alexander Albon",
+      "team": "Williams",
+      "teamColor": "#64C4FF",
+      "predictedTime": 80.316,
+      "gap": "1.791",
       "points": 0
     },
     {
@@ -203,8 +203,8 @@
       "driverFullName": "Franco Colapinto",
       "team": "Alpine",
       "teamColor": "#FF87BC",
-      "predictedTime": 83.597,
-      "gap": "2.115",
+      "predictedTime": 80.505,
+      "gap": "1.980",
       "points": 0
     },
     {
@@ -213,8 +213,8 @@
       "driverFullName": "Sergio P\u00e9rez",
       "team": "Cadillac",
       "teamColor": "#C0C0C0",
-      "predictedTime": 84.322,
-      "gap": "2.840",
+      "predictedTime": 81.552,
+      "gap": "3.027",
       "points": 0
     },
     {
@@ -223,14 +223,14 @@
       "driverFullName": "Valtteri Bottas",
       "team": "Cadillac",
       "teamColor": "#C0C0C0",
-      "predictedTime": 84.982,
+      "predictedTime": 82.025,
       "gap": "3.500",
       "points": 0
     }
   ],
   "metrics": {
-    "r2Score": -0.2871,
-    "mae": 3.8617,
+    "r2Score": -0.3828,
+    "mae": 5.1489,
     "maxSpread": 3.5,
     "trainingYears": [
       2023,
@@ -288,23 +288,18 @@
       "importance": 0.0
     }
   ],
-  "fastestLap": "81.482s",
+  "fastestLap": "78.525s",
   "podium": [
     "RUS",
-    "VER",
-    "ANT"
+    "ANT",
+    "VER"
   ],
   "visualizations": [
     "predicted_laptimes.png",
     "feature_importance.png",
     "team_vs_pace.png",
     "pace_vs_predicted.png",
-    "laptime_distribution.png",
-    "track_map.png",
-    "laptime_distribution_historical.png",
-    "tyre_strategy.png",
-    "pit_strategy_comparison.png",
-    "tyre_degradation_curves.png"
+    "laptime_distribution.png"
   ],
   "circuitInfo": {
     "type": "street-park",
@@ -318,15 +313,15 @@
     "altitudeM": 10
   },
   "weatherData": {
-    "rainProbability": 0.0,
-    "temperatureC": 25.8,
-    "humidity": 46.5,
-    "windSpeedKmh": 14.1,
-    "windDirection": 144,
-    "cloudCover": 77,
-    "precipitationMm": 0.0,
-    "weatherDescription": "Partly cloudy",
-    "source": "cache"
+    "rainProbability": 0.1,
+    "temperatureC": 24,
+    "humidity": null,
+    "windSpeedKmh": null,
+    "windDirection": null,
+    "cloudCover": null,
+    "precipitationMm": null,
+    "weatherDescription": null,
+    "source": "static"
   },
   "telemetryData": {
     "speedTraps": [
@@ -1834,7 +1829,7 @@
         "teamColor": "#3671C6",
         "lap": 3,
         "pitTimeLoss": -148.565,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "GAS",
@@ -1842,7 +1837,7 @@
         "teamColor": "#FF87BC",
         "lap": 3,
         "pitTimeLoss": -147.485,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ANT",
@@ -1850,7 +1845,7 @@
         "teamColor": "#27F4D2",
         "lap": 3,
         "pitTimeLoss": -147.264,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ALO",
@@ -1858,7 +1853,7 @@
         "teamColor": "#229971",
         "lap": 3,
         "pitTimeLoss": -146.791,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "LEC",
@@ -1866,7 +1861,7 @@
         "teamColor": "#E8002D",
         "lap": 3,
         "pitTimeLoss": -147.459,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "STR",
@@ -1874,7 +1869,7 @@
         "teamColor": "#229971",
         "lap": 3,
         "pitTimeLoss": -146.992,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "TSU",
@@ -1882,7 +1877,7 @@
         "teamColor": "#888888",
         "lap": 3,
         "pitTimeLoss": -147.815,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ALB",
@@ -1890,7 +1885,7 @@
         "teamColor": "#64C4FF",
         "lap": 3,
         "pitTimeLoss": -147.493,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "HUL",
@@ -1898,7 +1893,7 @@
         "teamColor": "#1E1E1E",
         "lap": 3,
         "pitTimeLoss": -147.03,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "LAW",
@@ -1906,7 +1901,7 @@
         "teamColor": "#6692FF",
         "lap": 3,
         "pitTimeLoss": -148.071,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "OCO",
@@ -1914,7 +1909,7 @@
         "teamColor": "#B6BABD",
         "lap": 3,
         "pitTimeLoss": -147.956,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "NOR",
@@ -1922,7 +1917,7 @@
         "teamColor": "#FF8000",
         "lap": 3,
         "pitTimeLoss": -148.548,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "HAM",
@@ -1930,7 +1925,7 @@
         "teamColor": "#E8002D",
         "lap": 3,
         "pitTimeLoss": -147.952,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "BOR",
@@ -1938,7 +1933,7 @@
         "teamColor": "#1E1E1E",
         "lap": 3,
         "pitTimeLoss": -147.815,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "RUS",
@@ -1946,7 +1941,7 @@
         "teamColor": "#27F4D2",
         "lap": 3,
         "pitTimeLoss": -148.105,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "PIA",
@@ -1954,7 +1949,7 @@
         "teamColor": "#FF8000",
         "lap": 3,
         "pitTimeLoss": -148.569,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "BEA",
@@ -1962,7 +1957,7 @@
         "teamColor": "#B6BABD",
         "lap": 3,
         "pitTimeLoss": -147.862,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "VER",
@@ -1970,7 +1965,7 @@
         "teamColor": "#3671C6",
         "lap": 4,
         "pitTimeLoss": -142.514,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "GAS",
@@ -1978,7 +1973,7 @@
         "teamColor": "#FF87BC",
         "lap": 4,
         "pitTimeLoss": -140.484,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ANT",
@@ -1986,7 +1981,7 @@
         "teamColor": "#27F4D2",
         "lap": 4,
         "pitTimeLoss": -141.184,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ALO",
@@ -1994,7 +1989,7 @@
         "teamColor": "#229971",
         "lap": 4,
         "pitTimeLoss": -140.439,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "LEC",
@@ -2002,7 +1997,7 @@
         "teamColor": "#E8002D",
         "lap": 4,
         "pitTimeLoss": -141.622,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "STR",
@@ -2010,7 +2005,7 @@
         "teamColor": "#229971",
         "lap": 4,
         "pitTimeLoss": -140.95,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "TSU",
@@ -2018,7 +2013,7 @@
         "teamColor": "#888888",
         "lap": 4,
         "pitTimeLoss": -141.647,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ALB",
@@ -2026,7 +2021,7 @@
         "teamColor": "#64C4FF",
         "lap": 4,
         "pitTimeLoss": -139.471,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "HUL",
@@ -2034,7 +2029,7 @@
         "teamColor": "#1E1E1E",
         "lap": 4,
         "pitTimeLoss": -141.558,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "LAW",
@@ -2042,7 +2037,7 @@
         "teamColor": "#6692FF",
         "lap": 4,
         "pitTimeLoss": -141.502,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "OCO",
@@ -2050,7 +2045,7 @@
         "teamColor": "#B6BABD",
         "lap": 4,
         "pitTimeLoss": -141.914,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "NOR",
@@ -2058,7 +2053,7 @@
         "teamColor": "#FF8000",
         "lap": 4,
         "pitTimeLoss": -143.146,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "HAM",
@@ -2066,7 +2061,7 @@
         "teamColor": "#E8002D",
         "lap": 4,
         "pitTimeLoss": -139.361,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "BOR",
@@ -2074,7 +2069,7 @@
         "teamColor": "#1E1E1E",
         "lap": 4,
         "pitTimeLoss": -141.374,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "RUS",
@@ -2082,7 +2077,7 @@
         "teamColor": "#27F4D2",
         "lap": 4,
         "pitTimeLoss": -142.718,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "PIA",
@@ -2090,7 +2085,7 @@
         "teamColor": "#FF8000",
         "lap": 4,
         "pitTimeLoss": -142.631,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "BEA",
@@ -2098,7 +2093,7 @@
         "teamColor": "#B6BABD",
         "lap": 4,
         "pitTimeLoss": -143.257,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "VER",
@@ -2106,7 +2101,7 @@
         "teamColor": "#3671C6",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "GAS",
@@ -2114,7 +2109,7 @@
         "teamColor": "#FF87BC",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ANT",
@@ -2122,7 +2117,7 @@
         "teamColor": "#27F4D2",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ALO",
@@ -2130,7 +2125,7 @@
         "teamColor": "#229971",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "LEC",
@@ -2138,7 +2133,7 @@
         "teamColor": "#E8002D",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "STR",
@@ -2146,7 +2141,7 @@
         "teamColor": "#229971",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "TSU",
@@ -2154,7 +2149,7 @@
         "teamColor": "#888888",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "ALB",
@@ -2162,7 +2157,7 @@
         "teamColor": "#64C4FF",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "HUL",
@@ -2170,7 +2165,7 @@
         "teamColor": "#1E1E1E",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "LAW",
@@ -2178,7 +2173,7 @@
         "teamColor": "#6692FF",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "OCO",
@@ -2186,7 +2181,7 @@
         "teamColor": "#B6BABD",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "NOR",
@@ -2194,7 +2189,7 @@
         "teamColor": "#FF8000",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "HAM",
@@ -2202,7 +2197,7 @@
         "teamColor": "#E8002D",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "BOR",
@@ -2210,7 +2205,7 @@
         "teamColor": "#1E1E1E",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "RUS",
@@ -2218,7 +2213,7 @@
         "teamColor": "#27F4D2",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "PIA",
@@ -2226,7 +2221,7 @@
         "teamColor": "#FF8000",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "BEA",
@@ -2234,7 +2229,7 @@
         "teamColor": "#B6BABD",
         "lap": 5,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "GAS",
@@ -2426,7 +2421,7 @@
         "teamColor": "#FF8000",
         "lap": 45,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "BEA",
@@ -2466,7 +2461,7 @@
         "teamColor": "#E8002D",
         "lap": 48,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "TSU",
@@ -2474,7 +2469,7 @@
         "teamColor": "#888888",
         "lap": 48,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       },
       {
         "driver": "HAM",
@@ -2482,7 +2477,7 @@
         "teamColor": "#E8002D",
         "lap": 48,
         "pitTimeLoss": null,
-        "outlapDelta": NaN
+        "outlapDelta": null
       }
     ],
     "sectorDominance": [
@@ -3262,5 +3257,37 @@
       "seasonAccuracyPct": 36.4,
       "roundsWithActual": 1
     }
+  },
+  "actualResults": {
+    "RUS": 1,
+    "ANT": 2,
+    "LEC": 3,
+    "HAM": 4,
+    "NOR": 5,
+    "VER": 6,
+    "BEA": 7,
+    "LIN": 8,
+    "BOR": 9,
+    "GAS": 10,
+    "OCO": 11,
+    "ALB": 12,
+    "LAW": 13,
+    "COL": 14,
+    "SAI": 15,
+    "PER": 16,
+    "STR": 17,
+    "ALO": 18,
+    "BOT": 19,
+    "HAD": 20,
+    "PIA": 21,
+    "HUL": 22
+  },
+  "accuracy": {
+    "mean_position_error": 5.55,
+    "median_position_error": 4.5,
+    "exact_matches": 0,
+    "within_3_positions": 8,
+    "total_drivers": 22,
+    "accuracy_pct": 36.4
   }
 }

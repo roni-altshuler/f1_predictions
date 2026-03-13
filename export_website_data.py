@@ -22,7 +22,7 @@ Outputs:
         round_01/*.png           ← prediction + FastF1 visualisations
 """
 
-import argparse, json, os, sys
+import argparse, json, os, sys, math
 import numpy as np
 import pandas as pd
 
@@ -48,6 +48,22 @@ def _safe_load_json(path):
             return json.load(f)
     except Exception:
         return None
+
+
+def _json_safe(value):
+    """Recursively replace non-finite floats with None for valid JSON output."""
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    return value
+
+
+def _write_json(path, data):
+    with open(path, "w") as f:
+        json.dump(_json_safe(data), f, indent=2)
 
 
 def _normalize_actual_results(actual):
@@ -217,8 +233,7 @@ def export_season_metadata():
     }
 
     path = os.path.join(DATA_DIR, "season.json")
-    with open(path, "w") as f:
-        json.dump(season, f, indent=2)
+    _write_json(path, season)
     print(f"✅ Season metadata → {path}")
     return season
 
@@ -412,8 +427,7 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         except Exception as e:
             print(f"  ⚠️  Telemetry extraction failed: {e}")
 
-    with open(path, "w") as f:
-        json.dump(round_data, f, indent=2)
+    _write_json(path, round_data)
     print(f"✅ Round {round_num} data → {path}")
     if return_merged:
         return round_data, merged
@@ -742,8 +756,7 @@ def export_standings():
     }
 
     path = os.path.join(DATA_DIR, "standings.json")
-    with open(path, "w") as f:
-        json.dump(standings, f, indent=2)
+    _write_json(path, standings)
     print(f"✅ Standings → {path}")
     return standings
 
@@ -798,8 +811,7 @@ def _run_advanced(round_data, merged):
                 round_data[key] = adv[key]
         # Re-save round file with additions
         path = os.path.join(ROUNDS_DIR, f"round_{round_num:02d}.json")
-        with open(path, "w") as f:
-            json.dump(round_data, f, indent=2)
+        _write_json(path, round_data)
         print(f"  ✅ Advanced features appended → {path}")
     except Exception as e:
         print(f"  ⚠️  Advanced features failed: {e}")
@@ -834,8 +846,7 @@ def main():
             if extra:
                 round_data["visualizations"].extend(extra)
                 path = os.path.join(ROUNDS_DIR, f"round_{args.round:02d}.json")
-                with open(path, "w") as f:
-                    json.dump(round_data, f, indent=2)
+                _write_json(path, round_data)
         if args.advanced:
             _run_advanced(round_data, merged)
         if args.weather:
@@ -861,8 +872,7 @@ def main():
                     if extra:
                         rd["visualizations"].extend(extra)
                         path = os.path.join(ROUNDS_DIR, f"round_{rnd:02d}.json")
-                        with open(path, "w") as f:
-                            json.dump(rd, f, indent=2)
+                        _write_json(path, rd)
                 if args.advanced:
                     _run_advanced(rd, merged)
             except Exception as e:
