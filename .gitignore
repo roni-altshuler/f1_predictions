@@ -20,6 +20,7 @@ build/
 # FastF1 data cache
 # ========================
 f1_cache/
+weather_cache/
 
 # ========================
 # Generated visualisations (reproducible — regenerate by running the scripts)
