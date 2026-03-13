@@ -40,6 +40,78 @@ def _ensure_dirs():
         os.makedirs(d, exist_ok=True)
 
 
+def _safe_load_json(path):
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _normalize_actual_results(actual):
+    """Normalize tracker actual results into {DRIVER: position} mapping."""
+    if not isinstance(actual, dict):
+        return None
+
+    normalized = {}
+    for drv, value in actual.items():
+        pos = value
+        if isinstance(value, dict):
+            pos = value.get("position")
+        try:
+            normalized[str(drv)] = int(pos)
+        except (TypeError, ValueError):
+            continue
+
+    return normalized or None
+
+
+def _get_round_preserved_fields(round_num, existing_round):
+    """Preserve already-known post-race/enriched fields from existing files.
+
+    If actual results or accuracy are missing, rehydrate from season tracker.
+    """
+    preserved = {}
+
+    # Keep previously generated fields unless the current run repopulates them.
+    if isinstance(existing_round, dict):
+        for key in (
+            "actualResults",
+            "accuracy",
+            "telemetryData",
+            "strategyData",
+            "tyreDegData",
+            "lstmData",
+            "trackerData",
+        ):
+            value = existing_round.get(key)
+            if value:
+                preserved[key] = value
+
+    # Fill missing post-race fields from tracker source-of-truth.
+    tracker = _safe_load_json("season_tracker_2026.json")
+    if isinstance(tracker, dict):
+        rk = str(round_num)
+
+        if "actualResults" not in preserved:
+            rounds = tracker.get("rounds", {})
+            round_entry = rounds.get(rk) or rounds.get(round_num)
+            if isinstance(round_entry, dict):
+                normalized_actuals = _normalize_actual_results(round_entry.get("actual"))
+                if normalized_actuals:
+                    preserved["actualResults"] = normalized_actuals
+
+        if "accuracy" not in preserved:
+            accuracy_map = tracker.get("accuracy", {})
+            round_accuracy = accuracy_map.get(rk) or accuracy_map.get(round_num)
+            if isinstance(round_accuracy, dict) and round_accuracy:
+                preserved["accuracy"] = round_accuracy
+
+    return preserved
+
+
 # ── Weather estimates per GP ─────────────────────────────────────────────
 GP_WEATHER = {
     "Australia":      {"rain": 0.10, "temp": 24},
@@ -287,6 +359,9 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
 
     char = CIRCUIT_CHARACTERISTICS.get(gp_key, {})
 
+    path = os.path.join(ROUNDS_DIR, f"round_{round_num:02d}.json")
+    existing_round = _safe_load_json(path)
+
     round_data = {
         "round":              round_num,
         "name":               gp_name,
@@ -325,6 +400,8 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         },
     }
 
+    round_data.update(_get_round_preserved_fields(round_num, existing_round))
+
     # ── Telemetry: speed traps & sector times from FastF1 ──
     if use_telemetry:
         try:
@@ -335,7 +412,6 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         except Exception as e:
             print(f"  ⚠️  Telemetry extraction failed: {e}")
 
-    path = os.path.join(ROUNDS_DIR, f"round_{round_num:02d}.json")
     with open(path, "w") as f:
         json.dump(round_data, f, indent=2)
     print(f"✅ Round {round_num} data → {path}")
