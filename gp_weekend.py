@@ -38,7 +38,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -59,17 +59,61 @@ def _load_calendar():
     return CALENDAR_2026
 
 
-def _detect_next_round():
-    """Find the next upcoming GP round based on today's date."""
+def _utc_today():
+    """Return today's date, with optional override for deterministic tests."""
+    override = os.getenv("F1_WEEKEND_TODAY")
+    if override:
+        return date.fromisoformat(override)
+    return date.today()
+
+
+def _utc_now():
+    """Return the current UTC datetime, with optional override for tests."""
+    override = os.getenv("F1_WEEKEND_NOW_UTC")
+    if override:
+        return datetime.fromisoformat(override)
+    return datetime.utcnow()
+
+
+def _weekend_window(round_num):
+    """Return the active automation window for a round.
+
+    The pipeline should begin publishing previews before the weekend and
+    continue retrying shortly after the race finishes to catch delayed
+    FastF1 result availability.
+    """
     cal = _load_calendar()
-    today = date.today()
+    race_date = date.fromisoformat(cal[round_num]["date"])
+    return race_date - timedelta(days=3), race_date + timedelta(days=1)
+
+
+def is_race_weekend(round_num, today=None):
+    """True when a round is in the automation window."""
+    today = today or _utc_today()
+    start, end = _weekend_window(round_num)
+    return start <= today <= end
+
+
+def detect_target_round(today=None):
+    """Find the active race weekend, otherwise the next upcoming round."""
+    cal = _load_calendar()
+    today = today or _utc_today()
+
+    for rnd in sorted(cal.keys()):
+        if is_race_weekend(rnd, today=today):
+            return rnd
+
     for rnd in sorted(cal.keys()):
         race_date = date.fromisoformat(cal[rnd]["date"])
-        # Consider a race "active" from 7 days before to 3 days after
-        if race_date + timedelta(days=3) >= today:
+        if race_date >= today:
             return rnd
-    # Past the last race — return the last one
+
     return max(cal.keys())
+
+
+def _detect_next_round():
+    """Backwards-compatible wrapper for the next active/upcoming GP."""
+    return detect_target_round()
 
 
 def _session_available(year, gp_key, session_type):
@@ -95,7 +139,7 @@ def _detect_phase(round_num):
     info = cal[round_num]
     gp_key = info["gp_key"]
     race_date = date.fromisoformat(info["date"])
-    today = date.today()
+    today = _utc_today()
 
     print(f"\n🔍 Detecting phase for Round {round_num}: {info['name']}")
     print(f"   Race date: {info['date']} | Today: {today}")
@@ -453,7 +497,7 @@ Typical GP Weekend Workflow:
         info = cal[round_num]
         print(f"🏎️  Round {round_num}: {info['name']} ({info['date']})")
     else:
-        round_num = _detect_next_round()
+        round_num = detect_target_round()
         cal = _load_calendar()
         info = cal[round_num]
         print(f"🏎️  Auto-detected Round {round_num}: {info['name']} ({info['date']})")

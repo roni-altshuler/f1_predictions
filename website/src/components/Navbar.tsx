@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "./ThemeProvider";
-import { SeasonData } from "@/types";
+import { SeasonData, SeasonTrackerData } from "@/types";
 import CountryFlag from "@/components/CountryFlag";
-import { fetchSeasonData } from "@/lib/data";
+import { fetchSeasonData, fetchSeasonTrackerData, getRoundLifecycle, getRoundStatusMeta } from "@/lib/data";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -14,10 +14,12 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [racesOpen, setRacesOpen] = useState(false);
   const [season, setSeason] = useState<SeasonData | null>(null);
+  const [tracker, setTracker] = useState<SeasonTrackerData | null>(null);
   const racesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSeasonData().then(setSeason).catch(() => {});
+    fetchSeasonTrackerData().then(setTracker).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -29,11 +31,6 @@ export default function Navbar() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  useEffect(() => {
-    setRacesOpen(false);
-    setMobileOpen(false);
-  }, [pathname]);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -50,6 +47,8 @@ export default function Navbar() {
       {label}
     </Link>
   );
+
+  const actualSet = new Set((tracker?.rounds || []).filter((round) => round.hasActual).map((round) => round.round));
 
   return (
     <nav
@@ -109,17 +108,20 @@ export default function Navbar() {
                     <div className="h-px my-1" style={{ background: "var(--border)" }} />
                     {season.calendar.map((race) => {
                       const completed = season.completedRounds.includes(race.round);
+                      const statusMeta = getRoundStatusMeta(
+                        getRoundLifecycle(race, completed, actualSet.has(race.round)),
+                      );
                       return (
                         <Link
                           key={race.round}
-                          href={completed ? `/race/${race.round}` : "/calendar"}
+                          href={`/race/${race.round}`}
                           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[var(--bg-card-hover)]"
-                          style={{ color: completed ? "var(--text)" : "var(--text-muted)" }}
+                          style={{ color: "var(--text)" }}
                         >
                           <CountryFlag country={race.country} size={20} />
                           <span className="flex-1 truncate">{race.name}</span>
                           <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>R{race.round}</span>
-                          {completed && <span className="w-1.5 h-1.5 rounded-full bg-f1-green shrink-0" />}
+                          <span className={`status-pill status-pill-${statusMeta.tone}`}>{statusMeta.shortLabel}</span>
                         </Link>
                       );
                     })}
@@ -191,18 +193,23 @@ export default function Navbar() {
               {season && season.completedRounds.length > 0 && (
                 <>
                   <div className="h-px my-2" style={{ background: "var(--border)" }} />
-                  <p className="px-4 py-1 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Predicted Races</p>
+                  <p className="px-4 py-1 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Race Status</p>
                   {season.calendar
-                    .filter((r) => season.completedRounds.includes(r.round))
+                    .filter((r) => season.completedRounds.includes(r.round) || actualSet.has(r.round))
                     .map((race) => (
                       <Link
                         key={race.round}
                         href={`/race/${race.round}`}
-                        className="px-4 py-2 text-sm flex items-center gap-2 transition-colors hover:text-f1-red"
+                        className="px-4 py-2 text-sm flex items-center gap-2 justify-between transition-colors hover:text-f1-red"
                         style={{ color: "var(--text)" }}
                       >
-                        <CountryFlag country={race.country} size={18} />
-                        {race.name}
+                        <span className="flex items-center gap-2">
+                          <CountryFlag country={race.country} size={18} />
+                          {race.name}
+                        </span>
+                        <span className={`status-pill status-pill-${getRoundStatusMeta(getRoundLifecycle(race, season.completedRounds.includes(race.round), actualSet.has(race.round))).tone}`}>
+                          {getRoundStatusMeta(getRoundLifecycle(race, season.completedRounds.includes(race.round), actualSet.has(race.round))).shortLabel}
+                        </span>
                       </Link>
                     ))}
                 </>

@@ -56,11 +56,16 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+  letter-spacing: -0.03em;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -100,11 +105,111 @@ body {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: 18px;
   transition: all 0.2s ease;
 }
 .card:hover { border-color: rgba(225, 6, 0, 0.12); }
 .card-glow:hover { box-shadow: 0 0 20px rgba(225, 6, 0, 0.06); }
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.status-pill-red {
+  background: rgba(225, 6, 0, 0.12);
+  color: #E10600;
+  border-color: rgba(225, 6, 0, 0.28);
+}
+
+.status-pill-green {
+  background: rgba(0, 210, 190, 0.12);
+  color: #00D2BE;
+  border-color: rgba(0, 210, 190, 0.25);
+}
+
+.status-pill-amber {
+  background: rgba(255, 128, 0, 0.12);
+  color: #FF8000;
+  border-color: rgba(255, 128, 0, 0.25);
+}
+
+.status-pill-slate {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.weekend-spotlight {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(225, 6, 0, 0.14);
+  background:
+    linear-gradient(135deg, rgba(225, 6, 0, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 60%),
+    var(--bg-card);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.18);
+}
+
+.weekend-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 30%),
+    repeating-linear-gradient(
+      120deg,
+      transparent 0,
+      transparent 18px,
+      rgba(255, 255, 255, 0.02) 18px,
+      rgba(255, 255, 255, 0.02) 19px
+    );
+  pointer-events: none;
+}
+
+.report-shell {
+  border-radius: 24px;
+  border: 1px solid rgba(225, 6, 0, 0.16);
+  background:
+    linear-gradient(135deg, rgba(225, 6, 0, 0.07), transparent 38%),
+    var(--bg-card);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.16);
+}
+
+.report-panel {
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+}
+
+.report-panel-muted {
+  border-radius: 16px;
+  border: 1px dashed var(--border);
+  padding: 1rem;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+}
+
+.report-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  background: var(--bg-surface);
+}
 
 /* Position badges */
 .position-badge {

@@ -238,6 +238,13 @@ export interface SeasonTrackerData {
   } | null;
 }
 
+export type RoundLifecycle =
+  | "upcoming"
+  | "prediction-ready"
+  | "live-weekend"
+  | "awaiting-results"
+  | "official";
+
 export interface DriverStanding {
   position: number;
   driver: string;

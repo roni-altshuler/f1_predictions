@@ -1,4 +1,12 @@
-import { SeasonData, RoundData, StandingsData, WeatherData, SeasonTrackerData } from "@/types";
+import {
+  SeasonData,
+  RoundData,
+  StandingsData,
+  WeatherData,
+  SeasonTrackerData,
+  RaceCalendarEntry,
+  RoundLifecycle,
+} from "@/types";
 
 const PREFIX = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const BASE_PATH = PREFIX + "/data";
@@ -65,9 +73,134 @@ export function formatDate(dateStr: string): string {
   });
 }
 
-export function getStatusForRound(date: string, completedRounds: number[]): "completed" | "upcoming" | "next" {
-  // This is for prediction status - all predictions might be available even for future races
-  return "completed";
+function getRaceDate(dateStr: string): Date {
+  return new Date(`${dateStr}T12:00:00`);
+}
+
+export function getRoundLifecycle(
+  race: Pick<RaceCalendarEntry, "date" | "sprint">,
+  hasPrediction: boolean,
+  hasActual: boolean,
+  now: Date = new Date(),
+): RoundLifecycle {
+  if (hasActual) return "official";
+
+  const raceDate = getRaceDate(race.date);
+  const weekendStart = new Date(raceDate);
+  weekendStart.setDate(raceDate.getDate() - 2);
+
+  const syncDeadline = new Date(raceDate);
+  syncDeadline.setDate(raceDate.getDate() + 1);
+
+  if (now >= weekendStart && now <= raceDate) {
+    return "live-weekend";
+  }
+
+  if (now > raceDate && now <= syncDeadline) {
+    return "awaiting-results";
+  }
+
+  if (hasPrediction) {
+    return "prediction-ready";
+  }
+
+  return "upcoming";
+}
+
+export function getRoundStatusMeta(status: RoundLifecycle): {
+  label: string;
+  shortLabel: string;
+  tone: "red" | "green" | "amber" | "slate";
+  description: string;
+} {
+  switch (status) {
+    case "official":
+      return {
+        label: "Official Result",
+        shortLabel: "Official",
+        tone: "green",
+        description: "Predictions are locked and compared against the classified race result.",
+      };
+    case "live-weekend":
+      return {
+        label: "Grand Prix Weekend Live",
+        shortLabel: "Live Weekend",
+        tone: "red",
+        description: "This race weekend is active. The page should showcase the latest forecast and live-ready analysis.",
+      };
+    case "awaiting-results":
+      return {
+        label: "Results Syncing",
+        shortLabel: "Syncing",
+        tone: "amber",
+        description: "The race has run, and the site is waiting to publish the official finishing order.",
+      };
+    case "prediction-ready":
+      return {
+        label: "Prediction Published",
+        shortLabel: "Prediction",
+        tone: "slate",
+        description: "The model forecast is available ahead of the Grand Prix weekend.",
+      };
+    default:
+      return {
+        label: "Preview Scheduled",
+        shortLabel: "Upcoming",
+        tone: "slate",
+        description: "This Grand Prix is on the calendar, and the model forecast will appear before the race weekend.",
+      };
+  }
+}
+
+export function getStatusForRound(
+  race: Pick<RaceCalendarEntry, "date" | "sprint">,
+  hasPrediction: boolean,
+  hasActual: boolean,
+): RoundLifecycle {
+  return getRoundLifecycle(race, hasPrediction, hasActual);
+}
+
+export function getCurrentRaceContext(
+  season: SeasonData,
+  roundsWithActual: number[] = [],
+  now: Date = new Date(),
+): {
+  liveRound: RaceCalendarEntry | null;
+  nextRound: RaceCalendarEntry | null;
+  latestPredictionRound: RaceCalendarEntry | null;
+  latestOfficialRound: RaceCalendarEntry | null;
+} {
+  const actualSet = new Set(roundsWithActual);
+  const predictionSet = new Set(season.completedRounds);
+
+  let liveRound: RaceCalendarEntry | null = null;
+  let nextRound: RaceCalendarEntry | null = null;
+  let latestPredictionRound: RaceCalendarEntry | null = null;
+  let latestOfficialRound: RaceCalendarEntry | null = null;
+
+  for (const race of season.calendar) {
+    const lifecycle = getRoundLifecycle(
+      race,
+      predictionSet.has(race.round),
+      actualSet.has(race.round),
+      now,
+    );
+
+    if (lifecycle === "live-weekend") {
+      liveRound = race;
+    }
+    if (!nextRound && getRaceDate(race.date) >= now) {
+      nextRound = race;
+    }
+    if (predictionSet.has(race.round)) {
+      latestPredictionRound = race;
+    }
+    if (actualSet.has(race.round)) {
+      latestOfficialRound = race;
+    }
+  }
+
+  return { liveRound, nextRound, latestPredictionRound, latestOfficialRound };
 }
 
 export async function fetchWeatherData(): Promise<WeatherData | null> {

@@ -2,11 +2,15 @@ name: Update Race Predictions
 
 on:
   schedule:
-    # Three cron jobs covering the entire GP weekend:
-    - cron: "0 18 * * 5"   # Friday  18:00 UTC – pre-weekend predictions
-    - cron: "0 23 * * 6"   # Saturday 23:00 UTC – post-qualifying update
-    - cron: "0 20 * * 0"   # Sunday  20:00 UTC – post-race results
-    - cron: "0 06 * * 1"   # Monday  06:00 UTC – post-race retry window
+    # Frequent polling during GP weekends. The Python pipeline auto-detects
+    # whether to publish previews, refresh post-quali forecasts, or ingest
+    # official results, so these schedules are intentionally broad.
+    - cron: "0 0 * * 4"    # Thursday 00:00 UTC
+    - cron: "0 12 * * 4"   # Thursday 12:00 UTC
+    - cron: "0 0,6,12,18 * * 5"  # Friday every 6 hours
+    - cron: "0 0,6,12,18,22 * * 6"  # Saturday with a late-night retry
+    - cron: "0 0,6,12,18,21 * * 0"  # Sunday including post-race retry
+    - cron: "0 0,6,12 * * 1"  # Monday result backfill window
   workflow_dispatch:
     inputs:
       round:
@@ -32,6 +36,10 @@ permissions:
 jobs:
   predict:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: gp-weekend-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,20 +60,10 @@ jobs:
           # ── Detect round ──
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.round }}" = "next" ]; then
             ROUND=$(python3 -c "
-          import sys, os
+          import sys
           sys.path.insert(0, '.')
-          from datetime import datetime
-          from f1_prediction_utils import CALENDAR_2026
-          now = datetime.utcnow()
-          for rnd, info in sorted(CALENDAR_2026.items()):
-              race_date = datetime.strptime(info['date'], '%Y-%m-%d')
-              if abs((race_date - now).days) <= 3:
-                  print(rnd); sys.exit(0)
-          for rnd, info in sorted(CALENDAR_2026.items()):
-              race_date = datetime.strptime(info['date'], '%Y-%m-%d')
-              if race_date >= now:
-                  print(rnd); sys.exit(0)
-          print(1)
+          from gp_weekend import detect_target_round
+          print(detect_target_round())
           ")
           else
             ROUND="${{ github.event.inputs.round }}"
@@ -74,14 +72,7 @@ jobs:
 
           # ── Detect phase ──
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            DOW=$(date -u +%u)  # 1=Mon … 7=Sun
-            case $DOW in
-              1) PHASE="post-race" ;;
-              5) PHASE="pre" ;;
-              6) PHASE="post-quali" ;;
-              7) PHASE="post-race" ;;
-              *) PHASE="pre" ;;
-            esac
+            PHASE="auto"
           else
             PHASE="${{ github.event.inputs.phase }}"
             PHASE="${PHASE:-auto}"
@@ -90,21 +81,24 @@ jobs:
 
           echo "Round: $ROUND  |  Phase: $PHASE"
 
+      - name: Restore FastF1 cache
+        uses: actions/cache@v4
+        with:
+          path: f1_cache
+          key: fastf1-${{ runner.os }}-${{ steps.config.outputs.round }}-${{ github.run_id }}
+          restore-keys: |
+            fastf1-${{ runner.os }}-${{ steps.config.outputs.round }}-
+            fastf1-${{ runner.os }}-
+
       - name: Check if it's a race weekend
         id: check
         if: github.event_name == 'schedule'
         run: |
           IS_RACE_WEEKEND=$(python3 -c "
-          import sys, os
+          import sys
           sys.path.insert(0, '.')
-          from datetime import datetime
-          from f1_prediction_utils import CALENDAR_2026
-          now = datetime.utcnow()
-          for rnd, info in sorted(CALENDAR_2026.items()):
-              race_date = datetime.strptime(info['date'], '%Y-%m-%d')
-              if abs((race_date - now).days) <= 3:
-                  print('true'); sys.exit(0)
-          print('false')
+          from gp_weekend import is_race_weekend
+          print('true' if is_race_weekend(int('${{ steps.config.outputs.round }}')) else 'false')
           ")
           echo "is_race_weekend=$IS_RACE_WEEKEND" >> "$GITHUB_OUTPUT"
           if [ "$IS_RACE_WEEKEND" = "false" ]; then
@@ -113,6 +107,8 @@ jobs:
 
       - name: Run GP weekend pipeline
         if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
           ROUND="${{ steps.config.outputs.round }}"
           PHASE="${{ steps.config.outputs.phase }}"

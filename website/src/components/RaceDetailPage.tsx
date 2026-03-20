@@ -16,7 +16,15 @@ import {
 } from "recharts";
 import { RoundData, SeasonData } from "@/types";
 import CountryFlag from "@/components/CountryFlag";
-import { fetchRoundData, fetchSeasonData, getVisualizationPath, formatDate, formatGap } from "@/lib/data";
+import {
+  fetchRoundData,
+  fetchSeasonData,
+  getVisualizationPath,
+  formatDate,
+  formatGap,
+  getRoundLifecycle,
+  getRoundStatusMeta,
+} from "@/lib/data";
 
 type Tab = "classification" | "analysis" | "strategy" | "visualizations";
 
@@ -55,13 +63,6 @@ const VIZ_CATEGORIES = [
   },
 ];
 
-const ALL_KNOWN_VIZ_FILENAMES = [
-  "predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png",
-  "pace_vs_predicted.png", "laptime_distribution.png", "track_map.png",
-  "laptime_distribution_historical.png", "tyre_strategy.png",
-  "pit_strategy_comparison.png", "tyre_degradation_curves.png", "lstm_pace_prediction.png",
-];
-
 function getYouTubeSearchUrl(raceName: string, type: string): string {
   const q = encodeURIComponent(`Formula 1 2026 ${raceName} ${type} highlights`);
   return `https://www.youtube.com/results?search_query=${q}`;
@@ -95,6 +96,9 @@ export default function RaceDetailPage({ round }: Props) {
   }
 
   const seasonRace = season?.calendar.find((r) => r.round === round) || null;
+  const liveMeta = seasonRace
+    ? getRoundStatusMeta(getRoundLifecycle(seasonRace, !!data, !!data?.actualResults))
+    : null;
 
   if (!data && seasonRace) {
     const previewTrackMapSrc = failedImages.has("track_map.png") ? null : getVisualizationPath(round, "track_map.png");
@@ -110,9 +114,7 @@ export default function RaceDetailPage({ round }: Props) {
                 <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "rgba(225,6,0,0.1)", color: "#E10600", border: "1px solid rgba(225,6,0,0.2)" }}>
                   Round {seasonRace.round}
                 </span>
-                <span className="text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-                  Prediction Pending
-                </span>
+                <span className="status-pill status-pill-slate">Preview Scheduled</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>{seasonRace.name}</h1>
             </div>
@@ -298,6 +300,7 @@ export default function RaceDetailPage({ round }: Props) {
                   Sprint Weekend
                 </span>
               )}
+              {liveMeta && <span className={`status-pill status-pill-${liveMeta.tone}`}>{liveMeta.label}</span>}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>{data.name}</h1>
           </div>
@@ -306,6 +309,82 @@ export default function RaceDetailPage({ round }: Props) {
       <p className="mb-6 text-sm" style={{ color: "var(--text-muted)" }}>
         {data.circuit} • {formatDate(data.date)}
       </p>
+
+      <motion.div
+        className="report-shell p-6 sm:p-7 mb-8"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] mb-2" style={{ color: "#E10600" }}>Race Report</p>
+            <h2 className="text-2xl font-black" style={{ color: "var(--text)" }}>
+              {actualRows.length > 0 ? "Prediction vs Official Outcome" : "Pre-Race Prediction Briefing"}
+            </h2>
+            <p className="text-sm mt-2 max-w-3xl" style={{ color: "var(--text-muted)" }}>
+              {actualRows.length > 0
+                ? "The model forecast remains visible alongside the classified result so visitors can clearly evaluate accuracy, misses, and team-level performance."
+                : "This page is configured for the live Grand Prix weekend flow: predictions are front-and-center now, and the official result will replace the headline state once the race is complete."}
+            </p>
+          </div>
+          <div className={`status-pill status-pill-${actualRows.length > 0 ? "green" : liveMeta?.tone || "slate"}`}>
+            {actualRows.length > 0 ? "Official Result Loaded" : liveMeta?.label || "Prediction Published"}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="report-panel">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] mb-3" style={{ color: "#E10600" }}>Model Forecast</p>
+            <div className="space-y-3">
+              {data.classification.slice(0, 5).map((entry) => (
+                <div key={`pred-${entry.driver}`} className="report-row">
+                  <div className="flex items-center gap-3">
+                    <span className="position-badge points">P{entry.position}</span>
+                    <div className="team-color-bar h-8" style={{ backgroundColor: entry.teamColor }} />
+                    <div>
+                      <p className="font-bold" style={{ color: "var(--text)" }}>{entry.driverFullName}</p>
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{entry.team}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>{entry.gap === "LEADER" ? "Projected leader" : `+${entry.gap}s`}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="report-panel">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] mb-3" style={{ color: actualRows.length > 0 ? "#00D2BE" : "#FF8000" }}>
+              {actualRows.length > 0 ? "Official Classification" : "Post-Race Slot"}
+            </p>
+            {actualRows.length > 0 ? (
+              <div className="space-y-3">
+                {actualRows.slice(0, 5).map(([driver, position]) => {
+                  const predicted = predictedByDriver.get(driver);
+                  const delta = predicted ? predicted.position - position : null;
+                  return (
+                    <div key={`actual-${driver}`} className="report-row">
+                      <div className="flex items-center gap-3">
+                        <span className="position-badge no-points">P{position}</span>
+                        <div className="team-color-bar h-8" style={{ backgroundColor: predicted?.teamColor || "#888" }} />
+                        <div>
+                          <p className="font-bold" style={{ color: "var(--text)" }}>{predicted?.driverFullName || driver}</p>
+                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{predicted?.team || "Official result"}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm font-mono" style={{ color: delta == null ? "var(--text-muted)" : Math.abs(delta) <= 2 ? "#00D2BE" : "#E10600" }}>
+                        {delta == null ? "No forecast match" : delta === 0 ? "Exact match" : delta > 0 ? `${delta} better than predicted` : `${Math.abs(delta)} worse than predicted`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="report-panel-muted">
+                Official results will appear here automatically after the Grand Prix weekend once the post-race workflow syncs the classified order.
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
 
       {trackMapSrc && (
         <motion.div
@@ -362,17 +441,32 @@ export default function RaceDetailPage({ round }: Props) {
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <div className="grid grid-cols-3">
-          {data.classification.slice(0, 3).map((entry, i) => (
+          {(actualRows.length > 0
+            ? actualRows.slice(0, 3).map(([driver, position]) => ({
+                driver,
+                position,
+                predicted: predictedByDriver.get(driver),
+              }))
+            : data.classification.slice(0, 3).map((entry) => ({
+                driver: entry.driver,
+                position: entry.position,
+                predicted: entry,
+              }))
+          ).map((entry, i) => (
             <div key={entry.driver} className="p-5 sm:p-8 text-center border-r last:border-r-0 relative group" style={{ borderColor: "var(--border)" }}>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: `radial-gradient(circle at 50% 100%, ${entry.teamColor}15, transparent 70%)` }} />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: `radial-gradient(circle at 50% 100%, ${(entry.predicted?.teamColor || "#888")}15, transparent 70%)` }} />
               <div className="relative">
                 <div className={`text-4xl sm:text-5xl font-black mb-2 ${i === 0 ? "podium-1" : i === 1 ? "podium-2" : "podium-3"}`}>P{entry.position}</div>
-                <div className="w-12 h-1 rounded-full mx-auto mb-3" style={{ backgroundColor: entry.teamColor }} />
+                <div className="w-12 h-1 rounded-full mx-auto mb-3" style={{ backgroundColor: entry.predicted?.teamColor || "#888" }} />
                 <p className="font-black text-lg" style={{ color: "var(--text)" }}>{entry.driver}</p>
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>{entry.driverFullName}</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{entry.team}</p>
-                <p className="text-sm font-bold mt-2" style={{ color: "var(--text)" }}>{entry.predictedTime}s</p>
-                <p className="text-f1-red font-bold text-sm">+{entry.points} pts</p>
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>{entry.predicted?.driverFullName || entry.driver}</p>
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{entry.predicted?.team || "Official classification"}</p>
+                <p className="text-sm font-bold mt-2" style={{ color: "var(--text)" }}>
+                  {actualRows.length > 0 ? "Official podium" : `${entry.predicted?.predictedTime}s`}
+                </p>
+                <p className="text-f1-red font-bold text-sm">
+                  {actualRows.length > 0 ? `Predicted P${entry.predicted?.position ?? "—"}` : `+${entry.predicted?.points || 0} pts`}
+                </p>
               </div>
             </div>
           ))}

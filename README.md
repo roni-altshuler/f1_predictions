@@ -229,7 +229,7 @@ python export_website_data.py --round N --fastf1 --advanced
 
 The **Update Race Predictions** workflow (`.github/workflows/update_predictions.yml`) automates the full pipeline:
 
-**Scheduled (automatic):** Runs every **Saturday at 23:00 UTC** — after qualifying sessions worldwide. The workflow auto-detects the current race weekend and re-runs the pipeline with real qualifying data from FastF1, then deploys updated predictions to the website before Sunday's race.
+**Scheduled (automatic):** Runs repeatedly from **Thursday through Monday UTC** during race weekends. The workflow now always uses the Python auto-detection path, so it can publish preview predictions before the Grand Prix starts, refresh them once qualifying data is available, and keep retrying after the race until official results land in FastF1.
 
 **Manual:** Go to **Actions → Update Race Predictions → Run workflow**, enter a round number (or `next` / `all`), and select options.
 
@@ -237,14 +237,15 @@ The workflow:
 1. Runs the ML pipeline (`export_website_data.py`)
 2. Generates visualizations (PNGs) into `website/public/`
 3. Imports any locally generated visualizations from `visualizations/{GP_Name}/`
-4. Commits data + viz files and redeploys to GitHub Pages
+4. Commits data + viz files back to `main`
+5. Calls the Pages deployment workflow so GitHub Pages updates even when the commit was created by `GITHUB_TOKEN`
 
 ```
 Race Weekend Flow:
-  Friday    → Pipeline runs with estimated quali times (initial prediction)
-  Saturday  → 23:00 UTC cron auto-fetches real quali data + redeploys
-  Sunday    → Website shows updated prediction with real quali for race day
-  Post-race → Season tracker compares prediction vs actual result
+  Thursday/Friday  → Preview forecast publishes before the GP starts
+  Saturday         → Auto-detects qualifying availability and refreshes race predictions
+  Sunday           → Keeps polling until official results are available
+  Monday           → Final backfill window for delayed FastF1 classification data
 ```
 
 ### Sprint Race Weekends

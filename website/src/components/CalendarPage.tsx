@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { SeasonData } from "@/types";
+import { SeasonData, SeasonTrackerData } from "@/types";
 import CountryFlag from "@/components/CountryFlag";
-import { fetchSeasonData, formatDate } from "@/lib/data";
+import { fetchSeasonData, fetchSeasonTrackerData, formatDate, getRoundLifecycle, getRoundStatusMeta } from "@/lib/data";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -14,9 +14,11 @@ const fadeUp = {
 
 export default function CalendarPage() {
   const [season, setSeason] = useState<SeasonData | null>(null);
+  const [tracker, setTracker] = useState<SeasonTrackerData | null>(null);
 
   useEffect(() => {
     fetchSeasonData().then(setSeason).catch(console.error);
+    fetchSeasonTrackerData().then(setTracker).catch(() => {});
   }, []);
 
   if (!season) {
@@ -31,6 +33,15 @@ export default function CalendarPage() {
   }
 
   const completedCount = season.completedRounds.length;
+  const actualSet = new Set((tracker?.rounds || []).filter((round) => round.hasActual).map((round) => round.round));
+  const officialCount = actualSet.size;
+  const liveCount = season.calendar.filter((race) =>
+    getRoundLifecycle(
+      race,
+      season.completedRounds.includes(race.round),
+      actualSet.has(race.round),
+    ) === "live-weekend"
+  ).length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -40,8 +51,26 @@ export default function CalendarPage() {
           2026 Season Calendar
         </h1>
         <p style={{ color: "var(--text-muted)" }}>
-          {season.totalRounds} Grand Prix • {completedCount} prediction{completedCount !== 1 ? "s" : ""} completed
+          {season.totalRounds} Grand Prix • {completedCount} forecasts published • {officialCount} official result{officialCount !== 1 ? "s" : ""}
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--text-muted)" }}>Forecast Coverage</p>
+          <p className="text-3xl font-black mt-2" style={{ color: "var(--text)" }}>{completedCount}/{season.totalRounds}</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Rounds with model predictions already published.</p>
+        </div>
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--text-muted)" }}>Official Results</p>
+          <p className="text-3xl font-black mt-2" style={{ color: "#00D2BE" }}>{officialCount}</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Rounds where predictions are now compared against real race outcomes.</p>
+        </div>
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--text-muted)" }}>Weekend Live</p>
+          <p className="text-3xl font-black mt-2" style={{ color: liveCount > 0 ? "#E10600" : "var(--text)" }}>{liveCount}</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Grand Prix weekend currently in progress.</p>
+        </div>
       </div>
 
       {/* Season Progress */}
@@ -59,9 +88,10 @@ export default function CalendarPage() {
       {/* Race List */}
       <div className="space-y-3">
         {season.calendar.map((race, index) => {
-          const completed = season.completedRounds.includes(race.round);
-          const raceDate = new Date(race.date + "T00:00:00");
-          const isPast = raceDate < new Date();
+          const hasPrediction = season.completedRounds.includes(race.round);
+          const hasActual = actualSet.has(race.round);
+          const lifecycle = getRoundLifecycle(race, hasPrediction, hasActual);
+          const statusMeta = getRoundStatusMeta(lifecycle);
 
           return (
             <motion.div
@@ -77,7 +107,7 @@ export default function CalendarPage() {
               >
                 {/* Round number */}
                 <div className="text-center shrink-0 w-12">
-                  <span className="text-2xl font-black stat-number" style={{ color: completed ? "#E10600" : "var(--text)" }}>{race.round}</span>
+                  <span className="text-2xl font-black stat-number" style={{ color: hasActual ? "#00D2BE" : hasPrediction ? "#E10600" : "var(--text)" }}>{race.round}</span>
                 </div>
 
                 {/* Flag + Name */}
@@ -86,11 +116,14 @@ export default function CalendarPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <h3
-                        className={`font-bold truncate transition-colors ${completed ? "group-hover:text-f1-red" : ""}`}
+                        className={`font-bold truncate transition-colors ${hasPrediction ? "group-hover:text-f1-red" : ""}`}
                         style={{ color: "var(--text)" }}
                       >
                         {race.name}
                       </h3>
+                      <span className={`status-pill status-pill-${statusMeta.tone}`}>
+                        {statusMeta.shortLabel}
+                      </span>
                       {race.sprint && (
                         <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: "rgba(255, 128, 0, 0.15)", color: "#FF8000", border: "1px solid rgba(255, 128, 0, 0.3)" }}>
                           Sprint
@@ -130,13 +163,9 @@ export default function CalendarPage() {
                 {/* Date + Status */}
                 <div className="text-right shrink-0 w-28">
                   <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{formatDate(race.date)}</p>
-                  {completed ? (
-                    <span className="text-xs font-bold" style={{ color: "#00D2BE" }}>✓ Data Ready</span>
-                  ) : isPast ? (
-                    <span className="text-xs font-medium" style={{ color: "#FF8000" }}>Race complete, results syncing</span>
-                  ) : (
-                    <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Upcoming (Preview Available)</span>
-                  )}
+                  <span className="text-xs font-medium" style={{ color: statusMeta.tone === "green" ? "#00D2BE" : statusMeta.tone === "red" ? "#E10600" : statusMeta.tone === "amber" ? "#FF8000" : "var(--text-muted)" }}>
+                    {statusMeta.label}
+                  </span>
                 </div>
               </Link>
             </motion.div>

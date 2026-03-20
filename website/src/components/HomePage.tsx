@@ -3,9 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { SeasonData, StandingsData, RoundData } from "@/types";
+import { SeasonData, StandingsData, RoundData, SeasonTrackerData } from "@/types";
 import CountryFlag from "@/components/CountryFlag";
-import { fetchSeasonData, fetchStandingsData, fetchRoundData, formatDate } from "@/lib/data";
+import {
+  fetchSeasonData,
+  fetchStandingsData,
+  fetchRoundData,
+  fetchSeasonTrackerData,
+  formatDate,
+  getCurrentRaceContext,
+  getRoundLifecycle,
+  getRoundStatusMeta,
+} from "@/lib/data";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -39,6 +48,7 @@ export default function HomePage() {
   const [season, setSeason] = useState<SeasonData | null>(null);
   const [standings, setStandings] = useState<StandingsData | null>(null);
   const [latestRace, setLatestRace] = useState<RoundData | null>(null);
+  const [tracker, setTracker] = useState<SeasonTrackerData | null>(null);
 
   const actualRows = latestRace?.actualResults
     ? Object.entries(latestRace.actualResults).sort((a, b) => a[1] - b[1])
@@ -47,6 +57,7 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchSeasonData().then(setSeason).catch(console.error);
+    fetchSeasonTrackerData().then(setTracker).catch(() => {});
     fetchStandingsData()
       .then((s) => {
         setStandings(s);
@@ -68,6 +79,22 @@ export default function HomePage() {
     );
   }
 
+  const roundsWithActual = (tracker?.rounds || []).filter((round) => round.hasActual).map((round) => round.round);
+  const context = getCurrentRaceContext(season, roundsWithActual);
+  const featuredRace =
+    context.liveRound ||
+    context.latestOfficialRound ||
+    context.latestPredictionRound ||
+    context.nextRound ||
+    season.calendar[0];
+  const featuredRaceStatus = getRoundStatusMeta(
+    getRoundLifecycle(
+      featuredRace,
+      season.completedRounds.includes(featuredRace.round),
+      roundsWithActual.includes(featuredRace.round),
+    ),
+  );
+
   return (
     <div className="hero-gradient">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -85,6 +112,42 @@ export default function HomePage() {
           <motion.p variants={fadeUp} className="text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             AI-powered race predictions for every Grand Prix. XGBoost + GradientBoosting + LSTM ensemble trained on 3 years of FastF1 telemetry data.
           </motion.p>
+          <motion.div variants={fadeUp} className="max-w-4xl mx-auto mb-10">
+            <div className="weekend-spotlight p-6 sm:p-7 text-left">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.32em] mb-3" style={{ color: "#E10600" }}>Weekend Command Center</p>
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <CountryFlag country={featuredRace.country} size={28} />
+                    <h2 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>{featuredRace.name}</h2>
+                    <span className={`status-pill status-pill-${featuredRaceStatus.tone}`}>{featuredRaceStatus.label}</span>
+                  </div>
+                  <p className="text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>
+                    {featuredRace.circuit} • {formatDate(featuredRace.date)} • {featuredRaceStatus.description}
+                  </p>
+                </div>
+                <Link href={`/race/${featuredRace.round}`} className="px-5 py-3 rounded-xl font-bold text-white bg-f1-red hover:bg-f1-red-dark transition-colors">
+                  Open Race Report
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+                <div className="metric-card">
+                  <p className="text-xs uppercase tracking-[0.2em]" style={{ color: "var(--text-muted)" }}>Forecasts Published</p>
+                  <p className="text-2xl font-black mt-2" style={{ color: "var(--text)" }}>{season.completedRounds.length}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs uppercase tracking-[0.2em]" style={{ color: "var(--text-muted)" }}>Official Results</p>
+                  <p className="text-2xl font-black mt-2" style={{ color: "#00D2BE" }}>{roundsWithActual.length}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs uppercase tracking-[0.2em]" style={{ color: "var(--text-muted)" }}>Current Focus</p>
+                  <p className="text-2xl font-black mt-2" style={{ color: featuredRaceStatus.tone === "green" ? "#00D2BE" : featuredRaceStatus.tone === "red" ? "#E10600" : featuredRaceStatus.tone === "amber" ? "#FF8000" : "var(--text)" }}>
+                    {featuredRaceStatus.shortLabel}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
           <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-4">
             <Link href="/calendar" className="group px-8 py-3.5 bg-f1-red hover:bg-f1-red-dark text-white font-bold rounded-xl transition-all hover:scale-[1.03] active:scale-95 shadow-lg shadow-f1-red/25">
               Explore All Races
@@ -102,7 +165,7 @@ export default function HomePage() {
             { value: season.totalRounds, label: "Grand Prix", accent: "#E10600" },
             { value: season.drivers.length, label: "Drivers", accent: "#00D2BE" },
             { value: season.teams.length, label: "Teams", accent: "#FF8000" },
-            { value: season.completedRounds.length, label: "Predicted", accent: "#FFD700" },
+            { value: roundsWithActual.length, label: "Official", accent: "#FFD700" },
           ].map((s) => (
             <motion.div key={s.label} variants={scaleIn} className="card p-6 text-center">
               <p className="text-4xl font-black stat-number" style={{ color: s.accent }}>{s.value}</p>
