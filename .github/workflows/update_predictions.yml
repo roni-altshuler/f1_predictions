@@ -121,6 +121,10 @@ jobs:
             python gp_weekend.py --round "$ROUND" --phase "$PHASE" --no-build
           fi
 
+      - name: Generate labeled circuit maps for all rounds
+        if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
+        run: python generate_fastf1_viz.py --all-circuits --year 2025
+
       - name: Commit updated data
         if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
         env:

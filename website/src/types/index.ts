@@ -54,6 +54,10 @@ export interface ClassificationEntry {
   predictedTime: number;
   gap: string;
   points: number;
+  confidence?: "High" | "Medium" | "Low" | string;
+  finishRangeLow?: number;
+  finishRangeHigh?: number;
+  winProbability?: number;
 }
 
 export interface ModelMetrics {
@@ -61,6 +65,7 @@ export interface ModelMetrics {
   mae: number;
   maxSpread: number;
   trainingYears: number[];
+  avgUncertainty?: number;
 }
 
 export interface FeatureImportance {
@@ -114,6 +119,19 @@ export interface RoundData {
     raceControlEvents?: RaceControlEvent[];
   };
   actualResults?: Record<string, number>;
+  actualStatus?: Record<string, string>;
+  predictionInsights?: {
+    poleToWinBias: number;
+    highConfidenceCount: number;
+    mediumConfidenceCount: number;
+    lowConfidenceCount: number;
+    mostLikelyWinner: string;
+    winnerProbability?: number;
+    closestBattle: {
+      drivers: string[];
+      gap: number;
+    };
+  };
   accuracy?: {
     mean_position_error?: number;
     median_position_error?: number;

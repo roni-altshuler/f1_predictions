@@ -1,5 +1,5 @@
 {
-  "lastUpdatedRound": 2,
+  "lastUpdatedRound": 3,
   "drivers": [
     {
       "position": 1,
@@ -7,12 +7,13 @@
       "driverFullName": "George Russell",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "points": 35,
-      "wins": 1,
-      "podiums": 1,
+      "points": 60,
+      "wins": 2,
+      "podiums": 2,
       "pointsHistory": [
         25,
-        35
+        50,
+        60
       ]
     },
     {
@@ -21,82 +22,88 @@
       "driverFullName": "Charles Leclerc",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "points": 30,
+      "points": 45,
       "wins": 0,
-      "podiums": 2,
+      "podiums": 3,
       "pointsHistory": [
         15,
-        30
+        30,
+        45
       ]
     },
     {
       "position": 3,
-      "driver": "NOR",
-      "driverFullName": "Lando Norris",
-      "team": "McLaren",
-      "teamColor": "#FF8000",
-      "points": 28,
-      "wins": 0,
-      "podiums": 1,
-      "pointsHistory": [
-        10,
-        28
-      ]
-    },
-    {
-      "position": 4,
-      "driver": "PIA",
-      "driverFullName": "Oscar Piastri",
-      "team": "McLaren",
-      "teamColor": "#FF8000",
-      "points": 25,
-      "wins": 1,
-      "podiums": 1,
-      "pointsHistory": [
-        0,
-        25
-      ]
-    },
-    {
-      "position": 5,
       "driver": "ANT",
       "driverFullName": "Kimi Antonelli",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "points": 24,
+      "points": 42,
       "wins": 0,
-      "podiums": 1,
+      "podiums": 2,
       "pointsHistory": [
         18,
-        24
+        36,
+        42
       ]
     },
     {
-      "position": 6,
+      "position": 4,
       "driver": "VER",
       "driverFullName": "Max Verstappen",
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "points": 20,
-      "wins": 0,
-      "podiums": 0,
+      "points": 41,
+      "wins": 1,
+      "podiums": 1,
       "pointsHistory": [
         8,
-        20
+        16,
+        41
       ]
     },
     {
-      "position": 7,
+      "position": 5,
+      "driver": "NOR",
+      "driverFullName": "Lando Norris",
+      "team": "McLaren",
+      "teamColor": "#FF8000",
+      "points": 38,
+      "wins": 0,
+      "podiums": 1,
+      "pointsHistory": [
+        10,
+        20,
+        38
+      ]
+    },
+    {
+      "position": 6,
       "driver": "HAM",
       "driverFullName": "Lewis Hamilton",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "points": 20,
+      "points": 32,
       "wins": 0,
       "podiums": 0,
       "pointsHistory": [
         12,
-        20
+        24,
+        32
+      ]
+    },
+    {
+      "position": 7,
+      "driver": "PIA",
+      "driverFullName": "Oscar Piastri",
+      "team": "McLaren",
+      "teamColor": "#FF8000",
+      "points": 12,
+      "wins": 0,
+      "podiums": 0,
+      "pointsHistory": [
+        0,
+        0,
+        12
       ]
     },
     {
@@ -105,16 +112,32 @@
       "driverFullName": "Oliver Bearman",
       "team": "Haas",
       "teamColor": "#B6BABD",
-      "points": 6,
+      "points": 12,
       "wins": 0,
       "podiums": 0,
       "pointsHistory": [
         6,
-        6
+        12,
+        12
       ]
     },
     {
       "position": 9,
+      "driver": "LIN",
+      "driverFullName": "Arvid Lindblad",
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF",
+      "points": 8,
+      "wins": 0,
+      "podiums": 0,
+      "pointsHistory": [
+        4,
+        8,
+        8
+      ]
+    },
+    {
+      "position": 10,
       "driver": "LAW",
       "driverFullName": "Liam Lawson",
       "team": "Racing Bulls",
@@ -124,25 +147,42 @@
       "podiums": 0,
       "pointsHistory": [
         0,
-        4
-      ]
-    },
-    {
-      "position": 10,
-      "driver": "LIN",
-      "driverFullName": "Arvid Lindblad",
-      "team": "Racing Bulls",
-      "teamColor": "#6692FF",
-      "points": 4,
-      "wins": 0,
-      "podiums": 0,
-      "pointsHistory": [
-        4,
+        0,
         4
       ]
     },
     {
       "position": 11,
+      "driver": "BOR",
+      "driverFullName": "Gabriel Bortoleto",
+      "team": "Audi",
+      "teamColor": "#1E1E1E",
+      "points": 4,
+      "wins": 0,
+      "podiums": 0,
+      "pointsHistory": [
+        2,
+        4,
+        4
+      ]
+    },
+    {
+      "position": 12,
+      "driver": "GAS",
+      "driverFullName": "Pierre Gasly",
+      "team": "Alpine",
+      "teamColor": "#FF87BC",
+      "points": 2,
+      "wins": 0,
+      "podiums": 0,
+      "pointsHistory": [
+        1,
+        2,
+        2
+      ]
+    },
+    {
+      "position": 13,
       "driver": "SAI",
       "driverFullName": "Carlos Sainz Jr.",
       "team": "Williams",
@@ -152,35 +192,8 @@
       "podiums": 0,
       "pointsHistory": [
         0,
+        0,
         2
-      ]
-    },
-    {
-      "position": 12,
-      "driver": "BOR",
-      "driverFullName": "Gabriel Bortoleto",
-      "team": "Audi",
-      "teamColor": "#1E1E1E",
-      "points": 2,
-      "wins": 0,
-      "podiums": 0,
-      "pointsHistory": [
-        2,
-        2
-      ]
-    },
-    {
-      "position": 13,
-      "driver": "GAS",
-      "driverFullName": "Pierre Gasly",
-      "team": "Alpine",
-      "teamColor": "#FF87BC",
-      "points": 1,
-      "wins": 0,
-      "podiums": 0,
-      "pointsHistory": [
-        1,
-        1
       ]
     },
     {
@@ -193,6 +206,7 @@
       "wins": 0,
       "podiums": 0,
       "pointsHistory": [
+        0,
         0,
         1
       ]
@@ -208,6 +222,7 @@
       "podiums": 0,
       "pointsHistory": [
         0,
+        0,
         0
       ]
     },
@@ -221,6 +236,7 @@
       "wins": 0,
       "podiums": 0,
       "pointsHistory": [
+        0,
         0,
         0
       ]
@@ -236,6 +252,7 @@
       "podiums": 0,
       "pointsHistory": [
         0,
+        0,
         0
       ]
     },
@@ -249,6 +266,7 @@
       "wins": 0,
       "podiums": 0,
       "pointsHistory": [
+        0,
         0,
         0
       ]
@@ -264,6 +282,7 @@
       "podiums": 0,
       "pointsHistory": [
         0,
+        0,
         0
       ]
     },
@@ -277,6 +296,7 @@
       "wins": 0,
       "podiums": 0,
       "pointsHistory": [
+        0,
         0,
         0
       ]
@@ -292,6 +312,7 @@
       "podiums": 0,
       "pointsHistory": [
         0,
+        0,
         0
       ]
     },
@@ -306,6 +327,7 @@
       "podiums": 0,
       "pointsHistory": [
         0,
+        0,
         0
       ]
     }
@@ -315,37 +337,23 @@
       "position": 1,
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "points": 59,
-      "wins": 1,
+      "points": 102,
+      "wins": 2,
       "drivers": [
         "RUS",
         "ANT"
       ],
       "pointsHistory": [
         43,
-        59
+        86,
+        102
       ]
     },
     {
       "position": 2,
-      "team": "McLaren",
-      "teamColor": "#FF8000",
-      "points": 53,
-      "wins": 1,
-      "drivers": [
-        "NOR",
-        "PIA"
-      ],
-      "pointsHistory": [
-        10,
-        53
-      ]
-    },
-    {
-      "position": 3,
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "points": 50,
+      "points": 77,
       "wins": 0,
       "drivers": [
         "LEC",
@@ -353,6 +361,23 @@
       ],
       "pointsHistory": [
         27,
+        54,
+        77
+      ]
+    },
+    {
+      "position": 3,
+      "team": "McLaren",
+      "teamColor": "#FF8000",
+      "points": 50,
+      "wins": 0,
+      "drivers": [
+        "NOR",
+        "PIA"
+      ],
+      "pointsHistory": [
+        10,
+        20,
         50
       ]
     },
@@ -360,37 +385,39 @@
       "position": 4,
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "points": 20,
-      "wins": 0,
+      "points": 41,
+      "wins": 1,
       "drivers": [
         "VER",
         "HAD"
       ],
       "pointsHistory": [
         8,
-        20
+        16,
+        41
       ]
     },
     {
       "position": 5,
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
-      "points": 8,
+      "points": 12,
       "wins": 0,
       "drivers": [
-        "LAW",
-        "LIN"
+        "LIN",
+        "LAW"
       ],
       "pointsHistory": [
         4,
-        8
+        8,
+        12
       ]
     },
     {
       "position": 6,
       "team": "Haas",
       "teamColor": "#B6BABD",
-      "points": 6,
+      "points": 12,
       "wins": 0,
       "drivers": [
         "BEA",
@@ -398,11 +425,44 @@
       ],
       "pointsHistory": [
         6,
-        6
+        12,
+        12
       ]
     },
     {
       "position": 7,
+      "team": "Audi",
+      "teamColor": "#1E1E1E",
+      "points": 4,
+      "wins": 0,
+      "drivers": [
+        "BOR",
+        "HUL"
+      ],
+      "pointsHistory": [
+        2,
+        4,
+        4
+      ]
+    },
+    {
+      "position": 8,
+      "team": "Alpine",
+      "teamColor": "#FF87BC",
+      "points": 2,
+      "wins": 0,
+      "drivers": [
+        "GAS",
+        "COL"
+      ],
+      "pointsHistory": [
+        1,
+        2,
+        2
+      ]
+    },
+    {
+      "position": 9,
       "team": "Williams",
       "teamColor": "#64C4FF",
       "points": 2,
@@ -413,37 +473,8 @@
       ],
       "pointsHistory": [
         0,
+        0,
         2
-      ]
-    },
-    {
-      "position": 8,
-      "team": "Audi",
-      "teamColor": "#1E1E1E",
-      "points": 2,
-      "wins": 0,
-      "drivers": [
-        "BOR",
-        "HUL"
-      ],
-      "pointsHistory": [
-        2,
-        2
-      ]
-    },
-    {
-      "position": 9,
-      "team": "Alpine",
-      "teamColor": "#FF87BC",
-      "points": 1,
-      "wins": 0,
-      "drivers": [
-        "GAS",
-        "COL"
-      ],
-      "pointsHistory": [
-        1,
-        1
       ]
     },
     {
@@ -457,6 +488,7 @@
         "BOT"
       ],
       "pointsHistory": [
+        0,
         0,
         1
       ]
@@ -473,6 +505,7 @@
       ],
       "pointsHistory": [
         0,
+        0,
         0
       ]
     }
@@ -483,8 +516,8 @@
       "driverFullName": "George Russell",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "currentPoints": 35,
-      "maxPossiblePoints": 607,
+      "currentPoints": 60,
+      "maxPossiblePoints": 606,
       "canStillWin": true
     },
     {
@@ -492,26 +525,8 @@
       "driverFullName": "Charles Leclerc",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "currentPoints": 30,
-      "maxPossiblePoints": 602,
-      "canStillWin": true
-    },
-    {
-      "driver": "NOR",
-      "driverFullName": "Lando Norris",
-      "team": "McLaren",
-      "teamColor": "#FF8000",
-      "currentPoints": 28,
-      "maxPossiblePoints": 600,
-      "canStillWin": true
-    },
-    {
-      "driver": "PIA",
-      "driverFullName": "Oscar Piastri",
-      "team": "McLaren",
-      "teamColor": "#FF8000",
-      "currentPoints": 25,
-      "maxPossiblePoints": 597,
+      "currentPoints": 45,
+      "maxPossiblePoints": 591,
       "canStillWin": true
     },
     {
@@ -519,8 +534,8 @@
       "driverFullName": "Kimi Antonelli",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "currentPoints": 24,
-      "maxPossiblePoints": 596,
+      "currentPoints": 42,
+      "maxPossiblePoints": 588,
       "canStillWin": true
     },
     {
@@ -528,8 +543,17 @@
       "driverFullName": "Max Verstappen",
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "currentPoints": 20,
-      "maxPossiblePoints": 592,
+      "currentPoints": 41,
+      "maxPossiblePoints": 587,
+      "canStillWin": true
+    },
+    {
+      "driver": "NOR",
+      "driverFullName": "Lando Norris",
+      "team": "McLaren",
+      "teamColor": "#FF8000",
+      "currentPoints": 38,
+      "maxPossiblePoints": 584,
       "canStillWin": true
     },
     {
@@ -537,8 +561,17 @@
       "driverFullName": "Lewis Hamilton",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "currentPoints": 20,
-      "maxPossiblePoints": 592,
+      "currentPoints": 32,
+      "maxPossiblePoints": 578,
+      "canStillWin": true
+    },
+    {
+      "driver": "PIA",
+      "driverFullName": "Oscar Piastri",
+      "team": "McLaren",
+      "teamColor": "#FF8000",
+      "currentPoints": 12,
+      "maxPossiblePoints": 558,
       "canStillWin": true
     },
     {
@@ -546,8 +579,17 @@
       "driverFullName": "Oliver Bearman",
       "team": "Haas",
       "teamColor": "#B6BABD",
-      "currentPoints": 6,
-      "maxPossiblePoints": 578,
+      "currentPoints": 12,
+      "maxPossiblePoints": 558,
+      "canStillWin": true
+    },
+    {
+      "driver": "LIN",
+      "driverFullName": "Arvid Lindblad",
+      "team": "Racing Bulls",
+      "teamColor": "#6692FF",
+      "currentPoints": 8,
+      "maxPossiblePoints": 554,
       "canStillWin": true
     },
     {
@@ -556,16 +598,25 @@
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
       "currentPoints": 4,
-      "maxPossiblePoints": 576,
+      "maxPossiblePoints": 550,
       "canStillWin": true
     },
     {
-      "driver": "LIN",
-      "driverFullName": "Arvid Lindblad",
-      "team": "Racing Bulls",
-      "teamColor": "#6692FF",
+      "driver": "BOR",
+      "driverFullName": "Gabriel Bortoleto",
+      "team": "Audi",
+      "teamColor": "#1E1E1E",
       "currentPoints": 4,
-      "maxPossiblePoints": 576,
+      "maxPossiblePoints": 550,
+      "canStillWin": true
+    },
+    {
+      "driver": "GAS",
+      "driverFullName": "Pierre Gasly",
+      "team": "Alpine",
+      "teamColor": "#FF87BC",
+      "currentPoints": 2,
+      "maxPossiblePoints": 548,
       "canStillWin": true
     },
     {
@@ -574,25 +625,7 @@
       "team": "Williams",
       "teamColor": "#64C4FF",
       "currentPoints": 2,
-      "maxPossiblePoints": 574,
-      "canStillWin": true
-    },
-    {
-      "driver": "BOR",
-      "driverFullName": "Gabriel Bortoleto",
-      "team": "Audi",
-      "teamColor": "#1E1E1E",
-      "currentPoints": 2,
-      "maxPossiblePoints": 574,
-      "canStillWin": true
-    },
-    {
-      "driver": "GAS",
-      "driverFullName": "Pierre Gasly",
-      "team": "Alpine",
-      "teamColor": "#FF87BC",
-      "currentPoints": 1,
-      "maxPossiblePoints": 573,
+      "maxPossiblePoints": 548,
       "canStillWin": true
     },
     {
@@ -601,7 +634,7 @@
       "team": "Cadillac",
       "teamColor": "#C0C0C0",
       "currentPoints": 1,
-      "maxPossiblePoints": 573,
+      "maxPossiblePoints": 547,
       "canStillWin": true
     },
     {
@@ -610,7 +643,7 @@
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
       "currentPoints": 0,
-      "maxPossiblePoints": 572,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     },
     {
@@ -619,7 +652,7 @@
       "team": "Aston Martin",
       "teamColor": "#229971",
       "currentPoints": 0,
-      "maxPossiblePoints": 572,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     },
     {
@@ -628,7 +661,7 @@
       "team": "Aston Martin",
       "teamColor": "#229971",
       "currentPoints": 0,
-      "maxPossiblePoints": 572,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     },
     {
@@ -637,7 +670,7 @@
       "team": "Alpine",
       "teamColor": "#FF87BC",
       "currentPoints": 0,
-      "maxPossiblePoints": 572,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     },
     {
@@ -646,7 +679,7 @@
       "team": "Williams",
       "teamColor": "#64C4FF",
       "currentPoints": 0,
-      "maxPossiblePoints": 572,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     },
     {
@@ -655,7 +688,7 @@
       "team": "Haas",
       "teamColor": "#B6BABD",
       "currentPoints": 0,
-      "maxPossiblePoints": 572,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     },
     {
@@ -664,7 +697,7 @@
       "team": "Audi",
       "teamColor": "#1E1E1E",
       "currentPoints": 0,
-      "maxPossiblePoints": 572,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     },
     {
@@ -673,7 +706,7 @@
       "team": "Cadillac",
       "teamColor": "#C0C0C0",
       "currentPoints": 0,
-      "maxPossiblePoints": 572,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     }
   ]

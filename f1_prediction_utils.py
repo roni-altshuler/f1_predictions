@@ -135,11 +135,11 @@ F1_POINTS = {1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1}
 # ---- Complete 2026 Calendar (24 rounds) ----------------------------------
 CALENDAR_2026 = {
     1:  {"name": "Australian Grand Prix",     "gp_key": "Australia",      "circuit": "Albert Park",            "date": "2026-03-08", "laps": 58, "circuit_km": 5.278, "sprint": False},
-    2:  {"name": "Chinese Grand Prix",        "gp_key": "China",          "circuit": "Shanghai International", "date": "2026-03-22", "laps": 56, "circuit_km": 5.451, "sprint": True,  "sprint_laps": 21},
-    3:  {"name": "Japanese Grand Prix",       "gp_key": "Japan",          "circuit": "Suzuka",                 "date": "2026-04-05", "laps": 53, "circuit_km": 5.807, "sprint": False},
-    4:  {"name": "Bahrain Grand Prix",        "gp_key": "Bahrain",        "circuit": "Sakhir",                 "date": "2026-04-19", "laps": 57, "circuit_km": 5.412, "sprint": False},
-    5:  {"name": "Saudi Arabian Grand Prix",  "gp_key": "Saudi Arabia",   "circuit": "Jeddah Corniche",        "date": "2026-05-03", "laps": 50, "circuit_km": 6.174, "sprint": False},
-    6:  {"name": "Miami Grand Prix",          "gp_key": "Miami",          "circuit": "Miami International",    "date": "2026-05-17", "laps": 57, "circuit_km": 5.412, "sprint": True,  "sprint_laps": 21},
+    2:  {"name": "Chinese Grand Prix",        "gp_key": "China",          "circuit": "Shanghai International", "date": "2026-03-15", "laps": 56, "circuit_km": 5.451, "sprint": True,  "sprint_laps": 21},
+    3:  {"name": "Japanese Grand Prix",       "gp_key": "Japan",          "circuit": "Suzuka",                 "date": "2026-03-29", "laps": 53, "circuit_km": 5.807, "sprint": False},
+    4:  {"name": "Bahrain Grand Prix",        "gp_key": "Bahrain",        "circuit": "Sakhir",                 "date": "2026-04-12", "laps": 57, "circuit_km": 5.412, "sprint": False},
+    5:  {"name": "Saudi Arabian Grand Prix",  "gp_key": "Saudi Arabia",   "circuit": "Jeddah Corniche",        "date": "2026-04-19", "laps": 50, "circuit_km": 6.174, "sprint": False},
+    6:  {"name": "Miami Grand Prix",          "gp_key": "Miami",          "circuit": "Miami International",    "date": "2026-05-03", "laps": 57, "circuit_km": 5.412, "sprint": True,  "sprint_laps": 21},
     7:  {"name": "Emilia Romagna Grand Prix", "gp_key": "Emilia Romagna", "circuit": "Imola",                  "date": "2026-05-31", "laps": 63, "circuit_km": 4.909, "sprint": False},
     8:  {"name": "Monaco Grand Prix",         "gp_key": "Monaco",         "circuit": "Monaco",                 "date": "2026-06-07", "laps": 78, "circuit_km": 3.337, "sprint": False},
     9:  {"name": "Spanish Grand Prix",        "gp_key": "Spain",          "circuit": "Barcelona-Catalunya",    "date": "2026-06-21", "laps": 66, "circuit_km": 4.657, "sprint": False},
@@ -238,11 +238,23 @@ DEFAULT_FEATURE_COLS: list[str] = [
     "TeamAdjustedPace",
     "TeamPerformanceScore",
     "CleanAirPace",
+    "BestLapTime",
+    "LapTimeStd",
+    "ConsistencyScore",
+    "SectorBalance",
     "PitTimeLoss",
     "TyreDegFactor",
     "ExperienceFactor",
     "RainProbability",
     "Temperature",
+    "WeatherRiskScore",
+    "CircuitOvertaking",
+    "CircuitSafetyCar",
+    "CircuitGripPenalty",
+    "ExpectedStopsFeature",
+    "SprintWeekend",
+    "QualifyingRank",
+    "GridAdvantage",
     "CurrentForm",
     "PreviousPosition",
     "SeasonMomentum",
@@ -312,6 +324,8 @@ def aggregate_driver_stats(laps):
         rows.append({
             "Driver": drv,
             "AvgLapTime": d["LapTime (s)"].mean(),
+            "BestLapTime": d["LapTime (s)"].min(),
+            "LapTimeStd": d["LapTime (s)"].std(),
             "Sector1": d["Sector1Time (s)"].mean(),
             "Sector2": d["Sector2Time (s)"].mean(),
             "Sector3": d["Sector3Time (s)"].mean(),
@@ -319,6 +333,11 @@ def aggregate_driver_stats(laps):
         })
     stats = pd.DataFrame(rows)
     stats["TotalSectorTime"] = stats["Sector1"] + stats["Sector2"] + stats["Sector3"]
+    stats["ConsistencyScore"] = stats["LapTimeStd"] / stats["AvgLapTime"]
+    stats["SectorBalance"] = (
+        stats[["Sector1", "Sector2", "Sector3"]].std(axis=1) /
+        stats[["Sector1", "Sector2", "Sector3"]].mean(axis=1)
+    )
     print(f"✅ Aggregated stats for {len(stats)} unique drivers.")
     return stats
 
@@ -398,6 +417,18 @@ def _add_pit_and_tyre_features(merged, circuit_key="Australia"):
 
     print(f"✅ Pit/tyre/experience features added (circuit: {circuit_key}, "
           f"{expected_stops} stops, tyre deg={tyre_deg:.2f}).")
+    return merged
+
+
+def _add_circuit_context_features(merged, circuit_key="Australia", sprint=False):
+    """Add track-specific context so the model can behave differently by venue."""
+    char = CIRCUIT_CHARACTERISTICS.get(circuit_key, {})
+    merged = merged.copy()
+    merged["CircuitOvertaking"] = char.get("overtaking", 0.5)
+    merged["CircuitSafetyCar"] = char.get("safety_car_likelihood", 0.4)
+    merged["CircuitGripPenalty"] = 1.0 - char.get("overtaking", 0.5) + char.get("tyre_deg", 0.5) * 0.5
+    merged["ExpectedStopsFeature"] = char.get("expected_stops", 2)
+    merged["SprintWeekend"] = 1.0 if sprint else 0.0
     return merged
 
 
@@ -525,7 +556,7 @@ def _add_race_to_race_features(merged, current_round=1):
 
 
 def build_training_dataset(grid, driver_stats, circuit_key="Australia",
-                           current_round=1):
+                           current_round=1, sprint=False):
     """Merge grid + historical stats + all engineered features.
 
     v3 improvements:
@@ -537,7 +568,8 @@ def build_training_dataset(grid, driver_stats, circuit_key="Australia",
     merged = grid.merge(driver_stats, on="Driver", how="left")
 
     # Impute missing historical data (rookies / new drivers)
-    hist_cols = ["AvgLapTime", "Sector1", "Sector2", "Sector3",
+    hist_cols = ["AvgLapTime", "BestLapTime", "LapTimeStd", "ConsistencyScore",
+                 "Sector1", "Sector2", "Sector3", "SectorBalance",
                  "TotalSectorTime", "LapCount"]
     imputer = SimpleImputer(strategy="median")
     merged[hist_cols] = imputer.fit_transform(merged[hist_cols])
@@ -547,6 +579,11 @@ def build_training_dataset(grid, driver_stats, circuit_key="Australia",
 
     # Pit / tyre / experience
     merged = _add_pit_and_tyre_features(merged, circuit_key=circuit_key)
+
+    # Circuit context
+    merged = _add_circuit_context_features(
+        merged, circuit_key=circuit_key, sprint=sprint
+    )
 
     # Current season form
     merged = _add_current_season_form(merged, current_round=current_round)
@@ -611,8 +648,102 @@ def apply_qualifying_data(merged, qualifying_times,
         print("☀️  Dry conditions — raw qualifying times used.")
     merged["RainProbability"] = rain_probability
     merged["Temperature"]     = temperature_c
+    merged["WeatherRiskScore"] = (
+        rain_probability * 0.65 + max(0.0, abs(temperature_c - 24.0) / 20.0) * 0.35
+    )
+    merged["QualifyingRank"] = merged["AdjustedQualiTime"].rank(method="min")
+    median_quali = merged["AdjustedQualiTime"].median()
+    merged["GridAdvantage"] = median_quali - merged["AdjustedQualiTime"]
     print(f"✅ Qualifying data added for "
           f"{merged['QualifyingTime'].notna().sum()}/{len(merged)} drivers.")
+    return merged
+
+
+def _zscore(series):
+    values = pd.Series(series, dtype=float)
+    std = values.std(ddof=0)
+    if std == 0 or np.isnan(std):
+        return pd.Series(np.zeros(len(values)), index=values.index)
+    return (values - values.mean()) / std
+
+
+def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=0.0):
+    """Transform baseline lap-time predictions into more realistic race outcomes."""
+    char = CIRCUIT_CHARACTERISTICS.get(circuit_key, {})
+    overtaking = char.get("overtaking", 0.5)
+    safety_car = char.get("safety_car_likelihood", 0.4)
+    tyre_deg = char.get("tyre_deg", 0.5)
+
+    quali_lock_in = np.clip(
+        0.58 + 0.34 * (1.0 - overtaking) + 0.12 * (1.0 - safety_car) - 0.18 * rain_probability,
+        0.28,
+        0.82,
+    )
+    pace_weight = np.clip(
+        0.52 + 0.24 * overtaking + 0.10 * tyre_deg + 0.15 * rain_probability,
+        0.38,
+        0.84,
+    )
+    form_weight = 0.16 + 0.04 * rain_probability
+    consistency_weight = 0.10 + 0.04 * tyre_deg
+    strategy_weight = 0.08 + 0.04 * overtaking
+
+    weight_total = quali_lock_in + pace_weight + form_weight + consistency_weight + strategy_weight
+    quali_lock_in /= weight_total
+    pace_weight /= weight_total
+    form_weight /= weight_total
+    consistency_weight /= weight_total
+    strategy_weight /= weight_total
+
+    merged = merged.copy()
+    merged["RaceProjectionScore"] = (
+        _zscore(merged["PredictedLapTime"]) * pace_weight +
+        _zscore(merged["AdjustedQualiTime"]) * quali_lock_in +
+        _zscore(merged["CleanAirPace"]) * (pace_weight * 0.55) +
+        _zscore(merged["CurrentForm"]) * form_weight +
+        _zscore(merged["PreviousPosition"]) * (form_weight * 0.45) +
+        _zscore(merged["ConsistencyScore"]) * consistency_weight +
+        _zscore(merged["PitTimeLoss"]) * strategy_weight +
+        _zscore(merged["TyreDegFactor"]) * (strategy_weight * 0.55) -
+        _zscore(merged["SeasonMomentum"]) * 0.05 +
+        _zscore(merged["GridAdvantage"]) * -0.08
+    )
+    merged["RaceProjectionTime"] = (
+        merged["PredictedLapTime"].min() + 1.15 + _zscore(merged["RaceProjectionScore"]) * 0.85
+    )
+
+    model_cols = ["PredictedLapTime_GB", "PredictedLapTime_XGB"]
+    if "PredictedLapTime_LSTM" in merged.columns:
+        model_cols.append("PredictedLapTime_LSTM")
+    model_dispersion = merged[model_cols].std(axis=1).fillna(0.0)
+
+    volatility = 0.55 * (1.0 - overtaking) + 0.25 * rain_probability + 0.20 * safety_car
+    raw_uncertainty = (
+        model_dispersion +
+        merged["ConsistencyScore"].fillna(0.0) * 18.0 +
+        np.abs(merged["PositionTrend"]).fillna(0.0) * 0.18 +
+        volatility
+    )
+    uncertainty_floor = max(float(np.nanpercentile(raw_uncertainty, 20)), 0.45)
+    uncertainty_ceiling = max(float(np.nanpercentile(raw_uncertainty, 85)), uncertainty_floor + 0.25)
+    merged["PredictionUncertainty"] = raw_uncertainty.round(3)
+    merged["UncertaintyPercentile"] = (
+        (raw_uncertainty - uncertainty_floor) / (uncertainty_ceiling - uncertainty_floor)
+    ).clip(0.0, 1.0)
+    merged["PredictionConfidence"] = pd.cut(
+        merged["UncertaintyPercentile"],
+        bins=[-np.inf, 0.34, 0.68, np.inf],
+        labels=["High", "Medium", "Low"],
+    ).astype(str)
+
+    gap_to_leader = (merged["RaceProjectionTime"] - merged["RaceProjectionTime"].min()).clip(lower=0.0)
+    win_scale = max(0.12, 0.18 + volatility * 0.35 + model_dispersion.mean() * 0.8)
+    win_weights = np.exp(-(gap_to_leader / win_scale))
+    merged["WinProbability"] = (win_weights / max(win_weights.sum(), 1e-9) * 100).round(1)
+    print(
+        f"✅ Race-aware postprocessing applied "
+        f"(quali={quali_lock_in:.0%}, pace={pace_weight:.0%}, form={form_weight:.0%})."
+    )
     return merged
 
 
@@ -701,8 +832,7 @@ def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
         w_gb   = (1.0 - w_lstm) / 2
         w_xgb  = (1.0 - w_lstm) / 2
         total_steps = 4
-        print(f"🧠 LSTM integrated into ensemble — weights: "
-              f"GBR={w_gb:.0%}, XGB={w_xgb:.0%}, LSTM={w_lstm:.0%}")
+        print("🧠 LSTM integrated into ensemble candidate pool.")
     else:
         w_gb  = 0.5
         w_xgb = 0.5
@@ -729,6 +859,24 @@ def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
     xgb_model = XGBRegressor(**_xgb)
     xgb_model.fit(X_train, y_train)
     pbar.update(1)
+
+    gb_test = gb_model.predict(X_test)
+    xgb_test = xgb_model.predict(X_test)
+    gb_mae = mean_absolute_error(y_test, gb_test)
+    xgb_mae = mean_absolute_error(y_test, xgb_test)
+    inv_gb = 1.0 / max(gb_mae, 1e-6)
+    inv_xgb = 1.0 / max(xgb_mae, 1e-6)
+    if use_lstm:
+        base_total = inv_gb + inv_xgb
+        gb_share = inv_gb / base_total
+        xgb_share = inv_xgb / base_total
+        w_lstm = min(max(lstm_weight, 0.10), 0.18)
+        w_gb = (1.0 - w_lstm) * gb_share
+        w_xgb = (1.0 - w_lstm) * xgb_share
+    else:
+        total_inv = inv_gb + inv_xgb
+        w_gb = inv_gb / total_inv
+        w_xgb = inv_xgb / total_inv
 
     # LSTM predictions (pre-computed, just validate & align)
     lstm_all = None
@@ -770,6 +918,8 @@ def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
     pbar.close()
 
     ensemble_desc = "GBR+XGB+LSTM" if use_lstm else "GBR+XGB"
+    print(f"⚖️  Dynamic ensemble weights: GBR={w_gb:.0%}, XGB={w_xgb:.0%}"
+          + (f", LSTM={w_lstm:.0%}" if use_lstm else ""))
     print(f"✅ Ensemble model trained successfully ({ensemble_desc}).")
     return {
         "gb_model": gb_model, "xgb_model": xgb_model,
@@ -777,6 +927,8 @@ def train_ensemble(merged, feature_cols=None, target_col="AdjustedQualiTime",
         "X_imputed": X_imp, "X_scaled": X_scaled,
         "y_imputed": y_imp, "scaler": scaler,
         "X_test": X_test, "y_test": y_test,
+        "ensemble_weights": {"gb": w_gb, "xgb": w_xgb, "lstm": w_lstm if use_lstm else 0.0},
+        "test_predictions": {"gb": gb_test, "xgb": xgb_test},
         "merged": merged, "feature_cols": feature_cols,
     }
 
@@ -802,14 +954,24 @@ def evaluate_models(results):
                       "R²": 0.0})
 
     # Ensemble
-    gb_test  = results["gb_model"].predict(X_test)
-    xgb_test = results["xgb_model"].predict(X_test)
+    gb_test  = results.get("test_predictions", {}).get("gb")
+    xgb_test = results.get("test_predictions", {}).get("xgb")
+    if gb_test is None:
+        gb_test = results["gb_model"].predict(X_test)
+    if xgb_test is None:
+        xgb_test = results["xgb_model"].predict(X_test)
+    weights = results.get("ensemble_weights", {"gb": 0.5, "xgb": 0.5, "lstm": 0.0})
     if lstm_used:
-        # For test eval, use GBR+XGB since LSTM doesn't have test split
-        ens = (gb_test + xgb_test) / 2
+        # LSTM does not expose a held-out test split in this implementation,
+        # so evaluation uses the calibrated GBR/XGB blend.
+        eval_weight_sum = max(weights["gb"] + weights["xgb"], 1e-9)
+        ens = (
+            (weights["gb"] / eval_weight_sum) * gb_test +
+            (weights["xgb"] / eval_weight_sum) * xgb_test
+        )
         ens_name = "Ensemble (GBR + XGB + LSTM)"
     else:
-        ens = (gb_test + xgb_test) / 2
+        ens = weights["gb"] * gb_test + weights["xgb"] * xgb_test
         ens_name = "Ensemble (GBR + XGB)"
 
     rows.append({"Model": ens_name,
@@ -835,15 +997,26 @@ def predicted_classification(merged, gp_name="Grand Prix"):
     results = (
         merged[["Driver", "DriverName", "Team", "QualifyingTime",
                 "PredictedLapTime_GB", "PredictedLapTime_XGB",
-                "PredictedLapTime"]]
-        .sort_values("PredictedLapTime")
+                "PredictedLapTime", "RaceProjectionTime",
+                "PredictionUncertainty", "PredictionConfidence",
+                "WinProbability"]]
+        .sort_values("RaceProjectionTime" if "RaceProjectionTime" in merged.columns else "PredictedLapTime")
         .reset_index(drop=True)
     )
     results.index += 1
     results.index.name = "Pos"
     results["Points"] = results.index.map(lambda p: F1_POINTS.get(p, 0))
-    results["Gap"]    = (results["PredictedLapTime"] -
-                         results["PredictedLapTime"].iloc[0]).round(3)
+    anchor_col = "RaceProjectionTime" if "RaceProjectionTime" in results.columns else "PredictedLapTime"
+    results["Gap"]    = (results[anchor_col] - results[anchor_col].iloc[0]).round(3)
+    if "UncertaintyPercentile" in merged.columns:
+        results["UncertaintyPercentile"] = merged["UncertaintyPercentile"].values
+        uncertainty_steps = (
+            1 + np.clip(np.round(results["UncertaintyPercentile"].fillna(0.5) * 3), 0, 3)
+        ).astype(int)
+    else:
+        uncertainty_steps = np.clip(np.ceil(results["PredictionUncertainty"].fillna(0.8)), 1, 4).astype(int)
+    results["FinishRangeLow"] = np.maximum(1, results.index.to_series() - uncertainty_steps)
+    results["FinishRangeHigh"] = np.minimum(len(results), results.index.to_series() + uncertainty_steps)
 
     print("\n" + "=" * 80)
     print(f"  🏁  PREDICTED {gp_name.upper()} FINISHING ORDER  🏁")
@@ -852,8 +1025,9 @@ def predicted_classification(merged, gp_name="Grand Prix"):
         medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(pos, "  ")
         gap   = "LEADER" if pos == 1 else f"+{row['Gap']:.3f}s"
         print(f"  {medal}{pos:>2}  {row['Driver']:<5} {row['DriverName']:<22} "
-              f"{row['Team']:<18} {row['PredictedLapTime']:.3f}s  "
-              f"{gap:>10}  {row['Points']:>2} pts")
+              f"{row['Team']:<18} {row[anchor_col]:.3f}s  "
+              f"{gap:>10}  {row['Points']:>2} pts  "
+              f"[{row['PredictionConfidence']}]")
     print("=" * 80)
     return results
 

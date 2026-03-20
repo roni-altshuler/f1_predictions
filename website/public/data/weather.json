@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-03-13T10:53:41.025372",
+  "lastUpdated": "2026-03-20T12:56:21.647312",
   "races": [
     {
       "round": 1,
@@ -54,48 +54,48 @@
       "round": 2,
       "gpKey": "China",
       "name": "Chinese Grand Prix",
-      "date": "2026-03-22",
-      "rainProbability": 0.23,
-      "temperatureC": 12.5,
-      "humidity": 80.8,
-      "windSpeedKmh": 15.6,
-      "windDirection": 130,
-      "cloudCover": 98,
+      "date": "2026-03-15",
+      "rainProbability": 0.03,
+      "temperatureC": 14.1,
+      "humidity": 62.2,
+      "windSpeedKmh": 10.9,
+      "windDirection": 65,
+      "cloudCover": 95,
       "precipitationMm": 0.0,
       "weatherDescription": "Overcast",
       "source": "cache",
       "forecastDetail": [
         {
-          "time": "2026-03-22T14:00",
-          "temperature_c": 12.2,
-          "rain_probability": 0.16,
+          "time": "2026-03-15T14:00",
+          "temperature_c": 14.7,
+          "rain_probability": 0.0,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 14.4,
-          "cloud_cover": 100
+          "wind_speed_kmh": 9.8,
+          "cloud_cover": 90
         },
         {
-          "time": "2026-03-22T15:00",
-          "temperature_c": 12.4,
-          "rain_probability": 0.19,
+          "time": "2026-03-15T15:00",
+          "temperature_c": 14.5,
+          "rain_probability": 0.0,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 15.1,
+          "wind_speed_kmh": 10.9,
+          "cloud_cover": 92
+        },
+        {
+          "time": "2026-03-15T16:00",
+          "temperature_c": 14.0,
+          "rain_probability": 0.0,
+          "precipitation_mm": 0.0,
+          "wind_speed_kmh": 11.9,
           "cloud_cover": 99
         },
         {
-          "time": "2026-03-22T16:00",
-          "temperature_c": 12.6,
-          "rain_probability": 0.22,
+          "time": "2026-03-15T17:00",
+          "temperature_c": 13.2,
+          "rain_probability": 0.03,
           "precipitation_mm": 0.0,
-          "wind_speed_kmh": 16.3,
-          "cloud_cover": 98
-        },
-        {
-          "time": "2026-03-22T17:00",
-          "temperature_c": 12.6,
-          "rain_probability": 0.23,
-          "precipitation_mm": 0.0,
-          "wind_speed_kmh": 16.5,
-          "cloud_cover": 97
+          "wind_speed_kmh": 11.2,
+          "cloud_cover": 100
         }
       ]
     },
@@ -103,23 +103,56 @@
       "round": 3,
       "gpKey": "Japan",
       "name": "Japanese Grand Prix",
-      "date": "2026-04-05",
-      "rainProbability": 0.2,
-      "temperatureC": 16,
-      "humidity": 60.0,
-      "windSpeedKmh": 15.0,
-      "windDirection": 0,
-      "cloudCover": 30,
-      "precipitationMm": 0.0,
-      "weatherDescription": "Estimated (API unavailable)",
-      "source": "static",
-      "forecastDetail": []
+      "date": "2026-03-29",
+      "rainProbability": 0.12,
+      "temperatureC": 9.8,
+      "humidity": 87.8,
+      "windSpeedKmh": 7.8,
+      "windDirection": 319,
+      "cloudCover": 100,
+      "precipitationMm": 4.0,
+      "weatherDescription": "Light drizzle",
+      "source": "cache",
+      "forecastDetail": [
+        {
+          "time": "2026-03-29T14:00",
+          "temperature_c": 10.2,
+          "rain_probability": 0.12,
+          "precipitation_mm": 1.8,
+          "wind_speed_kmh": 4.8,
+          "cloud_cover": 100
+        },
+        {
+          "time": "2026-03-29T15:00",
+          "temperature_c": 9.5,
+          "rain_probability": 0.1,
+          "precipitation_mm": 1.8,
+          "wind_speed_kmh": 9.3,
+          "cloud_cover": 100
+        },
+        {
+          "time": "2026-03-29T16:00",
+          "temperature_c": 9.6,
+          "rain_probability": 0.1,
+          "precipitation_mm": 0.2,
+          "wind_speed_kmh": 9.7,
+          "cloud_cover": 100
+        },
+        {
+          "time": "2026-03-29T17:00",
+          "temperature_c": 10.1,
+          "rain_probability": 0.12,
+          "precipitation_mm": 0.2,
+          "wind_speed_kmh": 7.6,
+          "cloud_cover": 100
+        }
+      ]
     },
     {
       "round": 4,
       "gpKey": "Bahrain",
       "name": "Bahrain Grand Prix",
-      "date": "2026-04-19",
+      "date": "2026-04-12",
       "rainProbability": 0.02,
       "temperatureC": 32,
       "humidity": 60.0,
@@ -135,7 +168,7 @@
       "round": 5,
       "gpKey": "Saudi Arabia",
       "name": "Saudi Arabian Grand Prix",
-      "date": "2026-05-03",
+      "date": "2026-04-19",
       "rainProbability": 0.02,
       "temperatureC": 28,
       "humidity": 60.0,
@@ -151,7 +184,7 @@
       "round": 6,
       "gpKey": "Miami",
       "name": "Miami Grand Prix",
-      "date": "2026-05-17",
+      "date": "2026-05-03",
       "rainProbability": 0.15,
       "temperatureC": 30,
       "humidity": 60.0,

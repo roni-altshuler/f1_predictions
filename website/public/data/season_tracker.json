@@ -7,11 +7,27 @@
       "exactMatches": 0,
       "within3": 8,
       "accuracyPct": 36.4
+    },
+    {
+      "round": 2,
+      "hasActual": true,
+      "meanError": 3.45,
+      "exactMatches": 2,
+      "within3": 14,
+      "accuracyPct": 63.6
+    },
+    {
+      "round": 3,
+      "hasActual": false,
+      "meanError": null,
+      "exactMatches": null,
+      "within3": null,
+      "accuracyPct": null
     }
   ],
   "overallAccuracy": {
-    "seasonMeanError": 5.55,
-    "seasonAccuracyPct": 36.4,
-    "roundsWithActual": 1
+    "seasonMeanError": 4.5,
+    "seasonAccuracyPct": 50.0,
+    "roundsWithActual": 2
   }
 }

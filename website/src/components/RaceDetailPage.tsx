@@ -42,6 +42,7 @@ const VIZ_CATEGORIES = [
       { key: "team_vs_pace", label: "Team vs Pace", desc: "Team performance comparison" },
       { key: "pace_vs_predicted", label: "Pace vs Predicted", desc: "Correlation between raw pace and prediction" },
       { key: "laptime_distribution", label: "Lap Time Distribution", desc: "Statistical distribution of predicted times" },
+      { key: "prediction_confidence", label: "Prediction Confidence", desc: "Projected confidence bands for the finishing order" },
     ],
   },
   {
@@ -136,7 +137,7 @@ export default function RaceDetailPage({ round }: Props) {
             <div className="card p-4 mb-8">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="section-heading mb-0">Circuit Plot</h3>
-                <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Track Map</span>
+                <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Corners Labeled</span>
               </div>
               <img
                 src={previewTrackMapSrc}
@@ -149,7 +150,7 @@ export default function RaceDetailPage({ round }: Props) {
 
           <div className="card p-6 mb-8">
             <h3 className="section-heading">Circuit Profile</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div className="metric-card"><p className="text-xs" style={{ color: "var(--text-muted)" }}>Circuit</p><p className="text-lg font-black" style={{ color: "var(--text)" }}>{seasonRace.circuit}</p></div>
               <div className="metric-card"><p className="text-xs" style={{ color: "var(--text-muted)" }}>Length</p><p className="text-lg font-black" style={{ color: "var(--text)" }}>{seasonRace.circuitKm} km</p></div>
               <div className="metric-card"><p className="text-xs" style={{ color: "var(--text-muted)" }}>Laps</p><p className="text-lg font-black" style={{ color: "var(--text)" }}>{seasonRace.laps}</p></div>
@@ -197,12 +198,15 @@ export default function RaceDetailPage({ round }: Props) {
   ];
 
   const vizFiles = [...new Set([...(data.visualizations || [])])];
-  const mlViz = vizFiles.filter(f => ["predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png", "pace_vs_predicted.png", "laptime_distribution.png"].includes(f));
+  const mlViz = vizFiles.filter(f => ["predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png", "pace_vs_predicted.png", "laptime_distribution.png", "prediction_confidence.png"].includes(f));
   const fastf1Viz = vizFiles.filter(f => ["laptime_distribution_historical.png", "tyre_strategy.png"].includes(f));
   const advancedViz = vizFiles.filter(f => ["pit_strategy_comparison.png", "tyre_degradation_curves.png", "lstm_pace_prediction.png"].includes(f));
   const trackMapSrc = failedImages.has("track_map.png") ? null : getVisualizationPath(round, "track_map.png");
   const actualRows = data.actualResults ? Object.entries(data.actualResults).sort((a, b) => a[1] - b[1]) : [];
+  const actualStatus = data.actualStatus || {};
   const predictedByDriver = new Map(data.classification.map((e) => [e.driver, e]));
+  const confidenceTone = (value?: string) =>
+    value === "High" ? "#00D2BE" : value === "Low" ? "#E10600" : "#FF8000";
   const comparisonChartData = actualRows
     .map(([driver, actualPos]) => {
       const pred = predictedByDriver.get(driver);
@@ -346,7 +350,14 @@ export default function RaceDetailPage({ round }: Props) {
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>{entry.team}</p>
                     </div>
                   </div>
-                  <p className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>{entry.gap === "LEADER" ? "Projected leader" : `+${entry.gap}s`}</p>
+                  <div className="text-right">
+                    <p className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>{entry.gap === "LEADER" ? "Projected leader" : `+${entry.gap}s`}</p>
+                    {entry.winProbability != null && (
+                      <p className="text-xs font-bold mt-1" style={{ color: confidenceTone(entry.confidence) }}>
+                        {entry.winProbability.toFixed(1)}% win
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -360,6 +371,7 @@ export default function RaceDetailPage({ round }: Props) {
                 {actualRows.slice(0, 5).map(([driver, position]) => {
                   const predicted = predictedByDriver.get(driver);
                   const delta = predicted ? predicted.position - position : null;
+                  const actualLabel = actualStatus[driver] || `P${position}`;
                   return (
                     <div key={`actual-${driver}`} className="report-row">
                       <div className="flex items-center gap-3">
@@ -371,7 +383,7 @@ export default function RaceDetailPage({ round }: Props) {
                         </div>
                       </div>
                       <p className="text-sm font-mono" style={{ color: delta == null ? "var(--text-muted)" : Math.abs(delta) <= 2 ? "#00D2BE" : "#E10600" }}>
-                        {delta == null ? "No forecast match" : delta === 0 ? "Exact match" : delta > 0 ? `${delta} better than predicted` : `${Math.abs(delta)} worse than predicted`}
+                        {actualLabel} • {delta == null ? "No forecast match" : delta === 0 ? "Exact match" : delta > 0 ? `${delta} better than predicted` : `${Math.abs(delta)} worse than predicted`}
                       </p>
                     </div>
                   );
@@ -384,6 +396,32 @@ export default function RaceDetailPage({ round }: Props) {
             )}
           </div>
         </div>
+        {data.predictionInsights && (
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-4">
+            <div className="metric-card">
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Likeliest Winner</p>
+              <p className="text-xl font-black" style={{ color: "var(--text)" }}>{data.predictionInsights.mostLikelyWinner}</p>
+              {data.predictionInsights.winnerProbability != null && (
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                  {data.predictionInsights.winnerProbability.toFixed(1)}% projected win probability
+                </p>
+              )}
+            </div>
+            <div className="metric-card">
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Closest Battle</p>
+              <p className="text-xl font-black" style={{ color: "var(--text)" }}>{data.predictionInsights.closestBattle.drivers.join(" vs ")}</p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{data.predictionInsights.closestBattle.gap.toFixed(3)}s projected gap</p>
+            </div>
+            <div className="metric-card">
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>High Confidence Calls</p>
+              <p className="text-xl font-black" style={{ color: "#00D2BE" }}>{data.predictionInsights.highConfidenceCount}</p>
+            </div>
+            <div className="metric-card">
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Avg Uncertainty</p>
+              <p className="text-xl font-black" style={{ color: "var(--text)" }}>{data.metrics.avgUncertainty?.toFixed(2) ?? "—"}</p>
+            </div>
+          </div>
+        )}
       </motion.div>
 
       {trackMapSrc && (
@@ -395,7 +433,7 @@ export default function RaceDetailPage({ round }: Props) {
         >
           <div className="flex items-center justify-between mb-3">
             <h3 className="section-heading mb-0">Circuit Plot</h3>
-            <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Track Map</span>
+            <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Corners Labeled</span>
           </div>
           <img
             src={trackMapSrc}
@@ -533,7 +571,7 @@ export default function RaceDetailPage({ round }: Props) {
                       const delta = predPos != null ? predPos - actualPos : null;
                       return (
                         <tr key={`cmp-${drv}`} style={{ borderBottom: "1px solid var(--border)" }}>
-                          <td className="px-3 py-2 font-mono font-bold" style={{ color: "var(--text)" }}>P{actualPos}</td>
+                          <td className="px-3 py-2 font-mono font-bold" style={{ color: "var(--text)" }}>{actualStatus[drv] || `P${actualPos}`}</td>
                           <td className="px-3 py-2 font-mono" style={{ color: "var(--text)" }}>{predPos != null ? `P${predPos}` : "-"}</td>
                           <td className="px-3 py-2 font-mono" style={{ color: delta == null ? "var(--text-muted)" : Math.abs(delta) <= 2 ? "#00D2BE" : "#E10600" }}>
                             {delta == null ? "-" : delta === 0 ? "0" : delta > 0 ? `+${delta}` : `${delta}`}
@@ -603,7 +641,7 @@ export default function RaceDetailPage({ round }: Props) {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                    {["POS", "DRIVER", "", "TEAM", "TIME", "GAP", "PTS"].map((h) => (
+                    {["POS", "DRIVER", "", "TEAM", "TIME", "RANGE", "WIN", "CONF", "PTS"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{h}</th>
                     ))}
                   </tr>
@@ -621,7 +659,19 @@ export default function RaceDetailPage({ round }: Props) {
                       <td className="px-1 py-3"><div className="w-1 h-6 rounded" style={{ backgroundColor: entry.teamColor }} /></td>
                       <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{entry.team}</td>
                       <td className="px-4 py-3 font-mono text-sm" style={{ color: "var(--text)" }}>{entry.predictedTime}s</td>
-                      <td className="px-4 py-3 font-mono text-sm" style={{ color: "var(--text-muted)" }}>{formatGap(entry.gap)}</td>
+                      <td className="px-4 py-3 font-mono text-sm" style={{ color: "var(--text-muted)" }}>
+                        {entry.finishRangeLow && entry.finishRangeHigh
+                          ? `P${entry.finishRangeLow}-P${entry.finishRangeHigh}`
+                          : formatGap(entry.gap)}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-sm" style={{ color: "var(--text-muted)" }}>
+                        {entry.winProbability != null ? `${entry.winProbability.toFixed(1)}%` : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: confidenceTone(entry.confidence) }}>
+                          {entry.confidence || "Medium"}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
                         {entry.points > 0 ? <span className="font-bold text-f1-red">{entry.points}</span> : <span style={{ color: "var(--text-muted)" }}>—</span>}
                       </td>
@@ -678,6 +728,36 @@ export default function RaceDetailPage({ round }: Props) {
               ))}
             </div>
           </div>
+
+          {data.predictionInsights && (
+            <div className="card p-6 sm:p-8">
+              <h3 className="section-heading">Model Readout</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="metric-card">
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Pole-to-Win Bias</p>
+                  <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{data.predictionInsights.poleToWinBias}%</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>How strongly this circuit rewards track position in our forecast blend.</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Likeliest Winner</p>
+                  <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{data.predictionInsights.mostLikelyWinner}</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    {data.predictionInsights.winnerProbability?.toFixed(1) ?? "—"}% projected win probability
+                  </p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>High Confidence</p>
+                  <p className="text-2xl font-black" style={{ color: "#00D2BE" }}>{data.predictionInsights.highConfidenceCount}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Medium / Low Confidence</p>
+                  <p className="text-2xl font-black" style={{ color: "#FF8000" }}>
+                    {data.predictionInsights.mediumConfidenceCount} / <span style={{ color: "#E10600" }}>{data.predictionInsights.lowConfidenceCount}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Weather */}
           {data.weatherData && (
@@ -991,6 +1071,10 @@ export default function RaceDetailPage({ round }: Props) {
               <div className="metric-card">
                 <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Training Data</p>
                 <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{data.metrics.trainingYears.join(", ")}</p>
+              </div>
+              <div className="metric-card">
+                <p className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>Avg Uncertainty</p>
+                <p className="text-2xl font-black" style={{ color: "var(--text)" }}>{data.metrics.avgUncertainty?.toFixed(2) ?? "—"}</p>
               </div>
             </div>
           </div>

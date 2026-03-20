@@ -40,6 +40,24 @@ def _ensure_dirs():
         os.makedirs(d, exist_ok=True)
 
 
+def ensure_track_map_asset(round_num, gp_key, fallback_year=2025):
+    """Ensure a labeled-corner circuit map exists when FastF1 data is available."""
+    round_viz_dir = os.path.join(VIZ_DIR, f"round_{round_num:02d}")
+    os.makedirs(round_viz_dir, exist_ok=True)
+    target = os.path.join(round_viz_dir, "track_map.png")
+
+    if os.path.exists(target):
+        return True
+
+    try:
+        from generate_fastf1_viz import plot_track_map, enable_cache
+        enable_cache()
+        return bool(plot_track_map(fallback_year, gp_key, round_viz_dir))
+    except Exception as e:
+        print(f"  ℹ️  Track map generation skipped for {gp_key}: {e}")
+        return False
+
+
 def _safe_load_json(path):
     if not os.path.exists(path):
         return None
@@ -126,6 +144,27 @@ def _get_round_preserved_fields(round_num, existing_round):
                 preserved["accuracy"] = round_accuracy
 
     return preserved
+
+
+def _sync_tracker_actuals(round_num, round_data):
+    """Keep season_tracker sources aligned with any round file actual result."""
+    actual_results = round_data.get("actualResults")
+    if not isinstance(actual_results, dict) or not actual_results:
+        return
+
+    try:
+        from advanced_models import SeasonTracker
+        tracker = SeasonTracker()
+        tracker.add_prediction(round_num, round_data.get("classification", []))
+        tracker.add_actual_result(round_num, actual_results)
+        tracker_export = tracker.export_for_website()
+        round_data["trackerData"] = tracker_export
+        tracker_path = os.path.join("website", "public", "data", "season_tracker.json")
+        os.makedirs(os.path.dirname(tracker_path), exist_ok=True)
+        with open(tracker_path, "w") as f:
+            json.dump(tracker_export, f, indent=2)
+    except Exception as e:
+        print(f"  ⚠️  Tracker actual-result sync failed: {e}")
 
 
 # ── Weather estimates per GP ─────────────────────────────────────────────
@@ -285,7 +324,8 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
     grid            = build_grid_dataframe()
     merged          = build_training_dataset(grid, driver_stats,
                                              circuit_key=gp_key,
-                                             current_round=round_num)
+                                             current_round=round_num,
+                                             sprint=info.get("sprint", False))
     quali_estimates = generate_qualifying_estimates(gp_key)
     quali           = get_qualifying_or_estimates(2026, gp_key, quali_estimates)
     merged          = apply_qualifying_data(merged, quali,
@@ -306,6 +346,10 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
     results         = train_ensemble(merged, max_spread_s=3.5,
                                      lstm_predictions=lstm_preds)
     merged          = results["merged"]
+    merged          = apply_race_postprocessing(
+        merged, circuit_key=gp_key, rain_probability=weather["rain"]
+    )
+    results["merged"] = merged
     metrics_df      = evaluate_models(results)
     classification  = predicted_classification(merged, gp_name)
 
@@ -327,6 +371,9 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         if fname not in viz_filenames:
             viz_filenames.append(fname)
 
+    if ensure_track_map_asset(round_num, gp_key) and "track_map.png" not in viz_filenames:
+        viz_filenames.append("track_map.png")
+
     # ── Classification → ClassificationEntry[] ──
     classification_data = []
     for pos, row in classification.iterrows():
@@ -341,6 +388,10 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
             "predictedTime": round(float(row["PredictedLapTime"]), 3),
             "gap":           gap_str,
             "points":        int(row["Points"]),
+            "confidence":    row.get("PredictionConfidence", "Medium"),
+            "finishRangeLow": int(row.get("FinishRangeLow", pos)),
+            "finishRangeHigh": int(row.get("FinishRangeHigh", pos)),
+            "winProbability": round(float(row.get("WinProbability", 0.0)), 1),
         })
 
     # ── Metrics → ModelMetrics ──
@@ -352,6 +403,7 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         "mae":           round(float(mae_vals.mean()), 4),
         "maxSpread":     round(float(pred.max() - pred.min()), 3),
         "trainingYears": years,
+        "avgUncertainty": round(float(merged["PredictionUncertainty"].mean()), 3),
     }
 
     # ── Feature importance → FeatureImportance[] ──
@@ -371,6 +423,19 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         classification_data[1]["driver"],
         classification_data[2]["driver"],
     ]
+    confidence_counts = merged["PredictionConfidence"].value_counts().to_dict()
+    prediction_insights = {
+        "poleToWinBias": round(float((merged["AdjustedQualiTime"].rank(method="min").astype(int) == merged["RaceProjectionTime"].rank(method="min").astype(int)).mean() * 100), 1),
+        "highConfidenceCount": int(confidence_counts.get("High", 0)),
+        "mediumConfidenceCount": int(confidence_counts.get("Medium", 0)),
+        "lowConfidenceCount": int(confidence_counts.get("Low", 0)),
+        "mostLikelyWinner": classification_data[0]["driver"],
+        "winnerProbability": classification_data[0].get("winProbability", 0.0),
+        "closestBattle": {
+            "drivers": [classification_data[1]["driver"], classification_data[2]["driver"]],
+            "gap": round(float(classification_data[2]["predictedTime"] - classification_data[1]["predictedTime"]), 3),
+        },
+    }
 
     char = CIRCUIT_CHARACTERISTICS.get(gp_key, {})
 
@@ -413,6 +478,7 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
             "weatherDescription": weather_full.get("weather_description", None) if weather_full else None,
             "source":           weather_full.get("source", "static") if weather_full else "static",
         },
+        "predictionInsights": prediction_insights,
     }
 
     round_data.update(_get_round_preserved_fields(round_num, existing_round))
@@ -427,6 +493,7 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         except Exception as e:
             print(f"  ⚠️  Telemetry extraction failed: {e}")
 
+    _sync_tracker_actuals(round_num, round_data)
     _write_json(path, round_data)
     print(f"✅ Round {round_num} data → {path}")
     if return_merged:
@@ -595,6 +662,52 @@ def _export_visualizations(results, merged, classification, out_dir, gp_name):
                 facecolor=fig.get_facecolor())
     plt.close(fig)
     filenames.append(fname)
+
+    # 6. Prediction confidence / expected finish range
+    if {"PredictionUncertainty", "PredictionConfidence"}.issubset(merged.columns):
+        fig, ax = plt.subplots(figsize=(14, 9), facecolor="#1a1a2e")
+        ax.set_facecolor("#1a1a2e")
+        conf_colors = {"High": "#00D2BE", "Medium": "#FF8000", "Low": "#E10600"}
+        conf_df = classification.copy().reset_index()
+        conf_df["Confidence"] = conf_df["Driver"].map(
+            merged.set_index("Driver")["PredictionConfidence"].to_dict()
+        )
+        conf_df["RangeLow"] = conf_df["Driver"].map(
+            merged.set_index("Driver")["PredictionUncertainty"].to_dict()
+        )
+        colors = [conf_colors.get(c, "#9CA3AF") for c in conf_df["Confidence"]]
+        bars = ax.barh(conf_df["Driver"], conf_df["Gap"], color=colors, edgecolor="white", linewidth=0.5)
+        ax.invert_yaxis()
+        ax.set_xlabel("Projected Gap to Winner (s)", fontsize=13, color="white")
+        ax.set_title(f"Prediction Confidence — 2026 {gp_name}",
+                     fontsize=16, fontweight="bold", color="white")
+        for bar, confidence in zip(bars, conf_df["Confidence"]):
+            ax.text(
+                bar.get_width() + 0.03,
+                bar.get_y() + bar.get_height() / 2,
+                str(confidence).upper(),
+                va="center",
+                fontsize=9,
+                color="white",
+                fontweight="bold",
+            )
+        ax.tick_params(colors="white")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_color("white")
+        ax.spines["left"].set_color("white")
+        legend_patches = [
+            plt.Rectangle((0, 0), 1, 1, color=color, label=label)
+            for label, color in conf_colors.items()
+        ]
+        ax.legend(handles=legend_patches, loc="lower right", facecolor="#1a1a2e",
+                  edgecolor="white", labelcolor="white", fontsize=10)
+        plt.tight_layout()
+        fname = "prediction_confidence.png"
+        fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight",
+                    facecolor=fig.get_facecolor())
+        plt.close(fig)
+        filenames.append(fname)
 
     print(f"  📊 {len(filenames)} visualisations → {out_dir}/")
     return filenames
