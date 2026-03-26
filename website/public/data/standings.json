@@ -22,13 +22,13 @@
       "driverFullName": "Charles Leclerc",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "points": 45,
+      "points": 42,
       "wins": 0,
-      "podiums": 3,
+      "podiums": 2,
       "pointsHistory": [
         15,
         30,
-        45
+        42
       ]
     },
     {
@@ -67,13 +67,13 @@
       "driverFullName": "Lando Norris",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "points": 38,
+      "points": 35,
       "wins": 0,
       "podiums": 1,
       "pointsHistory": [
         10,
         20,
-        38
+        35
       ]
     },
     {
@@ -97,13 +97,13 @@
       "driverFullName": "Oscar Piastri",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "points": 12,
+      "points": 18,
       "wins": 0,
-      "podiums": 0,
+      "podiums": 1,
       "pointsHistory": [
         0,
         0,
-        12
+        18
       ]
     },
     {
@@ -353,7 +353,7 @@
       "position": 2,
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "points": 77,
+      "points": 74,
       "wins": 0,
       "drivers": [
         "LEC",
@@ -362,14 +362,14 @@
       "pointsHistory": [
         27,
         54,
-        77
+        74
       ]
     },
     {
       "position": 3,
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "points": 50,
+      "points": 53,
       "wins": 0,
       "drivers": [
         "NOR",
@@ -378,7 +378,7 @@
       "pointsHistory": [
         10,
         20,
-        50
+        53
       ]
     },
     {
@@ -525,8 +525,8 @@
       "driverFullName": "Charles Leclerc",
       "team": "Ferrari",
       "teamColor": "#E8002D",
-      "currentPoints": 45,
-      "maxPossiblePoints": 591,
+      "currentPoints": 42,
+      "maxPossiblePoints": 588,
       "canStillWin": true
     },
     {
@@ -552,8 +552,8 @@
       "driverFullName": "Lando Norris",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "currentPoints": 38,
-      "maxPossiblePoints": 584,
+      "currentPoints": 35,
+      "maxPossiblePoints": 581,
       "canStillWin": true
     },
     {
@@ -570,8 +570,8 @@
       "driverFullName": "Oscar Piastri",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "currentPoints": 12,
-      "maxPossiblePoints": 558,
+      "currentPoints": 18,
+      "maxPossiblePoints": 564,
       "canStillWin": true
     },
     {
