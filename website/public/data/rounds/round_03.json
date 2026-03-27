@@ -19,7 +19,7 @@
       "confidence": "High",
       "finishRangeLow": 1,
       "finishRangeHigh": 3,
-      "winProbability": 26.0
+      "winProbability": 26.4
     },
     {
       "position": 2,
@@ -33,7 +33,7 @@
       "confidence": "High",
       "finishRangeLow": 1,
       "finishRangeHigh": 3,
-      "winProbability": 17.6
+      "winProbability": 17.7
     },
     {
       "position": 3,
@@ -42,7 +42,7 @@
       "team": "McLaren",
       "teamColor": "#FF8000",
       "predictedTime": 88.18,
-      "gap": "0.150",
+      "gap": "0.151",
       "points": 15,
       "confidence": "High",
       "finishRangeLow": 2,
@@ -56,7 +56,7 @@
       "team": "Ferrari",
       "teamColor": "#E8002D",
       "predictedTime": 88.26,
-      "gap": "0.202",
+      "gap": "0.203",
       "points": 12,
       "confidence": "High",
       "finishRangeLow": 3,
@@ -70,12 +70,12 @@
       "team": "Mercedes",
       "teamColor": "#27F4D2",
       "predictedTime": 88.35,
-      "gap": "0.348",
+      "gap": "0.349",
       "points": 10,
       "confidence": "High",
       "finishRangeLow": 4,
       "finishRangeHigh": 6,
-      "winProbability": 9.4
+      "winProbability": 9.3
     },
     {
       "position": 6,
@@ -89,7 +89,7 @@
       "confidence": "High",
       "finishRangeLow": 5,
       "finishRangeHigh": 7,
-      "winProbability": 6.0
+      "winProbability": 5.9
     },
     {
       "position": 7,
@@ -103,7 +103,7 @@
       "confidence": "High",
       "finishRangeLow": 6,
       "finishRangeHigh": 8,
-      "winProbability": 3.5
+      "winProbability": 3.4
     },
     {
       "position": 8,
@@ -112,12 +112,12 @@
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
       "predictedTime": 88.62,
-      "gap": "0.849",
+      "gap": "0.850",
       "points": 4,
       "confidence": "High",
       "finishRangeLow": 7,
       "finishRangeHigh": 9,
-      "winProbability": 2.2
+      "winProbability": 2.1
     },
     {
       "position": 9,
@@ -126,7 +126,7 @@
       "team": "Williams",
       "teamColor": "#64C4FF",
       "predictedTime": 88.643,
-      "gap": "1.009",
+      "gap": "1.010",
       "points": 2,
       "confidence": "Low",
       "finishRangeLow": 8,
@@ -145,7 +145,7 @@
       "confidence": "High",
       "finishRangeLow": 6,
       "finishRangeHigh": 14,
-      "winProbability": 0.9
+      "winProbability": 0.8
     },
     {
       "position": 11,
@@ -224,7 +224,7 @@
       "team": "Haas",
       "teamColor": "#B6BABD",
       "predictedTime": 89.5,
-      "gap": "1.950",
+      "gap": "1.951",
       "points": 0,
       "confidence": "Medium",
       "finishRangeLow": 14,
@@ -266,7 +266,7 @@
       "team": "Aston Martin",
       "teamColor": "#229971",
       "predictedTime": 89.76,
-      "gap": "2.264",
+      "gap": "2.263",
       "points": 0,
       "confidence": "Low",
       "finishRangeLow": 18,
@@ -280,7 +280,7 @@
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
       "predictedTime": 89.911,
-      "gap": "2.372",
+      "gap": "2.373",
       "points": 0,
       "confidence": "Medium",
       "finishRangeLow": 18,
@@ -308,7 +308,7 @@
       "team": "Cadillac",
       "teamColor": "#C0C0C0",
       "predictedTime": 89.85,
-      "gap": "2.610",
+      "gap": "2.611",
       "points": 0,
       "confidence": "Low",
       "finishRangeLow": 18,
@@ -325,7 +325,7 @@
       2024,
       2025
     ],
-    "avgUncertainty": 1.966
+    "avgUncertainty": 1.951
   },
   "featureImportance": [
     {
@@ -452,14 +452,14 @@
     "altitudeM": 60
   },
   "weatherData": {
-    "rainProbability": 0.06,
-    "temperatureC": 16.7,
-    "humidity": 65.5,
-    "windSpeedKmh": 7.3,
-    "windDirection": 142,
-    "cloudCover": 39,
+    "rainProbability": 0.0,
+    "temperatureC": 17.1,
+    "humidity": 63.0,
+    "windSpeedKmh": 7.2,
+    "windDirection": 140,
+    "cloudCover": 13,
     "precipitationMm": 0.0,
-    "weatherDescription": "Mainly clear",
+    "weatherDescription": "Clear sky",
     "source": "api"
   },
   "predictionInsights": {
@@ -468,7 +468,7 @@
     "mediumConfidenceCount": 4,
     "lowConfidenceCount": 5,
     "mostLikelyWinner": "VER",
-    "winnerProbability": 26.0,
+    "winnerProbability": 26.4,
     "closestBattle": {
       "drivers": [
         "PIA",
