@@ -454,10 +454,10 @@
   "weatherData": {
     "rainProbability": 0.03,
     "temperatureC": 16.8,
-    "humidity": 64.5,
+    "humidity": 65.5,
     "windSpeedKmh": 6.7,
-    "windDirection": 139,
-    "cloudCover": 15,
+    "windDirection": 144,
+    "cloudCover": 47,
     "precipitationMm": 0.0,
     "weatherDescription": "Clear sky",
     "source": "api"
