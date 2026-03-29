@@ -7,13 +7,13 @@
       "driverFullName": "George Russell",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "points": 68,
+      "points": 62,
       "wins": 2,
-      "podiums": 3,
+      "podiums": 2,
       "pointsHistory": [
         25,
         50,
-        68
+        62
       ]
     },
     {
@@ -82,13 +82,13 @@
       "driverFullName": "Max Verstappen",
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "points": 22,
+      "points": 20,
       "wins": 0,
       "podiums": 0,
       "pointsHistory": [
         8,
         16,
-        22
+        20
       ]
     },
     {
@@ -97,13 +97,13 @@
       "driverFullName": "Oscar Piastri",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "points": 12,
+      "points": 18,
       "wins": 0,
-      "podiums": 0,
+      "podiums": 1,
       "pointsHistory": [
         0,
         0,
-        12
+        18
       ]
     },
     {
@@ -123,6 +123,21 @@
     },
     {
       "position": 9,
+      "driver": "GAS",
+      "driverFullName": "Pierre Gasly",
+      "team": "Alpine",
+      "teamColor": "#FF87BC",
+      "points": 8,
+      "wins": 0,
+      "podiums": 0,
+      "pointsHistory": [
+        1,
+        2,
+        8
+      ]
+    },
+    {
+      "position": 10,
       "driver": "LIN",
       "driverFullName": "Arvid Lindblad",
       "team": "Racing Bulls",
@@ -137,37 +152,7 @@
       ]
     },
     {
-      "position": 10,
-      "driver": "HAD",
-      "driverFullName": "Isack Hadjar",
-      "team": "Red Bull Racing",
-      "teamColor": "#3671C6",
-      "points": 4,
-      "wins": 0,
-      "podiums": 0,
-      "pointsHistory": [
-        0,
-        0,
-        4
-      ]
-    },
-    {
       "position": 11,
-      "driver": "GAS",
-      "driverFullName": "Pierre Gasly",
-      "team": "Alpine",
-      "teamColor": "#FF87BC",
-      "points": 4,
-      "wins": 0,
-      "podiums": 0,
-      "pointsHistory": [
-        1,
-        2,
-        4
-      ]
-    },
-    {
-      "position": 12,
       "driver": "BOR",
       "driverFullName": "Gabriel Bortoleto",
       "team": "Audi",
@@ -182,11 +167,26 @@
       ]
     },
     {
-      "position": 13,
+      "position": 12,
       "driver": "LAW",
       "driverFullName": "Liam Lawson",
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
+      "points": 2,
+      "wins": 0,
+      "podiums": 0,
+      "pointsHistory": [
+        0,
+        0,
+        2
+      ]
+    },
+    {
+      "position": 13,
+      "driver": "OCO",
+      "driverFullName": "Esteban Ocon",
+      "team": "Haas",
+      "teamColor": "#B6BABD",
       "points": 1,
       "wins": 0,
       "podiums": 0,
@@ -198,6 +198,21 @@
     },
     {
       "position": 14,
+      "driver": "HAD",
+      "driverFullName": "Isack Hadjar",
+      "team": "Red Bull Racing",
+      "teamColor": "#3671C6",
+      "points": 0,
+      "wins": 0,
+      "podiums": 0,
+      "pointsHistory": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "position": 15,
       "driver": "ALO",
       "driverFullName": "Fernando Alonso",
       "team": "Aston Martin",
@@ -212,7 +227,7 @@
       ]
     },
     {
-      "position": 15,
+      "position": 16,
       "driver": "STR",
       "driverFullName": "Lance Stroll",
       "team": "Aston Martin",
@@ -227,7 +242,7 @@
       ]
     },
     {
-      "position": 16,
+      "position": 17,
       "driver": "COL",
       "driverFullName": "Franco Colapinto",
       "team": "Alpine",
@@ -242,7 +257,7 @@
       ]
     },
     {
-      "position": 17,
+      "position": 18,
       "driver": "ALB",
       "driverFullName": "Alexander Albon",
       "team": "Williams",
@@ -257,26 +272,11 @@
       ]
     },
     {
-      "position": 18,
+      "position": 19,
       "driver": "SAI",
       "driverFullName": "Carlos Sainz Jr.",
       "team": "Williams",
       "teamColor": "#64C4FF",
-      "points": 0,
-      "wins": 0,
-      "podiums": 0,
-      "pointsHistory": [
-        0,
-        0,
-        0
-      ]
-    },
-    {
-      "position": 19,
-      "driver": "OCO",
-      "driverFullName": "Esteban Ocon",
-      "team": "Haas",
-      "teamColor": "#B6BABD",
       "points": 0,
       "wins": 0,
       "podiums": 0,
@@ -337,7 +337,7 @@
       "position": 1,
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "points": 129,
+      "points": 123,
       "wins": 3,
       "drivers": [
         "RUS",
@@ -346,7 +346,7 @@
       "pointsHistory": [
         43,
         86,
-        129
+        123
       ]
     },
     {
@@ -369,7 +369,7 @@
       "position": 3,
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "points": 42,
+      "points": 48,
       "wins": 0,
       "drivers": [
         "NOR",
@@ -378,14 +378,14 @@
       "pointsHistory": [
         10,
         20,
-        42
+        48
       ]
     },
     {
       "position": 4,
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "points": 26,
+      "points": 20,
       "wins": 0,
       "drivers": [
         "VER",
@@ -394,14 +394,14 @@
       "pointsHistory": [
         8,
         16,
-        26
+        20
       ]
     },
     {
       "position": 5,
       "team": "Haas",
       "teamColor": "#B6BABD",
-      "points": 12,
+      "points": 13,
       "wins": 0,
       "drivers": [
         "BEA",
@@ -410,14 +410,14 @@
       "pointsHistory": [
         6,
         12,
-        12
+        13
       ]
     },
     {
       "position": 6,
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
-      "points": 9,
+      "points": 10,
       "wins": 0,
       "drivers": [
         "LIN",
@@ -426,14 +426,14 @@
       "pointsHistory": [
         4,
         8,
-        9
+        10
       ]
     },
     {
       "position": 7,
       "team": "Alpine",
       "teamColor": "#FF87BC",
-      "points": 4,
+      "points": 8,
       "wins": 0,
       "drivers": [
         "GAS",
@@ -442,7 +442,7 @@
       "pointsHistory": [
         1,
         2,
-        4
+        8
       ]
     },
     {
@@ -516,8 +516,8 @@
       "driverFullName": "George Russell",
       "team": "Mercedes",
       "teamColor": "#27F4D2",
-      "currentPoints": 68,
-      "maxPossiblePoints": 614,
+      "currentPoints": 62,
+      "maxPossiblePoints": 608,
       "canStillWin": true
     },
     {
@@ -561,8 +561,8 @@
       "driverFullName": "Max Verstappen",
       "team": "Red Bull Racing",
       "teamColor": "#3671C6",
-      "currentPoints": 22,
-      "maxPossiblePoints": 568,
+      "currentPoints": 20,
+      "maxPossiblePoints": 566,
       "canStillWin": true
     },
     {
@@ -570,8 +570,8 @@
       "driverFullName": "Oscar Piastri",
       "team": "McLaren",
       "teamColor": "#FF8000",
-      "currentPoints": 12,
-      "maxPossiblePoints": 558,
+      "currentPoints": 18,
+      "maxPossiblePoints": 564,
       "canStillWin": true
     },
     {
@@ -584,30 +584,21 @@
       "canStillWin": true
     },
     {
+      "driver": "GAS",
+      "driverFullName": "Pierre Gasly",
+      "team": "Alpine",
+      "teamColor": "#FF87BC",
+      "currentPoints": 8,
+      "maxPossiblePoints": 554,
+      "canStillWin": true
+    },
+    {
       "driver": "LIN",
       "driverFullName": "Arvid Lindblad",
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
       "currentPoints": 8,
       "maxPossiblePoints": 554,
-      "canStillWin": true
-    },
-    {
-      "driver": "HAD",
-      "driverFullName": "Isack Hadjar",
-      "team": "Red Bull Racing",
-      "teamColor": "#3671C6",
-      "currentPoints": 4,
-      "maxPossiblePoints": 550,
-      "canStillWin": true
-    },
-    {
-      "driver": "GAS",
-      "driverFullName": "Pierre Gasly",
-      "team": "Alpine",
-      "teamColor": "#FF87BC",
-      "currentPoints": 4,
-      "maxPossiblePoints": 550,
       "canStillWin": true
     },
     {
@@ -624,8 +615,26 @@
       "driverFullName": "Liam Lawson",
       "team": "Racing Bulls",
       "teamColor": "#6692FF",
+      "currentPoints": 2,
+      "maxPossiblePoints": 548,
+      "canStillWin": true
+    },
+    {
+      "driver": "OCO",
+      "driverFullName": "Esteban Ocon",
+      "team": "Haas",
+      "teamColor": "#B6BABD",
       "currentPoints": 1,
       "maxPossiblePoints": 547,
+      "canStillWin": true
+    },
+    {
+      "driver": "HAD",
+      "driverFullName": "Isack Hadjar",
+      "team": "Red Bull Racing",
+      "teamColor": "#3671C6",
+      "currentPoints": 0,
+      "maxPossiblePoints": 546,
       "canStillWin": true
     },
     {
@@ -669,15 +678,6 @@
       "driverFullName": "Carlos Sainz Jr.",
       "team": "Williams",
       "teamColor": "#64C4FF",
-      "currentPoints": 0,
-      "maxPossiblePoints": 546,
-      "canStillWin": true
-    },
-    {
-      "driver": "OCO",
-      "driverFullName": "Esteban Ocon",
-      "team": "Haas",
-      "teamColor": "#B6BABD",
       "currentPoints": 0,
       "maxPossiblePoints": 546,
       "canStillWin": true
