@@ -78,12 +78,13 @@ function getRaceDate(dateStr: string): Date {
 }
 
 export function getRoundLifecycle(
-  race: Pick<RaceCalendarEntry, "date" | "sprint">,
+  race: Pick<RaceCalendarEntry, "date" | "sprint" | "postponed">,
   hasPrediction: boolean,
   hasActual: boolean,
   now: Date = new Date(),
 ): RoundLifecycle {
   if (hasActual) return "official";
+  if (race.postponed) return "postponed";
 
   const raceDate = getRaceDate(race.date);
   const weekendStart = new Date(raceDate);
@@ -121,6 +122,13 @@ export function getRoundStatusMeta(status: RoundLifecycle): {
         tone: "green",
         description: "Predictions are locked and compared against the classified race result.",
       };
+    case "postponed":
+      return {
+        label: "Postponed",
+        shortLabel: "Postponed",
+        tone: "amber",
+        description: "This Grand Prix has been postponed and will be updated once a new date is confirmed.",
+      };
     case "live-weekend":
       return {
         label: "Grand Prix Weekend Live",
@@ -153,7 +161,7 @@ export function getRoundStatusMeta(status: RoundLifecycle): {
 }
 
 export function getStatusForRound(
-  race: Pick<RaceCalendarEntry, "date" | "sprint">,
+  race: Pick<RaceCalendarEntry, "date" | "sprint" | "postponed">,
   hasPrediction: boolean,
   hasActual: boolean,
 ): RoundLifecycle {
@@ -189,7 +197,7 @@ export function getCurrentRaceContext(
     if (lifecycle === "live-weekend") {
       liveRound = race;
     }
-    if (!nextRound && getRaceDate(race.date) >= now) {
+    if (!nextRound && getRaceDate(race.date) >= now && lifecycle !== "postponed") {
       nextRound = race;
     }
     if (predictionSet.has(race.round)) {

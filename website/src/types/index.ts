@@ -6,6 +6,10 @@ export interface RaceCalendarEntry {
   gpKey: string;
   circuit: string;
   date: string;
+  postponed?: boolean;
+  originalDate?: string | null;
+  rescheduledDate?: string | null;
+  statusNote?: string | null;
   laps: number;
   circuitKm: number;
   circuitType: string;
@@ -304,6 +308,7 @@ export type RoundLifecycle =
   | "prediction-ready"
   | "live-weekend"
   | "awaiting-results"
+  | "postponed"
   | "official";
 
 export interface DriverStanding {

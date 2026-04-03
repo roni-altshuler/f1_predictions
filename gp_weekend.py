@@ -89,6 +89,9 @@ def _weekend_window(round_num):
 
 def is_race_weekend(round_num, today=None):
     """True when a round is in the automation window."""
+    cal = _load_calendar()
+    if cal[round_num].get("postponed", False):
+        return False
     today = today or _utc_today()
     start, end = _weekend_window(round_num)
     return start <= today <= end
@@ -100,10 +103,14 @@ def detect_target_round(today=None):
     today = today or _utc_today()
 
     for rnd in sorted(cal.keys()):
+        if cal[rnd].get("postponed", False):
+            continue
         if is_race_weekend(rnd, today=today):
             return rnd
 
     for rnd in sorted(cal.keys()):
+        if cal[rnd].get("postponed", False):
+            continue
         race_date = date.fromisoformat(cal[rnd]["date"])
         if race_date >= today:
             return rnd
@@ -137,6 +144,9 @@ def _detect_phase(round_num):
     """Auto-detect which phase we're in based on data availability."""
     cal = _load_calendar()
     info = cal[round_num]
+    if info.get("postponed", False):
+        print(f"\n⏸️  Round {round_num}: {info['name']} is postponed. Skipping auto phase detection.")
+        return "pre"
     gp_key = info["gp_key"]
     race_date = date.fromisoformat(info["date"])
     today = _utc_today()
@@ -516,6 +526,10 @@ Typical GP Weekend Workflow:
         phase = args.phase
     else:
         phase = _detect_phase(round_num)
+
+    if info.get("postponed", False) and phase != "post-race":
+        print(f"\n⏸️  {info['name']} is marked as postponed. No pre-weekend or qualifying automation will run until a new date is set.")
+        return
 
     # ── Dry run ──
     if args.dry_run:

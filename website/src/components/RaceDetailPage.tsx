@@ -104,6 +104,7 @@ export default function RaceDetailPage({ round }: Props) {
   if (!data && seasonRace) {
     const previewTrackMapSrc = failedImages.has("track_map.png") ? null : getVisualizationPath(round, "track_map.png");
     const raceName = seasonRace.name;
+    const isPostponed = !!seasonRace.postponed;
 
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
@@ -115,21 +116,24 @@ export default function RaceDetailPage({ round }: Props) {
                 <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full" style={{ background: "rgba(225,6,0,0.1)", color: "#E10600", border: "1px solid rgba(225,6,0,0.2)" }}>
                   Round {seasonRace.round}
                 </span>
-                <span className="status-pill status-pill-slate">Preview Scheduled</span>
+                <span className={`status-pill status-pill-${liveMeta?.tone || "slate"}`}>
+                  {liveMeta?.label || "Preview Scheduled"}
+                </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>{seasonRace.name}</h1>
             </div>
           </div>
           <p className="mb-6 text-sm" style={{ color: "var(--text-muted)" }}>
             {seasonRace.circuit} • {formatDate(seasonRace.date)}
+            {isPostponed ? " (original slot)" : ""}
           </p>
 
           <div className="card p-6 mb-8">
-            <h3 className="section-heading">Race Preview</h3>
+            <h3 className="section-heading">{isPostponed ? "Race Postponed" : "Race Preview"}</h3>
             <p style={{ color: "var(--text-muted)" }}>
-              This Grand Prix page is available now, but the model has not published predictions yet.
-              Once the workflow runs for this round, predicted classification, real outcome comparison,
-              accuracy metrics, and strategy visualizations will automatically appear here.
+              {isPostponed
+                ? (seasonRace.statusNote || "This Grand Prix has been postponed. Predictions and race-comparison reporting will resume once a revised race date is confirmed.")
+                : "This Grand Prix page is available now, but the model has not published predictions yet. Once the workflow runs for this round, predicted classification, real outcome comparison, accuracy metrics, and strategy visualizations will automatically appear here."}
             </p>
           </div>
 
