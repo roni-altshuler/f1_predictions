@@ -1,30 +1,5 @@
 {
-  "rounds": [
-    {
-      "round": 1,
-      "hasActual": true,
-      "meanError": 6.27,
-      "exactMatches": 0,
-      "within3": 10,
-      "accuracyPct": 45.5
-    },
-    {
-      "round": 2,
-      "hasActual": true,
-      "meanError": 3.36,
-      "exactMatches": 2,
-      "within3": 14,
-      "accuracyPct": 63.6
-    },
-    {
-      "round": 3,
-      "hasActual": false,
-      "meanError": null,
-      "exactMatches": null,
-      "within3": null,
-      "accuracyPct": null
-    }
-  ],
+  "generatedAt": "2026-04-03T10:58:25.265750Z",
   "overallAccuracy": {
     "seasonMeanError": 4.81,
     "seasonAccuracyPct": 54.5,
@@ -253,6 +228,5 @@
         }
       ]
     }
-  ],
-  "generatedAt": "2026-04-03T10:58:25.265750Z"
+  ]
 }

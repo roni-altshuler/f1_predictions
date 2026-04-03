@@ -32,6 +32,10 @@ from f1_prediction_utils import (
     DRIVER_FULL_NAMES,
 )
 
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+WEBSITE_ROUNDS_DIR = os.path.join(PROJECT_ROOT, "website", "public", "data", "rounds")
+F1_CACHE_DIR = os.path.join(PROJECT_ROOT, "f1_cache")
+
 try:
     import fastf1
 except ImportError:
@@ -40,8 +44,8 @@ except ImportError:
 
 
 def enable_cache():
-    os.makedirs("f1_cache", exist_ok=True)
-    fastf1.Cache.enable_cache("f1_cache")
+    os.makedirs(F1_CACHE_DIR, exist_ok=True)
+    fastf1.Cache.enable_cache(F1_CACHE_DIR)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -67,6 +71,8 @@ def extract_speed_traps(year: int, gp_key: str, session_type: str = "Q") -> list
     drivers = session.laps["Driver"].unique()
 
     for driver in drivers:
+        if driver not in DRIVER_TEAM_2026:
+            continue
         driver_laps = session.laps.pick_drivers(driver)
         fastest = driver_laps.pick_fastest()
         if fastest is None or fastest.empty if hasattr(fastest, 'empty') else fastest is None:
@@ -129,6 +135,8 @@ def extract_sector_times(year: int, gp_key: str, session_type: str = "Q") -> lis
     drivers = session.laps["Driver"].unique()
 
     for driver in drivers:
+        if driver not in DRIVER_TEAM_2026:
+            continue
         driver_laps = session.laps.pick_drivers(driver)
 
         # Get best sector times across all laps
@@ -187,6 +195,8 @@ def extract_stint_timeline(year: int, gp_key: str, session_type: str = "R") -> l
 
     output = []
     for driver in laps["Driver"].dropna().unique():
+        if driver not in DRIVER_TEAM_2026:
+            continue
         dl = laps.pick_drivers(driver)
         if dl is None or dl.empty:
             continue
@@ -281,6 +291,8 @@ def extract_pit_stop_impact(year: int, gp_key: str, session_type: str = "R") -> 
 
     output = []
     for driver in laps["Driver"].dropna().unique():
+        if driver not in DRIVER_TEAM_2026:
+            continue
         dl = laps.pick_drivers(driver).sort_values("LapNumber")
         if dl.empty:
             continue
@@ -500,7 +512,7 @@ def inject_telemetry_into_round_json(round_num: int, telemetry: dict) -> bool:
     """
     Inject telemetry data into an existing round JSON file.
     """
-    round_path = os.path.join("website", "public", "data", "rounds", f"round_{round_num:02d}.json")
+    round_path = os.path.join(WEBSITE_ROUNDS_DIR, f"round_{round_num:02d}.json")
     if not os.path.exists(round_path):
         print(f"  ⚠️  {round_path} doesn't exist — run export_website_data.py first")
         return False

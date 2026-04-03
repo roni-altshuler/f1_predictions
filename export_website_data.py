@@ -30,9 +30,88 @@ sys.path.insert(0, os.path.dirname(__file__))
 from f1_prediction_utils import *
 
 # ── Paths ────────────────────────────────────────────────────────────────
-DATA_DIR   = os.path.join("website", "public", "data")
-VIZ_DIR    = os.path.join("website", "public", "visualizations")
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+WEBSITE_DIR = os.path.join(PROJECT_ROOT, "website")
+DATA_DIR   = os.path.join(WEBSITE_DIR, "public", "data")
+VIZ_DIR    = os.path.join(WEBSITE_DIR, "public", "visualizations")
 ROUNDS_DIR = os.path.join(DATA_DIR, "rounds")
+TRACKER_FILE = os.path.join(PROJECT_ROOT, "season_tracker_2026.json")
+TRACKER_EXPORT_FILE = os.path.join(DATA_DIR, "season_tracker.json")
+
+VIZ_METADATA = {
+    "predicted_laptimes.png": {
+        "title": "Predicted Race Pace",
+        "category": "ml",
+        "description": "Model-projected race pace and finishing spread across the full grid.",
+        "source": "model",
+    },
+    "feature_importance.png": {
+        "title": "Feature Importance",
+        "category": "ml",
+        "description": "Relative impact of each input feature for Gradient Boosting and XGBoost.",
+        "source": "model",
+    },
+    "team_vs_pace.png": {
+        "title": "Team Strength vs Pace",
+        "category": "ml",
+        "description": "Relationship between constructor strength and projected race pace.",
+        "source": "model",
+    },
+    "pace_vs_predicted.png": {
+        "title": "Clean-Air Pace vs Prediction",
+        "category": "ml",
+        "description": "How baseline clean-air pace translates to projected race performance.",
+        "source": "model",
+    },
+    "laptime_distribution.png": {
+        "title": "Predicted Lap-Time Distribution",
+        "category": "ml",
+        "description": "Team-level distribution of projected race lap times.",
+        "source": "model",
+    },
+    "prediction_confidence.png": {
+        "title": "Prediction Confidence",
+        "category": "ml",
+        "description": "Confidence bands by driver based on model uncertainty and volatility signals.",
+        "source": "model",
+    },
+    "track_map.png": {
+        "title": "Circuit Speed Map",
+        "category": "fastf1",
+        "description": "FastF1-derived circuit map with corner labels and speed profile.",
+        "source": "fastf1",
+    },
+    "laptime_distribution_historical.png": {
+        "title": "Historical Lap-Time Distribution",
+        "category": "fastf1",
+        "description": "Historical lap-time spread from prior seasons at this circuit.",
+        "source": "fastf1",
+    },
+    "tyre_strategy.png": {
+        "title": "Historical Tyre Strategy",
+        "category": "fastf1",
+        "description": "Compound usage and stint tendencies from historical race data.",
+        "source": "fastf1",
+    },
+    "pit_strategy_comparison.png": {
+        "title": "Pit Strategy Comparison",
+        "category": "advanced",
+        "description": "Monte-Carlo race-time simulation across strategic pit-stop options.",
+        "source": "advanced",
+    },
+    "tyre_degradation_curves.png": {
+        "title": "Tyre Degradation Curves",
+        "category": "advanced",
+        "description": "Projected soft/medium/hard degradation behavior and cliff laps.",
+        "source": "advanced",
+    },
+    "lstm_pace_prediction.png": {
+        "title": "LSTM Pace Projection",
+        "category": "advanced",
+        "description": "Neural-network pace projection for race evolution over stint length.",
+        "source": "advanced",
+    },
+}
 
 
 def _ensure_dirs():
@@ -79,6 +158,149 @@ def _json_safe(value):
     return value
 
 
+def _dedupe_preserve_order(values):
+    seen = set()
+    out = []
+    for v in values:
+        if v in seen:
+            continue
+        seen.add(v)
+        out.append(v)
+    return out
+
+
+def _build_visualization_details(filenames):
+    details = []
+    for fname in _dedupe_preserve_order(filenames):
+        meta = VIZ_METADATA.get(fname, {})
+        details.append({
+            "filename": fname,
+            "title": meta.get("title", fname.replace("_", " ").replace(".png", "").title()),
+            "category": meta.get("category", "other"),
+            "description": meta.get("description", "Generated race analysis visualization."),
+            "source": meta.get("source", "model"),
+        })
+    return details
+
+
+def _compute_round_accuracy(classification_rows, actual_results):
+    if not classification_rows or not actual_results:
+        return None
+
+    predicted = {}
+    for entry in classification_rows:
+        try:
+            predicted[str(entry["driver"])] = int(entry["position"])
+        except Exception:
+            continue
+
+    if not predicted:
+        return None
+
+    common = sorted(set(predicted.keys()) & set(actual_results.keys()))
+    if not common:
+        return None
+
+    diffs = [abs(predicted[d] - int(actual_results[d])) for d in common]
+    exact = int(sum(1 for d in diffs if d == 0))
+    within_3 = int(sum(1 for d in diffs if d <= 3))
+    within_5 = int(sum(1 for d in diffs if d <= 5))
+
+    return {
+        "mean_position_error": round(float(np.mean(diffs)), 2),
+        "median_position_error": round(float(np.median(diffs)), 1),
+        "exact_matches": exact,
+        "within_3_positions": within_3,
+        "within_5_positions": within_5,
+        "total_drivers": len(common),
+        "accuracy_pct": round(within_3 / len(common) * 100, 1),
+    }
+
+
+def _sanitize_telemetry_payload(telemetry):
+    """Drop telemetry rows for drivers outside the 2026 grid."""
+    if not isinstance(telemetry, dict):
+        return telemetry
+    valid = set(DRIVER_TEAM_2026.keys())
+
+    def _filter_rows(rows):
+        if not isinstance(rows, list):
+            return rows
+        return [r for r in rows if isinstance(r, dict) and r.get("driver") in valid]
+
+    out = dict(telemetry)
+    for key in ("speedTraps", "sectorTimes", "stintTimeline", "pitStopImpact", "sectorDominance"):
+        out[key] = _filter_rows(out.get(key, []))
+    return out
+
+
+def _write_gp_accuracy_report(tracker_export):
+    """Write detailed per-GP accuracy report for website + markdown archive."""
+    gp_reports = tracker_export.get("gpReports", []) if isinstance(tracker_export, dict) else []
+
+    json_payload = {
+        "generatedAt": tracker_export.get("generatedAt") if isinstance(tracker_export, dict) else None,
+        "overallAccuracy": tracker_export.get("overallAccuracy") if isinstance(tracker_export, dict) else None,
+        "gpReports": gp_reports,
+    }
+    _write_json(os.path.join(DATA_DIR, "gp_accuracy_report.json"), json_payload)
+
+    reports_dir = os.path.join(PROJECT_ROOT, "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    md_path = os.path.join(reports_dir, "season_accuracy_report.md")
+
+    lines = [
+        "# F1 Model Accuracy Report (Per Grand Prix)",
+        "",
+        f"Generated: {json_payload.get('generatedAt') or 'unknown'}",
+        "",
+    ]
+
+    overall = json_payload.get("overallAccuracy") or {}
+    if overall:
+        lines.extend([
+            "## Season Summary",
+            "",
+            f"- Mean position error: **{overall.get('seasonMeanError', 'n/a')}**",
+            f"- Within 3 positions accuracy: **{overall.get('seasonAccuracyPct', 'n/a')}%**",
+            f"- Rounds with official results: **{overall.get('roundsWithActual', 'n/a')}**",
+            "",
+        ])
+
+    if gp_reports:
+        lines.extend([
+            "## Per-GP Breakdown",
+            "",
+            "| Round | Grand Prix | Mean Error | Exact | Within 3 | Podium Hits | Winner Called | Biggest Miss |",
+            "|---|---|---:|---:|---:|---:|---|---|",
+        ])
+        for report in sorted(gp_reports, key=lambda r: r.get("round", 0)):
+            misses = report.get("biggestMisses") or []
+            if misses:
+                top = misses[0]
+                miss_label = (
+                    f"{top.get('driver')} P{top.get('predicted')}→P{top.get('actual')}"
+                )
+            else:
+                miss_label = "-"
+            lines.append(
+                f"| {report.get('round')} | {report.get('name')} | {report.get('meanError')} | "
+                f"{report.get('exactMatches')} | {report.get('within3')} | {report.get('podiumHits')} | "
+                f"{'Yes' if report.get('winnerHit') else 'No'} | {miss_label} |"
+            )
+        lines.append("")
+    else:
+        lines.extend([
+            "## Per-GP Breakdown",
+            "",
+            "No rounds with official results are available yet.",
+            "",
+        ])
+
+    with open(md_path, "w") as f:
+        f.write("\n".join(lines))
+
+
 def _write_json(path, data):
     with open(path, "w") as f:
         json.dump(_json_safe(data), f, indent=2)
@@ -114,6 +336,7 @@ def _get_round_preserved_fields(round_num, existing_round):
         for key in (
             "actualResults",
             "accuracy",
+            "gpReport",
             "telemetryData",
             "strategyData",
             "tyreDegData",
@@ -125,7 +348,7 @@ def _get_round_preserved_fields(round_num, existing_round):
                 preserved[key] = value
 
     # Fill missing post-race fields from tracker source-of-truth.
-    tracker = _safe_load_json("season_tracker_2026.json")
+    tracker = _safe_load_json(TRACKER_FILE) or _safe_load_json(TRACKER_EXPORT_FILE)
     if isinstance(tracker, dict):
         rk = str(round_num)
 
@@ -146,25 +369,41 @@ def _get_round_preserved_fields(round_num, existing_round):
     return preserved
 
 
-def _sync_tracker_actuals(round_num, round_data):
-    """Keep season_tracker sources aligned with any round file actual result."""
-    actual_results = round_data.get("actualResults")
-    if not isinstance(actual_results, dict) or not actual_results:
-        return
-
+def _sync_tracker_data(round_num, round_data):
+    """Synchronize tracker + per-round accuracy against current round payload."""
     try:
         from advanced_models import SeasonTracker
+
         tracker = SeasonTracker()
-        tracker.add_prediction(round_num, round_data.get("classification", []))
-        tracker.add_actual_result(round_num, actual_results)
+        tracker.sync_from_round_directory(ROUNDS_DIR)
+        tracker.sync_from_round_file(round_num, round_data)
+        tracker.save()
+
         tracker_export = tracker.export_for_website()
         round_data["trackerData"] = tracker_export
-        tracker_path = os.path.join("website", "public", "data", "season_tracker.json")
-        os.makedirs(os.path.dirname(tracker_path), exist_ok=True)
-        with open(tracker_path, "w") as f:
+
+        round_accuracy = tracker.data.get("accuracy", {}).get(str(round_num))
+        if round_accuracy:
+            round_data["accuracy"] = round_accuracy
+
+        round_report = tracker.get_round_report(round_num)
+        if round_report:
+            round_data["gpReport"] = round_report
+
+        os.makedirs(os.path.dirname(TRACKER_EXPORT_FILE), exist_ok=True)
+        with open(TRACKER_EXPORT_FILE, "w") as f:
             json.dump(tracker_export, f, indent=2)
+
+        _write_gp_accuracy_report(tracker_export)
     except Exception as e:
-        print(f"  ⚠️  Tracker actual-result sync failed: {e}")
+        print(f"  ⚠️  Tracker sync failed: {e}")
+
+    # Fallback when tracker sync fails: compute per-round accuracy locally.
+    actual_results = round_data.get("actualResults")
+    if isinstance(actual_results, dict) and actual_results and "accuracy" not in round_data:
+        local_accuracy = _compute_round_accuracy(round_data.get("classification", []), actual_results)
+        if local_accuracy:
+            round_data["accuracy"] = local_accuracy
 
 
 # ── Weather estimates per GP ─────────────────────────────────────────────
@@ -330,7 +569,8 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
     quali           = get_qualifying_or_estimates(2026, gp_key, quali_estimates)
     merged          = apply_qualifying_data(merged, quali,
                                             rain_probability=weather["rain"],
-                                            temperature_c=weather["temp"])
+                                            temperature_c=weather["temp"],
+                                            fallback_times=quali_estimates)
 
     # ── LSTM Grid Predictions (v3: true ensemble member) ──
     lstm_preds = None
@@ -373,6 +613,9 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
 
     if ensure_track_map_asset(round_num, gp_key) and "track_map.png" not in viz_filenames:
         viz_filenames.append("track_map.png")
+
+    viz_filenames = _dedupe_preserve_order(viz_filenames)
+    viz_details = _build_visualization_details(viz_filenames)
 
     # ── Classification → ClassificationEntry[] ──
     classification_data = []
@@ -424,8 +667,19 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         classification_data[2]["driver"],
     ]
     confidence_counts = merged["PredictionConfidence"].value_counts().to_dict()
+    quali_rank = (
+        merged["AdjustedQualiTime"]
+        .fillna(float(merged["AdjustedQualiTime"].dropna().median()))
+        .rank(method="min")
+    )
+    race_rank = (
+        merged["RaceProjectionTime"]
+        .fillna(float(merged["RaceProjectionTime"].dropna().median()))
+        .rank(method="min")
+    )
+
     prediction_insights = {
-        "poleToWinBias": round(float((merged["AdjustedQualiTime"].rank(method="min").astype(int) == merged["RaceProjectionTime"].rank(method="min").astype(int)).mean() * 100), 1),
+        "poleToWinBias": round(float(quali_rank.eq(race_rank).mean() * 100), 1),
         "highConfidenceCount": int(confidence_counts.get("High", 0)),
         "mediumConfidenceCount": int(confidence_counts.get("Medium", 0)),
         "lowConfidenceCount": int(confidence_counts.get("Low", 0)),
@@ -456,6 +710,7 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         "fastestLap":         fastest_time,
         "podium":             podium,
         "visualizations":     viz_filenames,
+        "visualizationDetails": viz_details,
         "circuitInfo": {
             "type":           char.get("type", "permanent"),
             "laps":           info["laps"],
@@ -489,11 +744,21 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
             from telemetry_features import extract_telemetry_for_round
             telemetry = extract_telemetry_for_round(round_num, year=years[-1] if years else 2025)
             if telemetry:
-                round_data["telemetryData"] = telemetry
+                round_data["telemetryData"] = _sanitize_telemetry_payload(telemetry)
         except Exception as e:
             print(f"  ⚠️  Telemetry extraction failed: {e}")
 
-    _sync_tracker_actuals(round_num, round_data)
+    _sync_tracker_data(round_num, round_data)
+
+    # Ensure accuracy is refreshed for rounds with actual results even without tracker writes.
+    if isinstance(round_data.get("actualResults"), dict) and round_data["actualResults"]:
+        local_accuracy = _compute_round_accuracy(
+            round_data.get("classification", []),
+            round_data.get("actualResults", {}),
+        )
+        if local_accuracy:
+            round_data["accuracy"] = local_accuracy
+
     _write_json(path, round_data)
     print(f"✅ Round {round_num} data → {path}")
     if return_merged:
@@ -720,7 +985,7 @@ def _import_local_visualizations(round_num, gp_name):
     import shutil
     # Map GP name to directory name (e.g. "Australian Grand Prix" → "Australian_Grand_Prix")
     dir_name = gp_name.replace(" ", "_")
-    local_dir = os.path.join("visualizations", dir_name)
+    local_dir = os.path.join(PROJECT_ROOT, "visualizations", dir_name)
     if not os.path.isdir(local_dir):
         return []
 
@@ -918,10 +1183,17 @@ def _run_advanced(round_data, merged):
         extra = adv.get("extra_visualizations", [])
         if extra:
             round_data["visualizations"].extend(extra)
+        round_data["visualizations"] = _dedupe_preserve_order(round_data.get("visualizations", []))
+        round_data["visualizationDetails"] = _build_visualization_details(
+            round_data.get("visualizations", [])
+        )
         # Attach advanced data sections
         for key in ("strategyData", "tyreDegData", "lstmData", "trackerData"):
             if key in adv:
                 round_data[key] = adv[key]
+
+        _sync_tracker_data(round_num, round_data)
+
         # Re-save round file with additions
         path = os.path.join(ROUNDS_DIR, f"round_{round_num:02d}.json")
         _write_json(path, round_data)
@@ -958,6 +1230,10 @@ def main():
             extra = _generate_fastf1_viz(args.round, gp_key, args.fastf1_year)
             if extra:
                 round_data["visualizations"].extend(extra)
+                round_data["visualizations"] = _dedupe_preserve_order(round_data.get("visualizations", []))
+                round_data["visualizationDetails"] = _build_visualization_details(
+                    round_data.get("visualizations", [])
+                )
                 path = os.path.join(ROUNDS_DIR, f"round_{args.round:02d}.json")
                 _write_json(path, round_data)
         if args.advanced:
@@ -984,6 +1260,10 @@ def main():
                     extra = _generate_fastf1_viz(rnd, gp_key, args.fastf1_year)
                     if extra:
                         rd["visualizations"].extend(extra)
+                        rd["visualizations"] = _dedupe_preserve_order(rd.get("visualizations", []))
+                        rd["visualizationDetails"] = _build_visualization_details(
+                            rd.get("visualizations", [])
+                        )
                         path = os.path.join(ROUNDS_DIR, f"round_{rnd:02d}.json")
                         _write_json(path, rd)
                 if args.advanced:

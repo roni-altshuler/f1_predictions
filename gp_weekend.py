@@ -293,7 +293,7 @@ def run_post_race(round_num, skip_build=False):
     )
     from advanced_models import SeasonTracker
     from export_website_data import (
-        export_standings, export_season_metadata, ROUNDS_DIR
+        export_standings, export_season_metadata, ROUNDS_DIR, _write_gp_accuracy_report
     )
     import fastf1
     import pandas as pd
@@ -336,10 +336,14 @@ def run_post_race(round_num, skip_build=False):
 
     # Export tracker data for website
     tracker_export = tracker.export_for_website()
-    tracker_path = os.path.join(DATA_DIR, "season_tracker.json")
+    tracker_path = SeasonTracker.WEBSITE_TRACKER_FILE
+    os.makedirs(os.path.dirname(tracker_path), exist_ok=True)
     with open(tracker_path, "w") as f:
         json.dump(tracker_export, f, indent=2)
     print(f"   ✅ Season tracker updated → {tracker_path}")
+    _write_gp_accuracy_report(tracker_export)
+
+    round_report = tracker.get_round_report(round_num)
 
     # Print accuracy for this round
     accuracy = tracker.data["accuracy"].get(str(round_num), {})
@@ -357,6 +361,9 @@ def run_post_race(round_num, skip_build=False):
             round_data = json.load(f)
         round_data["actualResults"] = actual_results
         round_data["accuracy"] = accuracy
+        round_data["trackerData"] = tracker_export
+        if round_report:
+            round_data["gpReport"] = round_report
         with open(round_path, "w") as f:
             json.dump(round_data, f, indent=2)
         print(f"   ✅ Actual results injected → {round_path}")

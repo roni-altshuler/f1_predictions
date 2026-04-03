@@ -69,6 +69,7 @@ export default function AccuracyDashboardPage() {
   const roundsWithActual = tracker.rounds.filter((r) => r.hasActual);
   const roundsWithoutActual = tracker.rounds.filter((r) => !r.hasActual);
   const hasActualResults = roundsWithActual.length > 0;
+  const gpReports = tracker.gpReports || [];
 
   const getRoundName = (round: number) => {
     if (!season) return `Round ${round}`;
@@ -263,6 +264,72 @@ export default function AccuracyDashboardPage() {
         </motion.div>
       )}
 
+      {gpReports.length > 0 && (
+        <motion.div
+          className="card p-6 sm:p-8 mb-8"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+        >
+          <h2 className="section-heading">Grand Prix Performance Reports</h2>
+          <div className="space-y-3">
+            {gpReports
+              .slice()
+              .sort((a, b) => b.round - a.round)
+              .map((report) => (
+                <Link key={`gp-report-${report.round}`} href={`/race/${report.round}`} className="block">
+                  <div
+                    className="p-4 rounded-xl transition-colors"
+                    style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                      <p className="font-bold" style={{ color: "var(--text)" }}>
+                        R{report.round}: {report.name}
+                      </p>
+                      <span
+                        className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-full"
+                        style={{
+                          background: report.winnerHit ? "rgba(0,210,190,0.12)" : "rgba(225,6,0,0.12)",
+                          color: report.winnerHit ? "#00D2BE" : "#E10600",
+                        }}
+                      >
+                        {report.winnerHit ? "Winner Called" : "Winner Miss"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                      <div style={{ color: "var(--text-muted)" }}>
+                        Mean Error: <span style={{ color: "var(--text)" }}>{report.meanError.toFixed(2)}</span>
+                      </div>
+                      <div style={{ color: "var(--text-muted)" }}>
+                        Exact: <span style={{ color: "var(--text)" }}>{report.exactMatches}</span>
+                      </div>
+                      <div style={{ color: "var(--text-muted)" }}>
+                        Within 3: <span style={{ color: "var(--text)" }}>{report.within3}</span>
+                      </div>
+                      <div style={{ color: "var(--text-muted)" }}>
+                        Podium Hits: <span style={{ color: "var(--text)" }}>{report.podiumHits}/3</span>
+                      </div>
+                      <div style={{ color: "var(--text-muted)" }}>
+                        Compared: <span style={{ color: "var(--text)" }}>{report.comparedDrivers}</span>
+                      </div>
+                    </div>
+                    {report.biggestMisses?.length > 0 && (
+                      <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                        Biggest miss: {report.biggestMisses[0].driver} (Pred P{report.biggestMisses[0].predicted} vs Actual P{report.biggestMisses[0].actual})
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+          </div>
+          {tracker.generatedAt && (
+            <p className="text-xs mt-4" style={{ color: "var(--text-muted)" }}>
+              Last tracker sync: {new Date(tracker.generatedAt).toLocaleString()}
+            </p>
+          )}
+        </motion.div>
+      )}
+
       {/* Detailed Round Table */}
       <motion.div
         className="card overflow-hidden mb-8"
@@ -436,7 +503,7 @@ export default function AccuracyDashboardPage() {
               color: "var(--text-muted)",
             }}
           >
-            python advanced_models.py --add-actual --round N
+            python gp_weekend.py --round N --phase post-race
           </div>
         </motion.div>
       )}

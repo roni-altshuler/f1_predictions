@@ -73,6 +73,44 @@ export interface FeatureImportance {
   importance: number;
 }
 
+export interface VisualizationDetail {
+  filename: string;
+  title: string;
+  category: "ml" | "fastf1" | "advanced" | "other" | string;
+  description: string;
+  source: "model" | "fastf1" | "advanced" | string;
+}
+
+export interface GrandPrixReportMiss {
+  driver: string;
+  team: string;
+  predicted: number;
+  actual: number;
+  delta: number;
+  absDelta: number;
+}
+
+export interface GrandPrixTeamError {
+  team: string;
+  meanError: number;
+  drivers: number;
+}
+
+export interface GrandPrixPerformanceReport {
+  round: number;
+  name: string;
+  comparedDrivers: number;
+  meanError: number;
+  medianError: number;
+  exactMatches: number;
+  within3: number;
+  within5: number;
+  winnerHit: boolean;
+  podiumHits: number;
+  biggestMisses: GrandPrixReportMiss[];
+  teamMeanError: GrandPrixTeamError[];
+}
+
 export interface RoundData {
   round: number;
   name: string;
@@ -87,6 +125,7 @@ export interface RoundData {
   fastestLap: string;
   podium: [string, string, string];
   visualizations: string[];
+  visualizationDetails?: VisualizationDetail[];
   circuitInfo: {
     type: string;
     laps: number;
@@ -137,9 +176,11 @@ export interface RoundData {
     median_position_error?: number;
     exact_matches?: number;
     within_3_positions?: number;
+    within_5_positions?: number;
     total_drivers?: number;
     accuracy_pct?: number;
   };
+  gpReport?: GrandPrixPerformanceReport;
 }
 
 export interface SpeedTrapEntry {
@@ -254,6 +295,8 @@ export interface SeasonTrackerData {
     seasonAccuracyPct: number;
     roundsWithActual: number;
   } | null;
+  gpReports?: GrandPrixPerformanceReport[];
+  generatedAt?: string;
 }
 
 export type RoundLifecycle =

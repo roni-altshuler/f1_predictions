@@ -25,6 +25,7 @@ Import:
 """
 
 import os, json, warnings
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -39,6 +40,7 @@ from f1_prediction_utils import (
     TEAM_COLOURS, DRIVER_TEAM_2026, DRIVER_FULL_NAMES,
     CALENDAR_2026, CIRCUIT_CHARACTERISTICS, TEAM_PIT_SPEED,
     F1_POINTS,
+    WEBSITE_DATA_DIR,
 )
 
 
@@ -960,7 +962,9 @@ class SeasonTracker:
     for the website.
     """
 
-    TRACKER_FILE = "season_tracker_2026.json"
+    PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+    TRACKER_FILE = os.path.join(PROJECT_ROOT, "season_tracker_2026.json")
+    WEBSITE_TRACKER_FILE = os.path.join(WEBSITE_DATA_DIR, "season_tracker.json")
 
     def __init__(self):
         self.data = self._load()
@@ -968,23 +972,103 @@ class SeasonTracker:
     def _load(self):
         if os.path.exists(self.TRACKER_FILE):
             with open(self.TRACKER_FILE) as f:
-                return json.load(f)
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                loaded.setdefault("rounds", {})
+                loaded.setdefault("accuracy", {})
+                return loaded
         return {"rounds": {}, "accuracy": {}}
 
     def save(self):
+        os.makedirs(os.path.dirname(self.TRACKER_FILE) or ".", exist_ok=True)
         with open(self.TRACKER_FILE, "w") as f:
             json.dump(self.data, f, indent=2)
+
+    def _normalize_actual_results(self, actual_results):
+        normalized = {}
+        if not isinstance(actual_results, dict):
+            return normalized
+        for drv, value in actual_results.items():
+            pos = value.get("position") if isinstance(value, dict) else value
+            try:
+                normalized[str(drv)] = int(pos)
+            except (TypeError, ValueError):
+                continue
+        return normalized
+
+    def _ensure_round_entry(self, rnd):
+        if rnd not in self.data["rounds"]:
+            self.data["rounds"][rnd] = {"predicted": {}, "actual": {}}
+
+    def sync_from_round_file(self, round_num, round_data):
+        """Ingest prediction/actual data from a round JSON payload."""
+        rnd = str(round_num)
+        self._ensure_round_entry(rnd)
+
+        classification = round_data.get("classification", []) if isinstance(round_data, dict) else []
+        if isinstance(classification, list) and classification:
+            self.data["rounds"][rnd]["predicted"] = {}
+            for entry in classification:
+                if not isinstance(entry, dict):
+                    continue
+                drv = entry.get("driver")
+                pos = entry.get("position")
+                team = entry.get("team", DRIVER_TEAM_2026.get(drv, "Unknown"))
+                try:
+                    self.data["rounds"][rnd]["predicted"][str(drv)] = {
+                        "position": int(pos),
+                        "team": team,
+                    }
+                except (TypeError, ValueError):
+                    continue
+
+        actual = self._normalize_actual_results(round_data.get("actualResults", {})) if isinstance(round_data, dict) else {}
+        if actual:
+            self.data["rounds"][rnd]["actual"] = {
+                drv: {"position": int(pos)} for drv, pos in actual.items()
+            }
+
+        self._compute_accuracy(round_num)
+
+    def sync_from_round_directory(self, rounds_dir):
+        """Rebuild tracker rows from round JSON files for full consistency."""
+        if not os.path.isdir(rounds_dir):
+            return
+
+        for fname in sorted(os.listdir(rounds_dir)):
+            if not (fname.startswith("round_") and fname.endswith(".json")):
+                continue
+            path = os.path.join(rounds_dir, fname)
+            try:
+                with open(path) as f:
+                    data = json.load(f)
+            except Exception:
+                continue
+
+            try:
+                round_num = int(str(data.get("round", "")))
+            except (TypeError, ValueError):
+                continue
+            self.sync_from_round_file(round_num, data)
 
     def add_prediction(self, round_num, classification_data):
         """Record predictions for a round."""
         rnd = str(round_num)
-        if rnd not in self.data["rounds"]:
-            self.data["rounds"][rnd] = {"predicted": {}, "actual": {}}
+        self._ensure_round_entry(rnd)
         for entry in classification_data:
-            self.data["rounds"][rnd]["predicted"][entry["driver"]] = {
-                "position": entry["position"],
-                "team": entry["team"],
-            }
+            if not isinstance(entry, dict):
+                continue
+            drv = entry.get("driver")
+            pos = entry.get("position")
+            team = entry.get("team", DRIVER_TEAM_2026.get(drv, "Unknown"))
+            try:
+                self.data["rounds"][rnd]["predicted"][str(drv)] = {
+                    "position": int(pos),
+                    "team": team,
+                }
+            except (TypeError, ValueError):
+                continue
+        self._compute_accuracy(round_num)
         self.save()
 
     def add_actual_result(self, round_num, actual_results):
@@ -993,10 +1077,10 @@ class SeasonTracker:
         actual_results: dict of {driver_code: position}
         """
         rnd = str(round_num)
-        if rnd not in self.data["rounds"]:
-            self.data["rounds"][rnd] = {"predicted": {}, "actual": {}}
-        for drv, pos in actual_results.items():
-            self.data["rounds"][rnd]["actual"][drv] = {"position": pos}
+        self._ensure_round_entry(rnd)
+        normalized = self._normalize_actual_results(actual_results)
+        for drv, pos in normalized.items():
+            self.data["rounds"][rnd]["actual"][drv] = {"position": int(pos)}
         self._compute_accuracy(round_num)
         self.save()
 
@@ -1006,6 +1090,7 @@ class SeasonTracker:
         predicted = self.data["rounds"][rnd].get("predicted", {})
         actual = self.data["rounds"][rnd].get("actual", {})
         if not predicted or not actual:
+            self.data["accuracy"].pop(rnd, None)
             return
 
         common = set(predicted.keys()) & set(actual.keys())
@@ -1016,8 +1101,8 @@ class SeasonTracker:
         exact = 0
         within_3 = 0
         for drv in common:
-            p_pos = predicted[drv]["position"]
-            a_pos = actual[drv]["position"]
+            p_pos = int(predicted[drv]["position"])
+            a_pos = int(actual[drv]["position"])
             diff = abs(p_pos - a_pos)
             diffs.append(diff)
             if diff == 0:
@@ -1025,19 +1110,102 @@ class SeasonTracker:
             if diff <= 3:
                 within_3 += 1
 
+        within_5 = int(sum(1 for d in diffs if d <= 5))
+
         self.data["accuracy"][rnd] = {
             "mean_position_error": round(np.mean(diffs), 2),
             "median_position_error": round(float(np.median(diffs)), 1),
             "exact_matches": exact,
             "within_3_positions": within_3,
+            "within_5_positions": within_5,
             "total_drivers": len(common),
             "accuracy_pct": round(within_3 / len(common) * 100, 1),
+        }
+
+    def _round_comparison_rows(self, round_num):
+        rnd = str(round_num)
+        round_data = self.data["rounds"].get(rnd, {})
+        predicted = round_data.get("predicted", {})
+        actual = round_data.get("actual", {})
+        common = sorted(set(predicted.keys()) & set(actual.keys()))
+        rows = []
+        for drv in common:
+            p_pos = int(predicted[drv]["position"])
+            a_pos = int(actual[drv]["position"])
+            delta = p_pos - a_pos
+            team = predicted[drv].get("team") or DRIVER_TEAM_2026.get(drv, "Unknown")
+            rows.append({
+                "driver": drv,
+                "team": team,
+                "predicted": p_pos,
+                "actual": a_pos,
+                "delta": delta,
+                "absDelta": abs(delta),
+            })
+        return rows
+
+    def get_round_report(self, round_num):
+        """Return a detailed per-GP prediction-vs-truth report."""
+        rows = self._round_comparison_rows(round_num)
+        if not rows:
+            return None
+
+        diffs = [r["absDelta"] for r in rows]
+        exact = sum(1 for r in rows if r["absDelta"] == 0)
+        within3 = sum(1 for r in rows if r["absDelta"] <= 3)
+        within5 = sum(1 for r in rows if r["absDelta"] <= 5)
+
+        predicted_podium = {r["driver"] for r in sorted(rows, key=lambda x: x["predicted"])[:3]}
+        actual_podium = {r["driver"] for r in sorted(rows, key=lambda x: x["actual"])[:3]}
+        predicted_winner = min(rows, key=lambda x: x["predicted"])["driver"]
+        actual_winner = min(rows, key=lambda x: x["actual"])["driver"]
+
+        team_acc = {}
+        for row in rows:
+            team = row["team"]
+            if team not in team_acc:
+                team_acc[team] = {"sum": 0.0, "n": 0}
+            team_acc[team]["sum"] += row["absDelta"]
+            team_acc[team]["n"] += 1
+        team_mean_error = [
+            {
+                "team": team,
+                "meanError": round(values["sum"] / max(values["n"], 1), 2),
+                "drivers": values["n"],
+            }
+            for team, values in team_acc.items()
+        ]
+        team_mean_error.sort(key=lambda x: x["meanError"])
+
+        biggest_misses = sorted(rows, key=lambda x: x["absDelta"], reverse=True)[:5]
+
+        return {
+            "round": int(round_num),
+            "name": CALENDAR_2026.get(int(round_num), {}).get("name", f"Round {round_num}"),
+            "comparedDrivers": len(rows),
+            "meanError": round(float(np.mean(diffs)), 2),
+            "medianError": round(float(np.median(diffs)), 2),
+            "exactMatches": int(exact),
+            "within3": int(within3),
+            "within5": int(within5),
+            "winnerHit": predicted_winner == actual_winner,
+            "podiumHits": len(predicted_podium & actual_podium),
+            "biggestMisses": biggest_misses,
+            "teamMeanError": team_mean_error,
         }
 
     def export_for_website(self):
         """Export tracker data in website-compatible format."""
         rounds_data = []
-        for rnd_str, rnd_data in sorted(self.data["rounds"].items()):
+        gp_reports = []
+
+        def _round_sort_key(item):
+            try:
+                return int(str(item[0]))
+            except (TypeError, ValueError):
+                return 10**9
+
+        for rnd_str, rnd_data in sorted(self.data["rounds"].items(), key=_round_sort_key):
             rnd_num = int(rnd_str)
             has_actual = bool(rnd_data.get("actual"))
             accuracy = self.data["accuracy"].get(rnd_str, {})
@@ -1049,9 +1217,15 @@ class SeasonTracker:
                 "within3": accuracy.get("within_3_positions"),
                 "accuracyPct": accuracy.get("accuracy_pct"),
             })
+            if has_actual:
+                report = self.get_round_report(rnd_num)
+                if report:
+                    gp_reports.append(report)
         return {
             "rounds": rounds_data,
             "overallAccuracy": self._overall_accuracy(),
+            "gpReports": gp_reports,
+            "generatedAt": datetime.utcnow().isoformat() + "Z",
         }
 
     def _overall_accuracy(self):
@@ -1257,13 +1431,14 @@ def generate_advanced_features(round_num, classification_data, merged,
     print(f"  📊 Season tracker...")
     try:
         tracker = SeasonTracker()
+        rounds_dir = os.path.join(WEBSITE_DATA_DIR, "rounds")
+        tracker.sync_from_round_directory(rounds_dir)
         tracker.add_prediction(round_num, classification_data)
         tracker_export = tracker.export_for_website()
         result["trackerData"] = tracker_export
 
         # Save tracker data for website
-        tracker_path = os.path.join("website", "public", "data",
-                                    "season_tracker.json")
+        tracker_path = SeasonTracker.WEBSITE_TRACKER_FILE
         os.makedirs(os.path.dirname(tracker_path), exist_ok=True)
         with open(tracker_path, "w") as f:
             json.dump(tracker_export, f, indent=2)

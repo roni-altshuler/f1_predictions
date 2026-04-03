@@ -198,11 +198,38 @@ export default function RaceDetailPage({ round }: Props) {
   ];
 
   const vizFiles = [...new Set([...(data.visualizations || [])])];
-  const mlViz = vizFiles.filter(f => ["predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png", "pace_vs_predicted.png", "laptime_distribution.png", "prediction_confidence.png"].includes(f));
-  const fastf1Viz = vizFiles.filter(f => ["laptime_distribution_historical.png", "tyre_strategy.png"].includes(f));
-  const advancedViz = vizFiles.filter(f => ["pit_strategy_comparison.png", "tyre_degradation_curves.png", "lstm_pace_prediction.png"].includes(f));
+  const inferVizCategory = (filename: string): "ml" | "fastf1" | "advanced" | "other" => {
+    if (["predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png", "pace_vs_predicted.png", "laptime_distribution.png", "prediction_confidence.png"].includes(filename)) {
+      return "ml";
+    }
+    if (["track_map.png", "laptime_distribution_historical.png", "tyre_strategy.png"].includes(filename)) {
+      return "fastf1";
+    }
+    if (["pit_strategy_comparison.png", "tyre_degradation_curves.png", "lstm_pace_prediction.png"].includes(filename)) {
+      return "advanced";
+    }
+    return "other";
+  };
+  const vizDetails = (data.visualizationDetails && data.visualizationDetails.length > 0
+    ? data.visualizationDetails
+    : vizFiles.map((filename) => ({
+        filename,
+        title: filename.replace(/_/g, " ").replace(".png", ""),
+        category: inferVizCategory(filename),
+        description: "Generated race analysis visualization.",
+        source: inferVizCategory(filename) === "fastf1" ? "fastf1" : inferVizCategory(filename) === "advanced" ? "advanced" : "model",
+      }))
+  ).map((item) => ({
+    ...item,
+    category: (item.category || inferVizCategory(item.filename)) as "ml" | "fastf1" | "advanced" | "other",
+  }));
+  const mlViz = vizDetails.filter((v) => v.category === "ml");
+  const fastf1Viz = vizDetails.filter((v) => v.category === "fastf1" && v.filename !== "track_map.png");
+  const advancedViz = vizDetails.filter((v) => v.category === "advanced");
+  const otherViz = vizDetails.filter((v) => !["ml", "fastf1", "advanced"].includes(v.category));
   const trackMapSrc = failedImages.has("track_map.png") ? null : getVisualizationPath(round, "track_map.png");
   const actualRows = data.actualResults ? Object.entries(data.actualResults).sort((a, b) => a[1] - b[1]) : [];
+  const gpReport = data.gpReport || null;
   const actualStatus = data.actualStatus || {};
   const predictedByDriver = new Map(data.classification.map((e) => [e.driver, e]));
   const confidenceTone = (value?: string) =>
@@ -628,6 +655,54 @@ export default function RaceDetailPage({ round }: Props) {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                </div>
+              )}
+
+              {gpReport && (
+                <div className="mt-6 space-y-4">
+                  <h4 className="text-sm font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                    Grand Prix Performance Report
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="metric-card">
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>Winner Called</p>
+                      <p className="text-xl font-black" style={{ color: gpReport.winnerHit ? "#00D2BE" : "#E10600" }}>
+                        {gpReport.winnerHit ? "Yes" : "No"}
+                      </p>
+                    </div>
+                    <div className="metric-card">
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>Podium Hits</p>
+                      <p className="text-xl font-black" style={{ color: "var(--text)" }}>{gpReport.podiumHits}/3</p>
+                    </div>
+                    <div className="metric-card">
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>Within 5</p>
+                      <p className="text-xl font-black" style={{ color: "var(--text)" }}>{gpReport.within5}</p>
+                    </div>
+                    <div className="metric-card">
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>Median Error</p>
+                      <p className="text-xl font-black" style={{ color: "var(--text)" }}>{gpReport.medianError.toFixed(1)}</p>
+                    </div>
+                  </div>
+
+                  {gpReport.biggestMisses?.length > 0 && (
+                    <div className="card p-4" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+                      <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                        Biggest Misses
+                      </p>
+                      <div className="space-y-2">
+                        {gpReport.biggestMisses.slice(0, 5).map((miss) => (
+                          <div key={`miss-${miss.driver}`} className="flex items-center justify-between text-sm">
+                            <span style={{ color: "var(--text)" }}>
+                              {miss.driver} <span style={{ color: "var(--text-muted)" }}>({miss.team})</span>
+                            </span>
+                            <span className="font-mono" style={{ color: "#E10600" }}>
+                              Pred P{miss.predicted} vs Actual P{miss.actual} ({miss.delta > 0 ? `+${miss.delta}` : miss.delta})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1171,12 +1246,47 @@ export default function RaceDetailPage({ round }: Props) {
 
       {/* ═══ Visualizations Tab ═══ */}
       {activeTab === "visualizations" && (() => {
-        const loadableViz = vizFiles.filter(f => !failedImages.has(f));
+        const loadableViz = vizDetails.filter(v => !failedImages.has(v.filename));
         const allFailed = vizFiles.length > 0 && loadableViz.length === 0;
         const hasViz = loadableViz.length > 0;
-        const loadableMl = mlViz.filter(f => !failedImages.has(f));
-        const loadableFastf1 = fastf1Viz.filter(f => !failedImages.has(f));
-        const loadableAdvanced = advancedViz.filter(f => !failedImages.has(f));
+        const loadableMl = mlViz.filter(v => !failedImages.has(v.filename));
+        const loadableFastf1 = fastf1Viz.filter(v => !failedImages.has(v.filename));
+        const loadableAdvanced = advancedViz.filter(v => !failedImages.has(v.filename));
+        const loadableOther = otherViz.filter(v => !failedImages.has(v.filename));
+
+        const renderVizCard = (detail: {
+          filename: string;
+          title: string;
+          description: string;
+          source?: string;
+        }) => {
+          const src = getVisualizationPath(round, detail.filename);
+          return (
+            <div key={detail.filename} className="card p-3 cursor-pointer group" onClick={() => setLightboxImg(src)}>
+              <img src={src} alt={detail.title} className="viz-image w-full" loading="lazy" onError={() => handleImageError(detail.filename)} />
+              <div className="mt-2 px-1">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text)" }}>
+                    {detail.title}
+                  </p>
+                  {detail.source && (
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                      style={{
+                        background: detail.source === "fastf1" ? "rgba(59,130,246,0.12)" : detail.source === "advanced" ? "rgba(255,128,0,0.12)" : "rgba(225,6,0,0.12)",
+                        color: detail.source === "fastf1" ? "#3B82F6" : detail.source === "advanced" ? "#FF8000" : "#E10600",
+                      }}
+                    >
+                      {detail.source}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{detail.description}</p>
+                <p className="text-[11px] mt-1" style={{ color: "#E10600" }}>Click to enlarge</p>
+              </div>
+            </div>
+          );
+        };
 
         return (
           <motion.div className="space-y-8" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -1186,19 +1296,7 @@ export default function RaceDetailPage({ round }: Props) {
                   <div>
                     <h3 className="section-heading">Model Predictions</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {loadableMl.map((filename) => {
-                        const src = getVisualizationPath(round, filename);
-                        const title = filename.replace(/_/g, " ").replace(".png", "");
-                        return (
-                          <div key={filename} className="card p-3 cursor-pointer group" onClick={() => setLightboxImg(src)}>
-                            <img src={src} alt={title} className="viz-image w-full" onError={() => handleImageError(filename)} />
-                            <p className="text-xs text-center mt-2 capitalize" style={{ color: "var(--text-muted)" }}>
-                              {title}
-                              <span className="ml-2 text-f1-red opacity-0 group-hover:opacity-100 transition-opacity">Click to enlarge</span>
-                            </p>
-                          </div>
-                        );
-                      })}
+                      {loadableMl.map(renderVizCard)}
                     </div>
                   </div>
                 )}
@@ -1206,19 +1304,7 @@ export default function RaceDetailPage({ round }: Props) {
                   <div>
                     <h3 className="section-heading">FastF1 Historical Data</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {loadableFastf1.map((filename) => {
-                        const src = getVisualizationPath(round, filename);
-                        const title = filename.replace(/_/g, " ").replace(".png", "");
-                        return (
-                          <div key={filename} className="card p-3 cursor-pointer group" onClick={() => setLightboxImg(src)}>
-                            <img src={src} alt={title} className="viz-image w-full" onError={() => handleImageError(filename)} />
-                            <p className="text-xs text-center mt-2 capitalize" style={{ color: "var(--text-muted)" }}>
-                              {title}
-                              <span className="ml-2 text-f1-red opacity-0 group-hover:opacity-100 transition-opacity">Click to enlarge</span>
-                            </p>
-                          </div>
-                        );
-                      })}
+                      {loadableFastf1.map(renderVizCard)}
                     </div>
                   </div>
                 )}
@@ -1226,19 +1312,15 @@ export default function RaceDetailPage({ round }: Props) {
                   <div>
                     <h3 className="section-heading">Strategy Analysis</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {loadableAdvanced.map((filename) => {
-                        const src = getVisualizationPath(round, filename);
-                        const title = filename.replace(/_/g, " ").replace(".png", "");
-                        return (
-                          <div key={filename} className="card p-3 cursor-pointer group" onClick={() => setLightboxImg(src)}>
-                            <img src={src} alt={title} className="viz-image w-full" onError={() => handleImageError(filename)} />
-                            <p className="text-xs text-center mt-2 capitalize" style={{ color: "var(--text-muted)" }}>
-                              {title}
-                              <span className="ml-2 text-f1-red opacity-0 group-hover:opacity-100 transition-opacity">Click to enlarge</span>
-                            </p>
-                          </div>
-                        );
-                      })}
+                      {loadableAdvanced.map(renderVizCard)}
+                    </div>
+                  </div>
+                )}
+                {loadableOther.length > 0 && (
+                  <div>
+                    <h3 className="section-heading">Additional Visualizations</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {loadableOther.map(renderVizCard)}
                     </div>
                   </div>
                 )}

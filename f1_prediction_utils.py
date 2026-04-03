@@ -237,6 +237,7 @@ TEAM_PIT_SPEED: dict[str, float] = {
 DEFAULT_FEATURE_COLS: list[str] = [
     "TeamAdjustedPace",
     "TeamPerformanceScore",
+    "TeamFormDelta",
     "CleanAirPace",
     "BestLapTime",
     "LapTimeStd",
@@ -259,12 +260,214 @@ DEFAULT_FEATURE_COLS: list[str] = [
     "PreviousPosition",
     "SeasonMomentum",
     "PositionTrend",
+    "DriverPredictionBias",
+    "TeamPredictionBias",
 ]
 
-# Path for storing actual race results as the season progresses
-SEASON_RESULTS_FILE = "season_results_2026.json"
-# Path for storing predicted results (auto-populated after each round)
-PREDICTED_RESULTS_FILE = "predicted_results_2026.json"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+WEBSITE_DATA_DIR = os.path.join(PROJECT_ROOT, "website", "public", "data")
+
+# Canonical state files (absolute paths so CWD does not matter)
+SEASON_RESULTS_FILE = os.path.join(PROJECT_ROOT, "season_results_2026.json")
+PREDICTED_RESULTS_FILE = os.path.join(PROJECT_ROOT, "predicted_results_2026.json")
+
+# Mirrored state files under website/public/data for transparency/debugging
+SEASON_RESULTS_WEBSITE_FILE = os.path.join(WEBSITE_DATA_DIR, "season_results_2026.json")
+PREDICTED_RESULTS_WEBSITE_FILE = os.path.join(WEBSITE_DATA_DIR, "predicted_results_2026.json")
+
+
+def _read_json_file(path):
+    if not path or not os.path.exists(path):
+        return {}
+    try:
+        with open(path) as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _write_json_file(path, data):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def _normalize_round_results(raw):
+    """Normalize round-position maps into {"<round>": {"DRV": int_pos}}."""
+    out = {}
+    if not isinstance(raw, dict):
+        return out
+    for rnd_key, rnd_data in raw.items():
+        try:
+            rnd = int(rnd_key)
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(rnd_data, dict):
+            continue
+        parsed = {}
+        for drv, pos in rnd_data.items():
+            value = pos.get("position") if isinstance(pos, dict) else pos
+            try:
+                parsed[str(drv)] = int(value)
+            except (TypeError, ValueError):
+                continue
+        if parsed:
+            out[str(rnd)] = parsed
+    return out
+
+
+def _load_season_position_maps(current_round=None):
+    """Load predicted, actual, and merged position maps with graceful fallback."""
+    pred_candidates = [
+        PREDICTED_RESULTS_FILE,
+        PREDICTED_RESULTS_WEBSITE_FILE,
+        "predicted_results_2026.json",
+    ]
+    actual_candidates = [
+        SEASON_RESULTS_FILE,
+        SEASON_RESULTS_WEBSITE_FILE,
+        "season_results_2026.json",
+    ]
+
+    predicted = {}
+    for path in pred_candidates:
+        predicted = _normalize_round_results(_read_json_file(path))
+        if predicted:
+            break
+
+    actual = {}
+    for path in actual_candidates:
+        actual = _normalize_round_results(_read_json_file(path))
+        if actual:
+            break
+
+    combined = dict(predicted)
+    for rnd_str, rnd_data in actual.items():
+        combined[rnd_str] = rnd_data
+
+    if current_round is not None:
+        predicted = {
+            rnd: data
+            for rnd, data in predicted.items()
+            if int(rnd) < current_round
+        }
+        actual = {
+            rnd: data
+            for rnd, data in actual.items()
+            if int(rnd) < current_round
+        }
+        combined = {
+            rnd: data
+            for rnd, data in combined.items()
+            if int(rnd) < current_round
+        }
+
+    return predicted, actual, combined
+
+
+def _add_dynamic_team_form(merged, combined_results=None, current_round=1):
+    """Blend static constructor strength with recency-weighted season form."""
+    merged = merged.copy()
+    merged["TeamFormDelta"] = 0.0
+
+    if current_round <= 1:
+        return merged
+
+    if combined_results is None:
+        _, _, combined_results = _load_season_position_maps(current_round=current_round)
+
+    if not combined_results:
+        return merged
+
+    weighted_points = {team: 0.0 for team in TEAM_PERFORMANCE_SCORE}
+    weighted_counts = {team: 0.0 for team in TEAM_PERFORMANCE_SCORE}
+
+    for rnd_str, rnd_data in combined_results.items():
+        rnd = int(rnd_str)
+        if rnd >= current_round:
+            continue
+        weight = float(np.exp(0.25 * rnd))
+        for drv, pos in rnd_data.items():
+            team = DRIVER_TEAM_2026.get(drv)
+            if team is None:
+                continue
+            weighted_points[team] += F1_POINTS.get(int(pos), 0) * weight
+            weighted_counts[team] += weight
+
+    avg_points = {
+        team: (weighted_points[team] / weighted_counts[team])
+        for team in TEAM_PERFORMANCE_SCORE
+        if weighted_counts[team] > 0
+    }
+    if not avg_points:
+        return merged
+
+    max_avg = max(avg_points.values())
+    if max_avg <= 0:
+        return merged
+
+    dynamic_scores = {}
+    for team, base in TEAM_PERFORMANCE_SCORE.items():
+        recent_norm = avg_points.get(team, 0.0) / max_avg
+        dynamic_scores[team] = 0.65 * base + 0.35 * recent_norm
+
+    merged["TeamFormDelta"] = merged["Team"].map(
+        lambda t: dynamic_scores.get(t, TEAM_PERFORMANCE_SCORE.get(t, 0.0))
+        - TEAM_PERFORMANCE_SCORE.get(t, 0.0)
+    )
+    merged["TeamPerformanceScore"] = merged["Team"].map(
+        lambda t: dynamic_scores.get(t, TEAM_PERFORMANCE_SCORE.get(t, 0.0))
+    )
+    print("✅ Dynamic team-form blend applied from prior rounds.")
+    return merged
+
+
+def _add_prediction_bias_features(merged, predicted_results, actual_results):
+    """Add driver/team bias features from historical prediction residuals."""
+    merged = merged.copy()
+
+    driver_sum = {drv: 0.0 for drv in DRIVER_TEAM_2026}
+    driver_weight = {drv: 0.0 for drv in DRIVER_TEAM_2026}
+
+    for rnd_str, pred_round in predicted_results.items():
+        actual_round = actual_results.get(rnd_str, {})
+        if not pred_round or not actual_round:
+            continue
+        rnd = int(rnd_str)
+        weight = float(np.exp(0.35 * rnd))
+        for drv, pred_pos in pred_round.items():
+            if drv not in actual_round:
+                continue
+            # Positive value means driver usually finishes better than predicted.
+            residual = float(pred_pos) - float(actual_round[drv])
+            if drv not in driver_sum:
+                continue
+            driver_sum[drv] += residual * weight
+            driver_weight[drv] += weight
+
+    driver_bias = {
+        drv: (driver_sum[drv] / driver_weight[drv]) if driver_weight[drv] > 0 else 0.0
+        for drv in DRIVER_TEAM_2026
+    }
+
+    team_sum = {team: 0.0 for team in TEAM_PERFORMANCE_SCORE}
+    team_count = {team: 0 for team in TEAM_PERFORMANCE_SCORE}
+    for drv, bias in driver_bias.items():
+        team = DRIVER_TEAM_2026.get(drv)
+        if team is None:
+            continue
+        team_sum[team] += bias
+        team_count[team] += 1
+    team_bias = {
+        team: (team_sum[team] / team_count[team]) if team_count[team] > 0 else 0.0
+        for team in TEAM_PERFORMANCE_SCORE
+    }
+
+    merged["DriverPredictionBias"] = merged["Driver"].map(driver_bias).fillna(0.0)
+    merged["TeamPredictionBias"] = merged["Team"].map(team_bias).fillna(0.0)
+    print("✅ Historical prediction-bias features added.")
+    return merged
 
 
 # ==========================================================================
@@ -432,7 +635,7 @@ def _add_circuit_context_features(merged, circuit_key="Australia", sprint=False)
     return merged
 
 
-def _add_current_season_form(merged, current_round=1):
+def _add_current_season_form(merged, current_round=1, combined_results=None):
     """Incorporate results from earlier 2026 races (predicted or actual).
 
     v3: Reads from both actual results (season_results_2026.json) and
@@ -445,26 +648,14 @@ def _add_current_season_form(merged, current_round=1):
     merged = merged.copy()
     form = {}
 
-    # Build combined results dict: {round_str: {driver: position}}
-    combined = {}
+    if combined_results is None:
+        _, _, combined_results = _load_season_position_maps(current_round=current_round)
 
-    # 1. Load predicted results (generated automatically by the pipeline)
-    if os.path.exists(PREDICTED_RESULTS_FILE) and current_round > 1:
-        with open(PREDICTED_RESULTS_FILE) as f:
-            combined.update(json.load(f))
-
-    # 2. Load actual results (override predicted where available)
-    if os.path.exists(SEASON_RESULTS_FILE) and current_round > 1:
-        with open(SEASON_RESULTS_FILE) as f:
-            actual = json.load(f)
-        for rnd_str, rnd_data in actual.items():
-            combined[rnd_str] = rnd_data  # actual overrides predicted
-
-    if combined and current_round > 1:
+    if combined_results and current_round > 1:
         for drv in DRIVER_TEAM_2026:
             positions = []
             weights   = []
-            for rnd_str, rnd_data in combined.items():
+            for rnd_str, rnd_data in combined_results.items():
                 rnd = int(rnd_str)
                 if rnd < current_round and drv in rnd_data:
                     positions.append(rnd_data[drv])
@@ -480,12 +671,12 @@ def _add_current_season_form(merged, current_round=1):
 
     merged["CurrentForm"] = merged["Driver"].map(form)
     completed = current_round - 1
-    source = "predicted+actual" if combined else "none"
+    source = "predicted+actual" if combined_results else "none"
     print(f"✅ Current season form added ({completed} race(s), source={source}).")
     return merged
 
 
-def _add_race_to_race_features(merged, current_round=1):
+def _add_race_to_race_features(merged, current_round=1, combined_results=None):
     """Add features that capture driver trajectory across the season.
 
     v3 NEW — These features make the model truly scalable race-to-race:
@@ -495,16 +686,8 @@ def _add_race_to_race_features(merged, current_round=1):
     """
     merged = merged.copy()
 
-    # Build combined results (predicted + actual, actual takes priority)
-    combined = {}
-    if os.path.exists(PREDICTED_RESULTS_FILE):
-        with open(PREDICTED_RESULTS_FILE) as f:
-            combined.update(json.load(f))
-    if os.path.exists(SEASON_RESULTS_FILE):
-        with open(SEASON_RESULTS_FILE) as f:
-            actual = json.load(f)
-        for rnd_str, rnd_data in actual.items():
-            combined[rnd_str] = rnd_data
+    if combined_results is None:
+        _, _, combined_results = _load_season_position_maps(current_round=current_round)
 
     prev_pos = {}
     momentum = {}
@@ -515,8 +698,8 @@ def _add_race_to_race_features(merged, current_round=1):
         positions_by_round = []
         for rnd in range(1, current_round):
             rnd_str = str(rnd)
-            if rnd_str in combined and drv in combined[rnd_str]:
-                positions_by_round.append((rnd, combined[rnd_str][drv]))
+            if rnd_str in combined_results and drv in combined_results[rnd_str]:
+                positions_by_round.append((rnd, combined_results[rnd_str][drv]))
 
         if not positions_by_round:
             prev_pos[drv] = 11.0    # neutral
@@ -577,6 +760,15 @@ def build_training_dataset(grid, driver_stats, circuit_key="Australia",
     # Team-change adjustment (modifies time columns)
     merged = _apply_team_change_adjustment(merged)
 
+    predicted_results, actual_results, combined_results = _load_season_position_maps(
+        current_round=current_round
+    )
+
+    # Dynamic constructor form from ongoing season results.
+    merged = _add_dynamic_team_form(
+        merged, combined_results=combined_results, current_round=current_round
+    )
+
     # Pit / tyre / experience
     merged = _add_pit_and_tyre_features(merged, circuit_key=circuit_key)
 
@@ -586,10 +778,17 @@ def build_training_dataset(grid, driver_stats, circuit_key="Australia",
     )
 
     # Current season form
-    merged = _add_current_season_form(merged, current_round=current_round)
+    merged = _add_current_season_form(
+        merged, current_round=current_round, combined_results=combined_results
+    )
 
-    # Race-to-race features (v3 NEW)
-    merged = _add_race_to_race_features(merged, current_round=current_round)
+    # Race-to-race features
+    merged = _add_race_to_race_features(
+        merged, current_round=current_round, combined_results=combined_results
+    )
+
+    # Historical prediction residuals help correct recurring over/under-rating.
+    merged = _add_prediction_bias_features(merged, predicted_results, actual_results)
 
     print(f"✅ Training dataset built — {len(merged)} drivers, "
           f"{len(DEFAULT_FEATURE_COLS)} features.")
@@ -634,10 +833,31 @@ def fetch_qualifying_data(year, grand_prix):
 
 
 def apply_qualifying_data(merged, qualifying_times,
-                          rain_probability=0.0, temperature_c=25.0):
+                          rain_probability=0.0, temperature_c=25.0,
+                          fallback_times=None):
     """Add qualifying + weather columns to the dataset."""
     merged = merged.copy()
     merged["QualifyingTime"] = merged["Driver"].map(qualifying_times)
+
+    # FastF1 qualifying feeds can miss drivers (e.g., DNS/early retirement).
+    # Backfill with generated estimates first, then with robust medians.
+    missing_quali = merged["QualifyingTime"].isna()
+    if missing_quali.any() and fallback_times:
+        merged.loc[missing_quali, "QualifyingTime"] = (
+            merged.loc[missing_quali, "Driver"].map(fallback_times)
+        )
+        missing_quali = merged["QualifyingTime"].isna()
+
+    if missing_quali.any():
+        clean_air_fallback = merged.loc[missing_quali, "CleanAirPace"]
+        merged.loc[missing_quali, "QualifyingTime"] = clean_air_fallback
+
+    if merged["QualifyingTime"].isna().any():
+        global_fallback = float(merged["QualifyingTime"].dropna().median())
+        if np.isnan(global_fallback):
+            global_fallback = float(merged["CleanAirPace"].median())
+        merged["QualifyingTime"] = merged["QualifyingTime"].fillna(global_fallback)
+
     if rain_probability >= 0.75:
         merged["AdjustedQualiTime"] = (
             merged["QualifyingTime"] * merged["WetPerformance"]
@@ -651,6 +871,12 @@ def apply_qualifying_data(merged, qualifying_times,
     merged["WeatherRiskScore"] = (
         rain_probability * 0.65 + max(0.0, abs(temperature_c - 24.0) / 20.0) * 0.35
     )
+
+    if merged["AdjustedQualiTime"].isna().any():
+        merged["AdjustedQualiTime"] = merged["AdjustedQualiTime"].fillna(
+            merged["QualifyingTime"]
+        )
+
     merged["QualifyingRank"] = merged["AdjustedQualiTime"].rank(method="min")
     median_quali = merged["AdjustedQualiTime"].median()
     merged["GridAdvantage"] = median_quali - merged["AdjustedQualiTime"]
@@ -696,6 +922,22 @@ def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=
     strategy_weight /= weight_total
 
     merged = merged.copy()
+    driver_bias_term = (
+        _zscore(merged["DriverPredictionBias"])
+        if "DriverPredictionBias" in merged.columns
+        else 0.0
+    )
+    team_bias_term = (
+        _zscore(merged["TeamPredictionBias"])
+        if "TeamPredictionBias" in merged.columns
+        else 0.0
+    )
+    team_form_term = (
+        _zscore(merged["TeamFormDelta"])
+        if "TeamFormDelta" in merged.columns
+        else 0.0
+    )
+
     merged["RaceProjectionScore"] = (
         _zscore(merged["PredictedLapTime"]) * pace_weight +
         _zscore(merged["AdjustedQualiTime"]) * quali_lock_in +
@@ -706,7 +948,10 @@ def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=
         _zscore(merged["PitTimeLoss"]) * strategy_weight +
         _zscore(merged["TyreDegFactor"]) * (strategy_weight * 0.55) -
         _zscore(merged["SeasonMomentum"]) * 0.05 +
-        _zscore(merged["GridAdvantage"]) * -0.08
+        _zscore(merged["GridAdvantage"]) * -0.08 -
+        driver_bias_term * 0.07 -
+        team_bias_term * 0.05 -
+        team_form_term * 0.04
     )
     merged["RaceProjectionTime"] = (
         merged["PredictedLapTime"].min() + 1.15 + _zscore(merged["RaceProjectionScore"]) * 0.85
@@ -722,6 +967,8 @@ def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=
         model_dispersion +
         merged["ConsistencyScore"].fillna(0.0) * 18.0 +
         np.abs(merged["PositionTrend"]).fillna(0.0) * 0.18 +
+        np.abs(merged.get("DriverPredictionBias", 0.0)) * 0.06 +
+        np.abs(merged.get("TeamPredictionBias", 0.0)) * 0.08 +
         volatility
     )
     uncertainty_floor = max(float(np.nanpercentile(raw_uncertainty, 20)), 0.45)
@@ -1041,16 +1288,13 @@ def save_race_result(round_num, classification):
 
     Call this AFTER a race with the actual finishing order.
     """
-    data = {}
-    if os.path.exists(SEASON_RESULTS_FILE):
-        with open(SEASON_RESULTS_FILE) as f:
-            data = json.load(f)
+    data = _normalize_round_results(_read_json_file(SEASON_RESULTS_FILE))
 
     rnd = {row["Driver"]: int(pos) for pos, row in classification.iterrows()}
     data[str(round_num)] = rnd
 
-    with open(SEASON_RESULTS_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    _write_json_file(SEASON_RESULTS_FILE, data)
+    _write_json_file(SEASON_RESULTS_WEBSITE_FILE, data)
     print(f"💾 Round {round_num} actual results saved to {SEASON_RESULTS_FILE}.")
 
 
@@ -1068,16 +1312,13 @@ def save_predicted_result(round_num, classification):
         The prediction result from predicted_classification(), with
         'Driver' column and positional index.
     """
-    data = {}
-    if os.path.exists(PREDICTED_RESULTS_FILE):
-        with open(PREDICTED_RESULTS_FILE) as f:
-            data = json.load(f)
+    data = _normalize_round_results(_read_json_file(PREDICTED_RESULTS_FILE))
 
     rnd = {row["Driver"]: int(pos) for pos, row in classification.iterrows()}
     data[str(round_num)] = rnd
 
-    with open(PREDICTED_RESULTS_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    _write_json_file(PREDICTED_RESULTS_FILE, data)
+    _write_json_file(PREDICTED_RESULTS_WEBSITE_FILE, data)
     print(f"💾 Round {round_num} predicted results saved → {PREDICTED_RESULTS_FILE} "
           f"(feeds next round's features).")
 
