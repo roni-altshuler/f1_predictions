@@ -62,6 +62,17 @@ const VIZ_CATEGORIES = [
       { key: "tyre_degradation", label: "Tyre Degradation", desc: "Compound degradation curves" },
     ],
   },
+  {
+    id: "bettor",
+    title: "Bettor Analytics",
+    items: [
+      { key: "win_probability_board", label: "Win Probability Board", desc: "Model win probabilities and fair-odds view" },
+      { key: "podium_probability_board", label: "Podium Probability", desc: "Chance each driver finishes inside the top 3" },
+      { key: "finish_probability_heatmap", label: "Finish Probability Heatmap", desc: "Driver-by-position distribution for top finish slots" },
+      { key: "head_to_head_edges", label: "Head-to-Head Edges", desc: "Pairwise finish-ahead probabilities for top contenders" },
+      { key: "risk_reward_matrix", label: "Risk-Reward Matrix", desc: "Uncertainty versus upside profile by driver" },
+    ],
+  },
 ];
 
 function getYouTubeSearchUrl(raceName: string, type: string): string {
@@ -202,7 +213,7 @@ export default function RaceDetailPage({ round }: Props) {
   ];
 
   const vizFiles = [...new Set([...(data.visualizations || [])])];
-  const inferVizCategory = (filename: string): "ml" | "fastf1" | "advanced" | "other" => {
+  const inferVizCategory = (filename: string): "ml" | "fastf1" | "advanced" | "bettor" | "other" => {
     if (["predicted_laptimes.png", "feature_importance.png", "team_vs_pace.png", "pace_vs_predicted.png", "laptime_distribution.png", "prediction_confidence.png"].includes(filename)) {
       return "ml";
     }
@@ -211,6 +222,9 @@ export default function RaceDetailPage({ round }: Props) {
     }
     if (["pit_strategy_comparison.png", "tyre_degradation_curves.png", "lstm_pace_prediction.png"].includes(filename)) {
       return "advanced";
+    }
+    if (["win_probability_board.png", "podium_probability_board.png", "finish_probability_heatmap.png", "head_to_head_edges.png", "risk_reward_matrix.png"].includes(filename)) {
+      return "bettor";
     }
     return "other";
   };
@@ -225,12 +239,13 @@ export default function RaceDetailPage({ round }: Props) {
       }))
   ).map((item) => ({
     ...item,
-    category: (item.category || inferVizCategory(item.filename)) as "ml" | "fastf1" | "advanced" | "other",
+    category: (item.category || inferVizCategory(item.filename)) as "ml" | "fastf1" | "advanced" | "bettor" | "other",
   }));
   const mlViz = vizDetails.filter((v) => v.category === "ml");
   const fastf1Viz = vizDetails.filter((v) => v.category === "fastf1" && v.filename !== "track_map.png");
   const advancedViz = vizDetails.filter((v) => v.category === "advanced");
-  const otherViz = vizDetails.filter((v) => !["ml", "fastf1", "advanced"].includes(v.category));
+  const bettorViz = vizDetails.filter((v) => v.category === "bettor");
+  const otherViz = vizDetails.filter((v) => !["ml", "fastf1", "advanced", "bettor"].includes(v.category));
   const trackMapSrc = failedImages.has("track_map.png") ? null : getVisualizationPath(round, "track_map.png");
   const actualRows = data.actualResults ? Object.entries(data.actualResults).sort((a, b) => a[1] - b[1]) : [];
   const gpReport = data.gpReport || null;
@@ -1256,6 +1271,7 @@ export default function RaceDetailPage({ round }: Props) {
         const loadableMl = mlViz.filter(v => !failedImages.has(v.filename));
         const loadableFastf1 = fastf1Viz.filter(v => !failedImages.has(v.filename));
         const loadableAdvanced = advancedViz.filter(v => !failedImages.has(v.filename));
+        const loadableBettor = bettorViz.filter(v => !failedImages.has(v.filename));
         const loadableOther = otherViz.filter(v => !failedImages.has(v.filename));
 
         const renderVizCard = (detail: {
@@ -1317,6 +1333,14 @@ export default function RaceDetailPage({ round }: Props) {
                     <h3 className="section-heading">Strategy Analysis</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {loadableAdvanced.map(renderVizCard)}
+                    </div>
+                  </div>
+                )}
+                {loadableBettor.length > 0 && (
+                  <div>
+                    <h3 className="section-heading">Bettor Analytics</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {loadableBettor.map(renderVizCard)}
                     </div>
                   </div>
                 )}

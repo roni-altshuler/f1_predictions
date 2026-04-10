@@ -75,6 +75,36 @@ VIZ_METADATA = {
         "description": "Confidence bands by driver based on model uncertainty and volatility signals.",
         "source": "model",
     },
+    "win_probability_board.png": {
+        "title": "Win Probability Board",
+        "category": "bettor",
+        "description": "Model win probabilities with implied fair decimal odds for market benchmarking.",
+        "source": "model",
+    },
+    "podium_probability_board.png": {
+        "title": "Podium Probability Board",
+        "category": "bettor",
+        "description": "Monte-Carlo podium probabilities derived from projected pace and uncertainty.",
+        "source": "model",
+    },
+    "finish_probability_heatmap.png": {
+        "title": "Finish Probability Heatmap",
+        "category": "bettor",
+        "description": "Driver-by-position probability matrix for the top 10 finish slots.",
+        "source": "model",
+    },
+    "head_to_head_edges.png": {
+        "title": "Head-to-Head Edge Matrix",
+        "category": "bettor",
+        "description": "Pairwise probability that one driver finishes ahead of another.",
+        "source": "model",
+    },
+    "risk_reward_matrix.png": {
+        "title": "Risk-Reward Matrix",
+        "category": "bettor",
+        "description": "Driver risk-versus-upside profile using uncertainty, win chance, and expected points.",
+        "source": "model",
+    },
     "track_map.png": {
         "title": "Circuit Speed Map",
         "category": "fastf1",
@@ -779,123 +809,166 @@ def _export_visualizations(results, merged, classification, out_dir, gp_name):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
 
     filenames = []
+    theme = {
+        "bg": "#0B1220",
+        "panel": "#111A2E",
+        "grid": "#25324A",
+        "text": "#E6EDF7",
+        "muted": "#9FB0C8",
+        "accent": "#FF5A36",
+        "accent2": "#2EC4B6",
+        "accent3": "#4EA8DE",
+        "warn": "#FFB020",
+        "danger": "#FF6B6B",
+    }
+
+    def _style_axis(ax, title, xlabel=None, ylabel=None):
+        ax.set_facecolor(theme["panel"])
+        ax.set_title(title, fontsize=16, fontweight="bold", color=theme["text"], loc="left")
+        if xlabel:
+            ax.set_xlabel(xlabel, fontsize=12, color=theme["text"])
+        if ylabel:
+            ax.set_ylabel(ylabel, fontsize=12, color=theme["text"])
+        ax.grid(alpha=0.28, color=theme["grid"], linewidth=0.8)
+        ax.tick_params(colors=theme["muted"], labelsize=10)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_color(theme["grid"])
+        ax.spines["left"].set_color(theme["grid"])
+
+    def _save_figure(fig, filename):
+        path = os.path.join(out_dir, filename)
+        fig.savefig(path, dpi=170, bbox_inches="tight", facecolor=theme["bg"])
+        plt.close(fig)
+        filenames.append(filename)
+
+    def _simulate_finish_distribution(df, n_sims=4000):
+        if df is None or df.empty:
+            return None
+
+        drivers = df["Driver"].astype(str).tolist()
+        n = len(drivers)
+        if n == 0:
+            return None
+
+        anchor_col = "RaceProjectionTime" if "RaceProjectionTime" in df.columns else "PredictedLapTime"
+        base = pd.to_numeric(df[anchor_col], errors="coerce")
+        if base.isna().all():
+            return None
+        base = base.fillna(float(base.dropna().median())).to_numpy(dtype=float)
+
+        if "PredictionUncertainty" in df.columns:
+            unc = pd.to_numeric(df["PredictionUncertainty"], errors="coerce")
+            if unc.isna().all():
+                unc = pd.Series(np.full(n, 0.8))
+            unc = unc.fillna(float(unc.dropna().median()))
+        else:
+            unc = pd.Series(np.full(n, 0.8))
+        unc = unc.clip(lower=0.20, upper=2.50).to_numpy(dtype=float)
+
+        rng = np.random.default_rng(2026 + (abs(hash(gp_name)) % 1000))
+        positions = np.zeros((n_sims, n), dtype=np.int16)
+        for i in range(n_sims):
+            sim_times = base + rng.normal(0.0, unc)
+            order = np.argsort(sim_times)
+            positions[i, order] = np.arange(1, n + 1)
+
+        return {
+            "drivers": drivers,
+            "positions": positions,
+            "mean_pos": positions.mean(axis=0),
+            "win_prob": (positions == 1).mean(axis=0) * 100.0,
+            "podium_prob": (positions <= 3).mean(axis=0) * 100.0,
+            "top10_prob": (positions <= 10).mean(axis=0) * 100.0,
+            "uncertainty": unc,
+        }
+
+    os.makedirs(out_dir, exist_ok=True)
+    sim = _simulate_finish_distribution(merged)
 
     # 1. Predicted Lap Times (horizontal bar)
-    fig, ax = plt.subplots(figsize=(14, 10), facecolor="#1a1a2e")
-    ax.set_facecolor("#1a1a2e")
+    fig, ax = plt.subplots(figsize=(14, 10), facecolor=theme["bg"])
     data = merged.sort_values("PredictedLapTime", ascending=True).copy()
     colours = data["Team"].map(TEAM_COLOURS).fillna("#888")
     bars = ax.barh(data["Driver"], data["PredictedLapTime"],
-                   color=colours, edgecolor="white", height=0.7, linewidth=0.5)
-    ax.set_xlabel("Predicted Avg Lap Time (s)", fontsize=13, color="white")
-    ax.set_title(f"2026 {gp_name} — Predicted Race Performance",
-                 fontsize=16, fontweight="bold", color="white")
+                   color=colours, edgecolor=theme["bg"], height=0.72, linewidth=0.4)
+    _style_axis(
+        ax,
+        f"2026 {gp_name} Race Pace Projection",
+        xlabel="Predicted Average Lap Time (s)",
+        ylabel="Driver",
+    )
     ax.invert_yaxis()
     for bar, val in zip(bars, data["PredictedLapTime"]):
         ax.text(bar.get_width() + 0.02, bar.get_y() + bar.get_height() / 2,
-                f"{val:.2f}s", va="center", fontsize=10, color="white")
-    ax.tick_params(labelsize=11, colors="white")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["bottom"].set_color("white")
-    ax.spines["left"].set_color("white")
+                f"{val:.2f}s", va="center", fontsize=9, color=theme["text"])
     plt.tight_layout()
-    fname = "predicted_laptimes.png"
-    fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight",
-                facecolor=fig.get_facecolor())
-    plt.close(fig)
-    filenames.append(fname)
+    _save_figure(fig, "predicted_laptimes.png")
 
     # 2. Feature Importance (side-by-side)
     feat_cols = results["feature_cols"]
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6), facecolor="#1a1a2e")
-    for ax, model, title in zip(
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6), facecolor=theme["bg"])
+    model_colors = [theme["accent"], theme["accent3"]]
+    for ax, model, title, bar_color in zip(
         axes, [results["gb_model"], results["xgb_model"]],
-        ["Gradient Boosting", "XGBoost"],
+        ["Gradient Boosting", "XGBoost"], model_colors,
     ):
-        ax.set_facecolor("#1a1a2e")
         imp = model.feature_importances_
         idx = np.argsort(imp)
-        ax.barh(np.array(feat_cols)[idx], imp[idx], color="#E8002D")
-        ax.set_xlabel("Importance", fontsize=12, color="white")
-        ax.set_title(title, fontsize=14, fontweight="bold", color="white")
-        ax.tick_params(labelsize=10, colors="white")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["bottom"].set_color("white")
-        ax.spines["left"].set_color("white")
+        ax.barh(np.array(feat_cols)[idx], imp[idx], color=bar_color, edgecolor=theme["bg"], linewidth=0.4)
+        _style_axis(ax, title, xlabel="Relative importance")
     plt.tight_layout()
-    fname = "feature_importance.png"
-    fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight",
-                facecolor=fig.get_facecolor())
-    plt.close(fig)
-    filenames.append(fname)
+    _save_figure(fig, "feature_importance.png")
 
     # 3. Team vs Pace scatter
-    fig, ax = plt.subplots(figsize=(14, 9), facecolor="#1a1a2e")
-    ax.set_facecolor("#1a1a2e")
+    fig, ax = plt.subplots(figsize=(14, 9), facecolor=theme["bg"])
     sc = ax.scatter(merged["TeamPerformanceScore"], merged["PredictedLapTime"],
-                    c=merged["QualifyingTime"], cmap="RdYlGn_r",
-                    s=160, edgecolors="white", linewidths=0.5)
+                    c=merged["QualifyingTime"], cmap="viridis_r",
+                    s=160, edgecolors=theme["bg"], linewidths=0.7)
     for _, r in merged.iterrows():
         ax.annotate(r["Driver"],
                     (r["TeamPerformanceScore"], r["PredictedLapTime"]),
                     xytext=(8, 5), textcoords="offset points", fontsize=10,
-                    color="white")
+                    color=theme["text"])
     cbar = plt.colorbar(sc, ax=ax, label="Qualifying Time (s)")
-    cbar.ax.yaxis.label.set_color("white")
-    cbar.ax.tick_params(colors="white")
-    ax.set_xlabel("Team Performance Score", fontsize=13, color="white")
-    ax.set_ylabel("Predicted Avg Lap Time (s)", fontsize=13, color="white")
-    ax.set_title(f"Team Strength vs Pace — 2026 {gp_name}",
-                 fontsize=16, fontweight="bold", color="white")
-    ax.tick_params(colors="white")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["bottom"].set_color("white")
-    ax.spines["left"].set_color("white")
+    cbar.ax.yaxis.label.set_color(theme["text"])
+    cbar.ax.tick_params(colors=theme["muted"])
+    _style_axis(
+        ax,
+        f"Team Strength vs Projected Pace",
+        xlabel="Team performance score",
+        ylabel="Predicted average lap time (s)",
+    )
     plt.tight_layout()
-    fname = "team_vs_pace.png"
-    fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight",
-                facecolor=fig.get_facecolor())
-    plt.close(fig)
-    filenames.append(fname)
+    _save_figure(fig, "team_vs_pace.png")
 
     # 4. Pace vs Predicted scatter
-    fig, ax = plt.subplots(figsize=(14, 9), facecolor="#1a1a2e")
-    ax.set_facecolor("#1a1a2e")
+    fig, ax = plt.subplots(figsize=(14, 9), facecolor=theme["bg"])
     sc = ax.scatter(merged["CleanAirPace"], merged["PredictedLapTime"],
-                    c=merged["TeamPerformanceScore"], cmap="coolwarm",
-                    s=160, edgecolors="white", linewidths=0.5)
+                    c=merged["TeamPerformanceScore"], cmap="plasma",
+                    s=160, edgecolors=theme["bg"], linewidths=0.7)
     for _, r in merged.iterrows():
         ax.annotate(r["Driver"],
                     (r["CleanAirPace"], r["PredictedLapTime"]),
                     xytext=(8, 5), textcoords="offset points", fontsize=10,
-                    color="white")
+                    color=theme["text"])
     cbar = plt.colorbar(sc, ax=ax, label="Team Perf. Score")
-    cbar.ax.yaxis.label.set_color("white")
-    cbar.ax.tick_params(colors="white")
-    ax.set_xlabel("Clean Air Race Pace (s)", fontsize=13, color="white")
-    ax.set_ylabel("Predicted Avg Lap Time (s)", fontsize=13, color="white")
-    ax.set_title(f"Clean Air Pace vs Predicted — 2026 {gp_name}",
-                 fontsize=16, fontweight="bold", color="white")
-    ax.tick_params(colors="white")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["bottom"].set_color("white")
-    ax.spines["left"].set_color("white")
+    cbar.ax.yaxis.label.set_color(theme["text"])
+    cbar.ax.tick_params(colors=theme["muted"])
+    _style_axis(
+        ax,
+        "Clean-Air Pace vs Final Projection",
+        xlabel="Clean-air pace (s)",
+        ylabel="Predicted average lap time (s)",
+    )
     plt.tight_layout()
-    fname = "pace_vs_predicted.png"
-    fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight",
-                facecolor=fig.get_facecolor())
-    plt.close(fig)
-    filenames.append(fname)
+    _save_figure(fig, "pace_vs_predicted.png")
 
     # 5. Lap-time distribution (box plot by team)
-    fig, ax = plt.subplots(figsize=(14, 8), facecolor="#1a1a2e")
-    ax.set_facecolor("#1a1a2e")
+    fig, ax = plt.subplots(figsize=(14, 8), facecolor=theme["bg"])
     team_order = (merged.groupby("Team")["PredictedLapTime"].mean()
                   .sort_values().index.tolist())
     team_data = []
@@ -913,29 +986,17 @@ def _export_visualizations(results, merged, classification, out_dir, gp_name):
         patch.set_edgecolor(color)
     for element in ["whiskers", "caps"]:
         for line in bp[element]:
-            line.set_color("white")
+            line.set_color(theme["muted"])
     for median in bp["medians"]:
-        median.set_color("white")
-    ax.set_ylabel("Predicted Lap Time (s)", fontsize=13, color="white")
-    ax.set_title(f"Lap Time Distribution by Team — 2026 {gp_name}",
-                 fontsize=16, fontweight="bold", color="white")
-    ax.tick_params(axis="x", rotation=45, labelsize=10, colors="white")
-    ax.tick_params(axis="y", colors="white")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["bottom"].set_color("white")
-    ax.spines["left"].set_color("white")
+        median.set_color(theme["text"])
+    _style_axis(ax, "Lap-Time Distribution by Team", ylabel="Predicted lap time (s)")
+    ax.tick_params(axis="x", rotation=42)
     plt.tight_layout()
-    fname = "laptime_distribution.png"
-    fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight",
-                facecolor=fig.get_facecolor())
-    plt.close(fig)
-    filenames.append(fname)
+    _save_figure(fig, "laptime_distribution.png")
 
     # 6. Prediction confidence / expected finish range
     if {"PredictionUncertainty", "PredictionConfidence"}.issubset(merged.columns):
-        fig, ax = plt.subplots(figsize=(14, 9), facecolor="#1a1a2e")
-        ax.set_facecolor("#1a1a2e")
+        fig, ax = plt.subplots(figsize=(14, 9), facecolor=theme["bg"])
         conf_colors = {"High": "#00D2BE", "Medium": "#FF8000", "Low": "#E10600"}
         conf_df = classification.copy().reset_index()
         conf_df["Confidence"] = conf_df["Driver"].map(
@@ -947,9 +1008,12 @@ def _export_visualizations(results, merged, classification, out_dir, gp_name):
         colors = [conf_colors.get(c, "#9CA3AF") for c in conf_df["Confidence"]]
         bars = ax.barh(conf_df["Driver"], conf_df["Gap"], color=colors, edgecolor="white", linewidth=0.5)
         ax.invert_yaxis()
-        ax.set_xlabel("Projected Gap to Winner (s)", fontsize=13, color="white")
-        ax.set_title(f"Prediction Confidence — 2026 {gp_name}",
-                     fontsize=16, fontweight="bold", color="white")
+        _style_axis(
+            ax,
+            "Prediction Confidence and Gap to Leader",
+            xlabel="Projected gap to winner (s)",
+            ylabel="Driver",
+        )
         for bar, confidence in zip(bars, conf_df["Confidence"]):
             ax.text(
                 bar.get_width() + 0.03,
@@ -957,26 +1021,208 @@ def _export_visualizations(results, merged, classification, out_dir, gp_name):
                 str(confidence).upper(),
                 va="center",
                 fontsize=9,
-                color="white",
+                color=theme["text"],
                 fontweight="bold",
             )
-        ax.tick_params(colors="white")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["bottom"].set_color("white")
-        ax.spines["left"].set_color("white")
         legend_patches = [
             plt.Rectangle((0, 0), 1, 1, color=color, label=label)
             for label, color in conf_colors.items()
         ]
-        ax.legend(handles=legend_patches, loc="lower right", facecolor="#1a1a2e",
-                  edgecolor="white", labelcolor="white", fontsize=10)
+        ax.legend(
+            handles=legend_patches,
+            loc="lower right",
+            facecolor=theme["panel"],
+            edgecolor=theme["grid"],
+            labelcolor=theme["text"],
+            fontsize=10,
+        )
         plt.tight_layout()
-        fname = "prediction_confidence.png"
-        fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight",
-                    facecolor=fig.get_facecolor())
-        plt.close(fig)
-        filenames.append(fname)
+        _save_figure(fig, "prediction_confidence.png")
+
+    # 7. Bettor board — win probability + fair odds
+    win_df = classification.copy().reset_index()[["Driver", "Team", "WinProbability"]]
+    win_df["WinProbability"] = pd.to_numeric(win_df["WinProbability"], errors="coerce").fillna(0.0)
+    if float(win_df["WinProbability"].sum()) <= 0:
+        fallback = merged.sort_values("PredictedLapTime").reset_index(drop=True)
+        fallback_scores = np.exp(-(fallback.index.to_numpy(dtype=float)) / 2.8)
+        fallback_probs = fallback_scores / fallback_scores.sum() * 100.0
+        win_df = fallback[["Driver", "Team"]].copy()
+        win_df["WinProbability"] = fallback_probs
+
+    win_df = win_df.sort_values("WinProbability", ascending=False).head(12)
+    if not win_df.empty:
+        fig, ax = plt.subplots(figsize=(14, 8), facecolor=theme["bg"])
+        bars = ax.barh(
+            win_df["Driver"],
+            win_df["WinProbability"],
+            color=[TEAM_COLOURS.get(team, theme["accent3"]) for team in win_df["Team"]],
+            edgecolor=theme["bg"],
+            linewidth=0.5,
+        )
+        ax.invert_yaxis()
+        _style_axis(
+            ax,
+            "Win Probability Board (Top 12)",
+            xlabel="Model win probability (%)",
+            ylabel="Driver",
+        )
+        for bar, p in zip(bars, win_df["WinProbability"]):
+            fair_odds = (100.0 / p) if p > 0 else np.inf
+            odds_label = f"{fair_odds:.2f}x" if np.isfinite(fair_odds) else "N/A"
+            ax.text(
+                bar.get_width() + 0.25,
+                bar.get_y() + bar.get_height() / 2,
+                f"{p:.1f}% ({odds_label})",
+                va="center",
+                fontsize=9,
+                color=theme["text"],
+            )
+        plt.tight_layout()
+        _save_figure(fig, "win_probability_board.png")
+
+    # Monte-Carlo bettor/analyst visuals.
+    if sim is not None:
+        drivers = np.array(sim["drivers"])
+        positions = sim["positions"]
+        podium_prob = sim["podium_prob"]
+        win_prob_mc = sim["win_prob"]
+        mean_pos = sim["mean_pos"]
+        unc = sim["uncertainty"]
+
+        # 8. Podium probability board
+        top_idx = np.argsort(podium_prob)[::-1][:12]
+        top_drivers = drivers[top_idx]
+        top_podium = podium_prob[top_idx]
+        top_teams = merged.set_index("Driver").reindex(top_drivers)["Team"].fillna("Unknown").tolist()
+
+        fig, ax = plt.subplots(figsize=(14, 8), facecolor=theme["bg"])
+        bars = ax.barh(
+            top_drivers,
+            top_podium,
+            color=[TEAM_COLOURS.get(team, theme["accent2"]) for team in top_teams],
+            edgecolor=theme["bg"],
+            linewidth=0.5,
+        )
+        ax.invert_yaxis()
+        _style_axis(
+            ax,
+            "Podium Probability Board (Monte-Carlo)",
+            xlabel="Probability of finishing P1-P3 (%)",
+            ylabel="Driver",
+        )
+        for bar, p in zip(bars, top_podium):
+            ax.text(
+                bar.get_width() + 0.25,
+                bar.get_y() + bar.get_height() / 2,
+                f"{p:.1f}%",
+                va="center",
+                fontsize=9,
+                color=theme["text"],
+            )
+        plt.tight_layout()
+        _save_figure(fig, "podium_probability_board.png")
+
+        # 9. Top-10 finish probability heatmap
+        matrix_idx = np.argsort(mean_pos)[:10]
+        matrix_drivers = drivers[matrix_idx]
+        pos_range = np.arange(1, 11)
+        heat = np.zeros((len(matrix_drivers), len(pos_range)), dtype=float)
+        for i, driver_idx in enumerate(matrix_idx):
+            for j, pos in enumerate(pos_range):
+                heat[i, j] = float(np.mean(positions[:, driver_idx] == pos) * 100.0)
+
+        fig, ax = plt.subplots(figsize=(14, 8), facecolor=theme["bg"])
+        cmap = LinearSegmentedColormap.from_list("f1_prob", ["#1E293B", "#2563EB", "#22C55E", "#F59E0B", "#EF4444"])
+        im = ax.imshow(heat, aspect="auto", cmap=cmap, vmin=0, vmax=max(20.0, float(heat.max()) + 1.0))
+        ax.set_xticks(np.arange(len(pos_range)))
+        ax.set_xticklabels([f"P{p}" for p in pos_range], color=theme["muted"])
+        ax.set_yticks(np.arange(len(matrix_drivers)))
+        ax.set_yticklabels(matrix_drivers, color=theme["muted"])
+        _style_axis(ax, "Finish Probability Heatmap (Top 10 Drivers)", xlabel="Finish position", ylabel="Driver")
+        for i in range(heat.shape[0]):
+            for j in range(heat.shape[1]):
+                val = heat[i, j]
+                if val >= 8.0:
+                    ax.text(j, i, f"{val:.0f}", ha="center", va="center", fontsize=8, color=theme["text"])
+        cbar = plt.colorbar(im, ax=ax, shrink=0.9)
+        cbar.set_label("Probability (%)", color=theme["text"])
+        cbar.ax.tick_params(colors=theme["muted"])
+        plt.tight_layout()
+        _save_figure(fig, "finish_probability_heatmap.png")
+
+        # 10. Head-to-head edge matrix for top contenders
+        contenders_idx = np.argsort(mean_pos)[:8]
+        contenders = drivers[contenders_idx]
+        n_contenders = len(contenders)
+        h2h = np.zeros((n_contenders, n_contenders), dtype=float)
+        for i, idx_i in enumerate(contenders_idx):
+            for j, idx_j in enumerate(contenders_idx):
+                if i == j:
+                    h2h[i, j] = 50.0
+                else:
+                    h2h[i, j] = float(np.mean(positions[:, idx_i] < positions[:, idx_j]) * 100.0)
+
+        fig, ax = plt.subplots(figsize=(10.5, 9), facecolor=theme["bg"])
+        im = ax.imshow(h2h, cmap="RdYlGn", vmin=0, vmax=100)
+        ax.set_xticks(np.arange(n_contenders))
+        ax.set_xticklabels(contenders, rotation=45, ha="right", color=theme["muted"])
+        ax.set_yticks(np.arange(n_contenders))
+        ax.set_yticklabels(contenders, color=theme["muted"])
+        _style_axis(
+            ax,
+            "Head-to-Head Edge Matrix",
+            xlabel="Driver j",
+            ylabel="Driver i",
+        )
+        for i in range(n_contenders):
+            for j in range(n_contenders):
+                val = h2h[i, j]
+                if i != j:
+                    ax.text(j, i, f"{val:.0f}", ha="center", va="center", fontsize=8, color=theme["text"])
+        cbar = plt.colorbar(im, ax=ax, shrink=0.9)
+        cbar.set_label("P(driver i beats driver j) %", color=theme["text"])
+        cbar.ax.tick_params(colors=theme["muted"])
+        plt.tight_layout()
+        _save_figure(fig, "head_to_head_edges.png")
+
+        # 11. Risk vs reward matrix
+        expected_points = []
+        for mean_finish in mean_pos:
+            rounded_pos = int(round(mean_finish))
+            expected_points.append(float(F1_POINTS.get(rounded_pos, 0)))
+
+        fig, ax = plt.subplots(figsize=(14, 8), facecolor=theme["bg"])
+        for drv, team, x_unc, y_win, exp_pts in zip(
+            drivers,
+            merged.set_index("Driver").reindex(drivers)["Team"].fillna("Unknown").tolist(),
+            unc,
+            win_prob_mc,
+            expected_points,
+        ):
+            color = TEAM_COLOURS.get(team, theme["accent3"])
+            size = 80 + exp_pts * 18
+            ax.scatter(x_unc, y_win, s=size, color=color, edgecolor=theme["bg"], linewidth=0.7, alpha=0.92)
+            if y_win >= 2.5 or exp_pts >= 8:
+                ax.annotate(drv, (x_unc, y_win), xytext=(6, 4), textcoords="offset points", fontsize=9, color=theme["text"])
+
+        _style_axis(
+            ax,
+            "Risk-Reward Matrix",
+            xlabel="Prediction uncertainty (seconds)",
+            ylabel="Monte-Carlo win probability (%)",
+        )
+        ax.text(
+            0.98,
+            0.02,
+            "Bubble size = expected points",
+            transform=ax.transAxes,
+            ha="right",
+            va="bottom",
+            fontsize=9,
+            color=theme["muted"],
+        )
+        plt.tight_layout()
+        _save_figure(fig, "risk_reward_matrix.png")
 
     print(f"  📊 {len(filenames)} visualisations → {out_dir}/")
     return filenames

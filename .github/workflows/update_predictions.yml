@@ -11,6 +11,7 @@ on:
     - cron: "0 0,6,12,18,22 * * 6"  # Saturday with a late-night retry
     - cron: "0 0,6,12,18,21 * * 0"  # Sunday including post-race retry
     - cron: "0 0,6,12 * * 1"  # Monday result backfill window
+    - cron: "0 0 * * 2"  # Tuesday final backfill retry
   workflow_dispatch:
     inputs:
       round:
@@ -123,7 +124,7 @@ jobs:
 
       - name: Generate labeled circuit maps for all rounds
         if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
-        run: python generate_fastf1_viz.py --all-circuits --year 2025
+        run: python generate_fastf1_viz.py --all-circuits --year 2026
 
       - name: Commit updated data
         if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'

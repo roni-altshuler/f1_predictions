@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-04-03T11:14:13.475249Z",
+  "generatedAt": "2026-04-10T13:08:42.616742Z",
   "overallAccuracy": {
-    "seasonMeanError": 3.91,
-    "seasonAccuracyPct": 65.2,
+    "seasonMeanError": 4.06,
+    "seasonAccuracyPct": 63.6,
     "roundsWithActual": 3
   },
   "gpReports": [
@@ -232,12 +232,12 @@
       "round": 3,
       "name": "Japanese Grand Prix",
       "comparedDrivers": 22,
-      "meanError": 2.09,
+      "meanError": 2.55,
       "medianError": 2.0,
-      "exactMatches": 3,
-      "within3": 19,
-      "within5": 21,
-      "winnerHit": true,
+      "exactMatches": 2,
+      "within3": 18,
+      "within5": 20,
+      "winnerHit": false,
       "podiumHits": 2,
       "biggestMisses": [
         {
@@ -251,42 +251,37 @@
         {
           "driver": "HUL",
           "team": "Audi",
-          "predicted": 16,
+          "predicted": 18,
           "actual": 11,
-          "delta": 5,
+          "delta": 7,
+          "absDelta": 7
+        },
+        {
+          "driver": "LIN",
+          "team": "Racing Bulls",
+          "predicted": 9,
+          "actual": 14,
+          "delta": -5,
           "absDelta": 5
         },
         {
           "driver": "PIA",
           "team": "McLaren",
-          "predicted": 6,
+          "predicted": 7,
           "actual": 2,
-          "delta": 4,
-          "absDelta": 4
+          "delta": 5,
+          "absDelta": 5
         },
         {
-          "driver": "HAD",
-          "team": "Red Bull Racing",
-          "predicted": 9,
-          "actual": 12,
-          "delta": -3,
-          "absDelta": 3
-        },
-        {
-          "driver": "LIN",
-          "team": "Racing Bulls",
-          "predicted": 11,
-          "actual": 14,
+          "driver": "ALB",
+          "team": "Williams",
+          "predicted": 17,
+          "actual": 20,
           "delta": -3,
           "absDelta": 3
         }
       ],
       "teamMeanError": [
-        {
-          "team": "Mercedes",
-          "meanError": 1.0,
-          "drivers": 2
-        },
         {
           "team": "Ferrari",
           "meanError": 1.0,
@@ -308,6 +303,11 @@
           "drivers": 2
         },
         {
+          "team": "Mercedes",
+          "meanError": 2.0,
+          "drivers": 2
+        },
+        {
           "team": "Cadillac",
           "meanError": 2.0,
           "drivers": 2
@@ -318,18 +318,18 @@
           "drivers": 2
         },
         {
-          "team": "Racing Bulls",
-          "meanError": 2.0,
+          "team": "McLaren",
+          "meanError": 2.5,
           "drivers": 2
         },
         {
-          "team": "McLaren",
-          "meanError": 2.0,
+          "team": "Racing Bulls",
+          "meanError": 4.0,
           "drivers": 2
         },
         {
           "team": "Audi",
-          "meanError": 3.0,
+          "meanError": 4.5,
           "drivers": 2
         },
         {

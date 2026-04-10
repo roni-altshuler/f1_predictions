@@ -84,7 +84,7 @@ def _weekend_window(round_num):
     """
     cal = _load_calendar()
     race_date = date.fromisoformat(cal[round_num]["date"])
-    return race_date - timedelta(days=3), race_date + timedelta(days=1)
+    return race_date - timedelta(days=3), race_date + timedelta(days=2)
 
 
 def is_race_weekend(round_num, today=None):
@@ -262,7 +262,7 @@ def run_post_qualifying(round_num, skip_build=False):
     print("\n🏎️  Generating FastF1 visualizations...")
     gp_key = CALENDAR_2026[round_num]["gp_key"]
     try:
-        extra = _generate_fastf1_viz(round_num, gp_key, 2025)
+        extra = _generate_fastf1_viz(round_num, gp_key, 2026)
         if extra:
             round_data["visualizations"].extend(extra)
             path = os.path.join(ROUNDS_DIR, f"round_{round_num:02d}.json")

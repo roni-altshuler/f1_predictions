@@ -14,8 +14,8 @@ Based on FastF1 examples gallery:
   https://docs.fastf1.dev/gen_modules/examples_gallery/index.html
 
 Usage:
-    python generate_fastf1_viz.py --circuit Australia --year 2025
-    python generate_fastf1_viz.py --all-circuits --year 2025
+    python generate_fastf1_viz.py --circuit Australia --year 2026
+    python generate_fastf1_viz.py --all-circuits --year 2026
 """
 
 import argparse, os, sys
@@ -281,7 +281,7 @@ def plot_tyre_strategy(year, gp_key, out_dir):
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════
 
-def generate_all_for_circuit(gp_key, year=2025, round_num=1):
+def generate_all_for_circuit(gp_key, year=2026, round_num=1):
     """Generate all FastF1 visualizations for one circuit."""
     out_dir = os.path.join(VIZ_DIR, f"round_{round_num:02d}")
     os.makedirs(out_dir, exist_ok=True)
@@ -306,7 +306,7 @@ def generate_all_for_circuit(gp_key, year=2025, round_num=1):
 def main():
     parser = argparse.ArgumentParser(description="Generate FastF1 visualizations")
     parser.add_argument("--circuit", type=str, help="GP key (e.g. Australia)")
-    parser.add_argument("--year", type=int, default=2025, help="Year for historical data")
+    parser.add_argument("--year", type=int, default=2026, help="Year for historical data")
     parser.add_argument("--round", type=int, default=1, help="Round number")
     parser.add_argument("--all-circuits", action="store_true", help="All 2026 circuits")
     args = parser.parse_args()
@@ -320,7 +320,7 @@ def main():
     elif args.circuit:
         generate_all_for_circuit(args.circuit, args.year, args.round)
     else:
-        generate_all_for_circuit("Australia", 2025, 1)
+        generate_all_for_circuit("Australia", 2026, 1)
 
 
 if __name__ == "__main__":

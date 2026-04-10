@@ -80,7 +80,7 @@ export interface FeatureImportance {
 export interface VisualizationDetail {
   filename: string;
   title: string;
-  category: "ml" | "fastf1" | "advanced" | "other" | string;
+  category: "ml" | "fastf1" | "advanced" | "bettor" | "other" | string;
   description: string;
   source: "model" | "fastf1" | "advanced" | string;
 }
