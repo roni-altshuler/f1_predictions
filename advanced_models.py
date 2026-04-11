@@ -57,8 +57,511 @@ COMPOUND_PROFILES = {
     "WET":          {"pace_offset":  5.0, "deg_rate": 0.020, "cliff_lap": 30},
 }
 
+DRY_COMPOUNDS = ("SOFT", "MEDIUM", "HARD")
 
-def _simulate_stint(base_lap_time, compound, laps, fuel_effect=0.05):
+
+def _safe_sigmoid(x):
+    x = np.clip(float(x), -40.0, 40.0)
+    return 1.0 / (1.0 + np.exp(-x))
+
+
+def _load_driver_points_context():
+    """Load latest driver points from website standings if available."""
+    standings_path = os.path.join(WEBSITE_DATA_DIR, "standings.json")
+    points = {}
+    if not os.path.exists(standings_path):
+        return points
+    try:
+        with open(standings_path) as f:
+            data = json.load(f)
+    except Exception:
+        return points
+
+    for row in data.get("drivers", []):
+        if not isinstance(row, dict):
+            continue
+        drv = row.get("driver")
+        pts = row.get("points")
+        try:
+            if drv:
+                points[str(drv)] = float(pts)
+        except (TypeError, ValueError):
+            continue
+    return points
+
+
+def _compound_mix_weights(expected_stops):
+    if expected_stops <= 1:
+        return {"SOFT": 0.20, "MEDIUM": 0.35, "HARD": 0.45}
+    if expected_stops == 2:
+        return {"SOFT": 0.35, "MEDIUM": 0.45, "HARD": 0.20}
+    return {"SOFT": 0.45, "MEDIUM": 0.40, "HARD": 0.15}
+
+
+def _fit_driver_compound_degradation(gp_key, year=SEASON_YEAR, cache_dir="f1_cache"):
+    """Fit per-driver, per-compound tyre degradation slopes from FastF1 stints.
+
+    Returns a tuple of:
+      (driver_compound_deg, compound_medians, diagnostics)
+    where driver_compound_deg[driver][compound] is slope in s/lap.
+    """
+    diagnostics = {
+        "source": "fallback",
+        "sessionLoaded": False,
+        "driversFitted": 0,
+        "year": int(year),
+    }
+
+    # Baseline from static compound profiles.
+    compound_medians = {
+        c: COMPOUND_PROFILES[c]["deg_rate"] for c in DRY_COMPOUNDS
+    }
+    driver_compound_deg = {
+        drv: dict(compound_medians) for drv in DRIVER_TEAM
+    }
+
+    try:
+        import fastf1
+        os.makedirs(cache_dir, exist_ok=True)
+        fastf1.Cache.enable_cache(cache_dir)
+
+        session = fastf1.get_session(int(year), gp_key, "R")
+        session.load(laps=True, telemetry=False, weather=False, messages=False)
+        laps = session.laps.copy()
+        diagnostics["sessionLoaded"] = True
+    except Exception:
+        # Use profile defaults if the session cannot be loaded.
+        return driver_compound_deg, compound_medians, diagnostics
+
+    if laps is None or laps.empty:
+        return driver_compound_deg, compound_medians, diagnostics
+
+    laps = laps.copy()
+    laps["LapTimeSec"] = pd.to_numeric(
+        laps["LapTime"].dt.total_seconds(), errors="coerce"
+    )
+    laps = laps[laps["LapTimeSec"].notna()].copy()
+    if laps.empty:
+        return driver_compound_deg, compound_medians, diagnostics
+
+    # Remove lap-time outliers per session.
+    q05 = laps["LapTimeSec"].quantile(0.05)
+    q95 = laps["LapTimeSec"].quantile(0.95)
+    laps = laps[(laps["LapTimeSec"] >= q05) & (laps["LapTimeSec"] <= q95)]
+    if laps.empty:
+        return driver_compound_deg, compound_medians, diagnostics
+
+    slope_pool = {c: [] for c in DRY_COMPOUNDS}
+    per_driver = {}
+    for drv, dl in laps.groupby("Driver"):
+        drv_code = str(drv)
+        if drv_code not in DRIVER_TEAM:
+            continue
+
+        comp_slopes = {c: [] for c in DRY_COMPOUNDS}
+        grouped = dl.sort_values("LapNumber").groupby(["Stint", "Compound"])
+        for (_stint, compound), chunk in grouped:
+            compound = str(compound).upper()
+            if compound not in DRY_COMPOUNDS:
+                continue
+            if len(chunk) < 4:
+                continue
+
+            if "TyreLife" in chunk.columns and chunk["TyreLife"].notna().sum() >= 3:
+                x = pd.to_numeric(chunk["TyreLife"], errors="coerce").fillna(method="ffill")
+            else:
+                x = pd.Series(np.arange(1, len(chunk) + 1), index=chunk.index, dtype=float)
+
+            y = pd.to_numeric(chunk["LapTimeSec"], errors="coerce")
+            valid = x.notna() & y.notna()
+            if valid.sum() < 3:
+                continue
+
+            xv = x[valid].astype(float)
+            yv = y[valid].astype(float)
+            if xv.nunique() < 2:
+                continue
+
+            slope = float(np.polyfit(xv, yv, 1)[0])
+            # Keep plausible degradation slopes only.
+            if -0.02 <= slope <= 0.45:
+                comp_slopes[compound].append(slope)
+                slope_pool[compound].append(slope)
+
+        resolved = {}
+        for comp in DRY_COMPOUNDS:
+            if comp_slopes[comp]:
+                resolved[comp] = float(np.median(comp_slopes[comp]))
+        if resolved:
+            per_driver[drv_code] = resolved
+
+    for comp in DRY_COMPOUNDS:
+        if slope_pool[comp]:
+            compound_medians[comp] = float(np.median(slope_pool[comp]))
+
+    for drv in DRIVER_TEAM:
+        values = {}
+        for comp in DRY_COMPOUNDS:
+            values[comp] = per_driver.get(drv, {}).get(comp, compound_medians[comp])
+        driver_compound_deg[drv] = values
+
+    diagnostics["source"] = "fastf1"
+    diagnostics["driversFitted"] = int(len(per_driver))
+    return driver_compound_deg, compound_medians, diagnostics
+
+
+def _resolve_compound_profile(compound, profile_overrides=None):
+    profile = dict(COMPOUND_PROFILES.get(compound, COMPOUND_PROFILES["MEDIUM"]))
+    if isinstance(profile_overrides, dict):
+        override = profile_overrides.get(compound)
+        if isinstance(override, dict):
+            for key in ("pace_offset", "deg_rate", "cliff_lap"):
+                if key in override and override[key] is not None:
+                    profile[key] = override[key]
+    return profile
+
+
+def _extract_speed_map(gp_key, year=SEASON_YEAR):
+    """Return driver->max speed map from qualifying speed traps."""
+    speed_map = {}
+    try:
+        from telemetry_features import extract_speed_traps
+        rows = extract_speed_traps(int(year), gp_key, session_type="Q")
+    except Exception:
+        rows = []
+
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        drv = str(row.get("driver", ""))
+        if not drv:
+            continue
+        try:
+            spd = float(row.get("speedKmh", 0.0))
+        except (TypeError, ValueError):
+            continue
+        speed_map[drv] = max(speed_map.get(drv, 0.0), spd)
+    return speed_map
+
+
+def _expected_strategy_time(base_lap_time, total_laps, strategy, pit_loss=22.0,
+                            fuel_effect=0.05, profile_overrides=None):
+    """Deterministic expected race time for one strategy."""
+    laps_done = 0
+    total = 0.0
+    stints = strategy.get("stints", []) if isinstance(strategy, dict) else []
+    for stint_idx, (compound, stint_laps) in enumerate(stints):
+        profile = _resolve_compound_profile(compound, profile_overrides)
+        deg_rate = float(profile["deg_rate"])
+        cliff_lap = int(profile["cliff_lap"])
+        pace_offset = float(profile["pace_offset"])
+
+        for lap in range(1, int(stint_laps) + 1):
+            lap_global = laps_done + lap
+            t = base_lap_time + pace_offset
+            if lap <= cliff_lap:
+                t += deg_rate * lap
+            else:
+                t += deg_rate * cliff_lap + (deg_rate * 3.0) * (lap - cliff_lap)
+            t -= fuel_effect * lap_global / max(int(total_laps), 1)
+            total += t
+        laps_done += int(stint_laps)
+        if stint_idx < len(stints) - 1:
+            total += pit_loss
+
+    return float(total)
+
+
+def _simulate_multi_agent_field(df, gp_key, total_laps, field_simulations=700,
+                                nearest_competitors=2, seed=0):
+    """Simulate multi-driver strategy races and return volatility/intensity maps."""
+    if df is None or df.empty:
+        return {}, {}
+
+    rng = np.random.default_rng(int(seed))
+    char = CIRCUIT_CHARACTERISTICS.get(gp_key, {})
+    safety_car = float(char.get("safety_car_likelihood", 0.4))
+
+    order = df.sort_values("QualifyingRank").reset_index(drop=True)
+    drivers = order["Driver"].astype(str).tolist()
+    n = len(drivers)
+    if n == 0:
+        return {}, {}
+
+    base_candidates = (
+        "RaceProjectionTime",
+        "PredictedLapTime",
+        "AdjustedQualiTime",
+        "BestLapTime",
+        "TeamAdjustedPace",
+    )
+    base_col = next((col for col in base_candidates if col in order.columns), None)
+    if base_col is not None:
+        base_values = pd.to_numeric(order[base_col], errors="coerce")
+        base_fill = float(base_values.dropna().median()) if base_values.notna().any() else 95.0
+        base_values = base_values.fillna(base_fill)
+    else:
+        base_values = pd.Series(np.full(n, 95.0), index=order.index, dtype=float)
+
+    if "PredictionUncertainty" in order.columns:
+        uncertainty = pd.to_numeric(order["PredictionUncertainty"], errors="coerce").fillna(0.8)
+    else:
+        uncertainty = pd.Series(np.full(n, 0.8), index=order.index, dtype=float)
+
+    expected_stops = int(char.get("expected_stops", 2))
+    strategies = get_default_strategies(int(total_laps), gp_key)
+    if not strategies:
+        return {drv: 0.0 for drv in drivers}, {drv: 0.0 for drv in drivers}
+
+    strategy_bank = {}
+    for i, drv in enumerate(drivers):
+        row = order.iloc[i]
+        profile_overrides = {
+            "SOFT": {
+                "deg_rate": float(max(0.005, row.get("DriverDegComposite", COMPOUND_PROFILES["SOFT"]["deg_rate"]) * 1.25)),
+                "cliff_lap": int(max(8, COMPOUND_PROFILES["SOFT"]["cliff_lap"] - row.get("DriverDegDeltaField", 0.0) * 20.0)),
+            },
+            "MEDIUM": {
+                "deg_rate": float(max(0.004, row.get("DriverDegComposite", COMPOUND_PROFILES["MEDIUM"]["deg_rate"]))),
+                "cliff_lap": int(max(10, COMPOUND_PROFILES["MEDIUM"]["cliff_lap"] - row.get("DriverDegDeltaField", 0.0) * 16.0)),
+            },
+            "HARD": {
+                "deg_rate": float(max(0.003, row.get("DriverDegComposite", COMPOUND_PROFILES["HARD"]["deg_rate"]) * 0.75)),
+                "cliff_lap": int(max(14, COMPOUND_PROFILES["HARD"]["cliff_lap"] - row.get("DriverDegDeltaField", 0.0) * 10.0)),
+            },
+        }
+
+        pit_loss = float(TEAM_PIT_SPEED.get(DRIVER_TEAM.get(drv, ""), 2.6) + 20.0)
+        expected_times = []
+        for strat in strategies:
+            total_time = _expected_strategy_time(
+                float(base_values.iloc[i]),
+                int(total_laps),
+                strat,
+                pit_loss=pit_loss,
+                fuel_effect=0.05,
+                profile_overrides=profile_overrides,
+            )
+            expected_times.append((strat, total_time))
+        expected_times.sort(key=lambda x: x[1])
+        top = expected_times[:2] if len(expected_times) > 1 else expected_times
+        t0 = top[0][1]
+        weights = np.array([np.exp(-(t - t0) / 1.2) for _, t in top], dtype=float)
+        weights = weights / max(weights.sum(), 1e-9)
+        strategy_bank[drv] = {
+            "choices": top,
+            "weights": weights,
+        }
+
+    positions = np.zeros((int(field_simulations), n), dtype=np.int16)
+    for sim_idx in range(int(field_simulations)):
+        totals = np.zeros(n, dtype=float)
+        for i, drv in enumerate(drivers):
+            bank = strategy_bank[drv]
+            pick_idx = int(rng.choice(len(bank["choices"]), p=bank["weights"]))
+            _, base_total = bank["choices"][pick_idx]
+
+            row = order.iloc[i]
+            tactical_bonus = (
+                0.55 * float(row.get("UndercutEdgeAhead", 0.0)) +
+                0.30 * float(row.get("OvercutEdgeBehind", 0.0)) +
+                0.90 * float(row.get("DRSOvertakeProbAhead", 0.0)) +
+                0.25 * float(row.get("TeamOrderPressure", 0.0))
+            )
+            tactical_bonus = np.clip(tactical_bonus, -1.6, 1.6)
+
+            sigma = 0.45 + 0.22 * float(uncertainty.iloc[i]) + 0.55 * safety_car
+            totals[i] = base_total - tactical_bonus + rng.normal(0.0, sigma)
+
+        order_idx = np.argsort(totals)
+        positions[sim_idx, order_idx] = np.arange(1, n + 1)
+
+    volatility_map = {
+        drv: float(np.std(positions[:, i])) for i, drv in enumerate(drivers)
+    }
+
+    battle_map = {}
+    for i, drv in enumerate(drivers):
+        neighbor_probs = []
+        for k in range(1, int(nearest_competitors) + 1):
+            for j in (i - k, i + k):
+                if 0 <= j < n:
+                    prob = float(np.mean(positions[:, i] < positions[:, j]))
+                    # Highest intensity when probability is close to 50/50.
+                    neighbor_probs.append(1.0 - abs(prob - 0.5) * 2.0)
+        battle_map[drv] = float(np.mean(neighbor_probs)) if neighbor_probs else 0.0
+
+    return volatility_map, battle_map
+
+
+def apply_game_theory_enhancements(merged, round_num, gp_key, total_laps,
+                                   season_year=SEASON_YEAR,
+                                   field_simulations=700,
+                                   nearest_competitors=2):
+    """Add game-theory strategy features to the model input DataFrame.
+
+    Enhancements implemented:
+      1. Driver-compound degradation fitted from telemetry.
+      2. Opponent-aware undercut/overcut edge features.
+      3. Teammate cooperation and conflict risk features.
+      4. Multi-agent field simulation features.
+      5. DRS contextual overtaking probability features.
+    """
+    if merged is None or merged.empty:
+        return merged, {"enabled": False, "reason": "empty-input"}
+
+    df = merged.copy()
+    char = CIRCUIT_CHARACTERISTICS.get(gp_key, {})
+    expected_stops = int(char.get("expected_stops", 2))
+    drs_zones = int(char.get("drs_zones", 2))
+    overtaking = float(char.get("overtaking", 0.5))
+
+    deg_map, compound_medians, deg_diag = _fit_driver_compound_degradation(
+        gp_key, year=season_year
+    )
+    weights = _compound_mix_weights(expected_stops)
+    deg_values = []
+    for drv in df["Driver"].astype(str):
+        comp_deg = deg_map.get(drv, compound_medians)
+        composite = sum(weights[c] * float(comp_deg.get(c, compound_medians[c])) for c in DRY_COMPOUNDS)
+        deg_values.append(composite)
+    df["DriverDegComposite"] = pd.Series(deg_values, index=df.index, dtype=float)
+    field_deg_median = float(np.nanmedian(df["DriverDegComposite"].values))
+    df["DriverDegDeltaField"] = (df["DriverDegComposite"] - field_deg_median).astype(float)
+
+    speed_map = _extract_speed_map(gp_key, year=season_year)
+    speed_values = [s for s in speed_map.values() if isinstance(s, (int, float)) and s > 0]
+    speed_fallback = float(np.median(speed_values)) if speed_values else 312.0
+
+    points_map = _load_driver_points_context()
+    leader_points = max(points_map.values()) if points_map else None
+
+    sort_col = "QualifyingRank" if "QualifyingRank" in df.columns else "AdjustedQualiTime"
+    order = df.sort_values(sort_col).reset_index()
+    idx_order = order["index"].tolist()
+    drv_order = order["Driver"].astype(str).tolist()
+
+    undercut = np.zeros(len(df), dtype=float)
+    overcut = np.zeros(len(df), dtype=float)
+    drs_prob = np.zeros(len(df), dtype=float)
+    team_order_pressure = np.zeros(len(df), dtype=float)
+    teammate_conflict = np.zeros(len(df), dtype=float)
+
+    # Build quick teammate lookup by active-season team map.
+    team_to_drivers = {}
+    for drv, team in DRIVER_TEAM.items():
+        team_to_drivers.setdefault(team, []).append(drv)
+
+    anchor_candidates = ("AdjustedQualiTime", "PredictedLapTime", "BestLapTime", "TeamAdjustedPace")
+    anchor_col = next((col for col in anchor_candidates if col in df.columns), None)
+    if anchor_col is not None:
+        anchor = pd.to_numeric(df[anchor_col], errors="coerce")
+        anchor_fill = float(anchor.dropna().median()) if anchor.notna().any() else 95.0
+        anchor = anchor.fillna(anchor_fill)
+    else:
+        anchor = pd.Series(np.arange(len(df), dtype=float), index=df.index)
+
+    for pos, idx in enumerate(idx_order):
+        drv = str(df.at[idx, "Driver"])
+        team = DRIVER_TEAM.get(drv, "Unknown")
+        self_deg = float(df.at[idx, "DriverDegComposite"])
+        self_pit = float(TEAM_PIT_SPEED.get(team, 2.6) + 20.0)
+        self_speed = float(speed_map.get(drv, speed_fallback))
+
+        # Opponent-aware undercut/overcut edges.
+        if pos > 0:
+            idx_ahead = idx_order[pos - 1]
+            drv_ahead = str(df.at[idx_ahead, "Driver"])
+            gap = float(max(anchor.loc[idx] - anchor.loc[idx_ahead], 0.0))
+            deg_ahead = float(df.at[idx_ahead, "DriverDegComposite"])
+            pit_ahead = float(TEAM_PIT_SPEED.get(DRIVER_TEAM.get(drv_ahead, ""), 2.6) + 20.0)
+
+            undercut_window = 1.8 + 1.0 * overtaking
+            gain = (deg_ahead - self_deg) * undercut_window + (pit_ahead - self_pit) * 0.16
+            undercut[idx] = float(gain - gap)
+
+            speed_ahead = float(speed_map.get(drv_ahead, speed_fallback))
+            score = (
+                0.24 * (self_speed - speed_ahead)
+                - 6.2 * gap
+                + 0.65 * max(drs_zones - 1, 0)
+                + 1.15 * (overtaking - 0.5)
+            )
+            drs_prob[idx] = float(_safe_sigmoid(score))
+
+        if pos < len(idx_order) - 1:
+            idx_behind = idx_order[pos + 1]
+            drv_behind = str(df.at[idx_behind, "Driver"])
+            gap_b = float(max(anchor.loc[idx_behind] - anchor.loc[idx], 0.0))
+            deg_behind = float(df.at[idx_behind, "DriverDegComposite"])
+            pit_behind = float(TEAM_PIT_SPEED.get(DRIVER_TEAM.get(drv_behind, ""), 2.6) + 20.0)
+
+            overcut_window = 2.1 + 0.8 * (1.0 - overtaking)
+            gain_b = (deg_behind - self_deg) * overcut_window + (pit_behind - self_pit) * 0.14
+            overcut[idx] = float(gain_b - gap_b)
+
+        # Teammate cooperation / conflict game-state metrics.
+        mates = [d for d in team_to_drivers.get(team, []) if d != drv]
+        if mates:
+            mate = mates[0]
+            mate_rows = df.index[df["Driver"].astype(str) == mate].tolist()
+            if mate_rows:
+                mate_idx = mate_rows[0]
+                pace_gap = float(abs(anchor.loc[idx] - anchor.loc[mate_idx]))
+                p_self = float(points_map.get(drv, 0.0))
+                p_mate = float(points_map.get(mate, 0.0))
+                points_gap_norm = min(abs(p_self - p_mate) / 70.0, 1.0)
+
+                if leader_points and leader_points > 0:
+                    title_pressure = max(0.0, 1.0 - ((leader_points - p_self) / max(leader_points, 1.0)))
+                else:
+                    # Early season fallback: infer pressure from current-form rank.
+                    cf = float(df.at[idx, "CurrentForm"]) if "CurrentForm" in df.columns else 11.0
+                    title_pressure = float(np.clip((11.5 - cf) / 10.5, 0.0, 1.0))
+
+                coop = (1.0 - points_gap_norm) * (1.0 / (1.0 + 6.0 * pace_gap)) * title_pressure
+                conflict = (1.0 - points_gap_norm) * (1.0 / (1.0 + 4.0 * pace_gap)) * (1.0 - 0.35 * coop)
+                team_order_pressure[idx] = float(np.clip(coop, 0.0, 1.0))
+                teammate_conflict[idx] = float(np.clip(conflict, 0.0, 1.0))
+
+    df["UndercutEdgeAhead"] = undercut
+    df["OvercutEdgeBehind"] = overcut
+    df["TeamOrderPressure"] = team_order_pressure
+    df["TeammateConflictRisk"] = teammate_conflict
+    df["DRSOvertakeProbAhead"] = drs_prob
+
+    # Multi-agent field simulation based on nearest-competitor battles.
+    vol_map, intensity_map = _simulate_multi_agent_field(
+        df,
+        gp_key,
+        total_laps=total_laps,
+        field_simulations=field_simulations,
+        nearest_competitors=nearest_competitors,
+        seed=(int(round_num) * 113 + int(season_year) * 17),
+    )
+    df["FieldPositionVolatility"] = df["Driver"].astype(str).map(vol_map).fillna(0.0)
+    df["LocalBattleIntensity"] = df["Driver"].astype(str).map(intensity_map).fillna(0.0)
+
+    diagnostics = {
+        "enabled": True,
+        "round": int(round_num),
+        "gpKey": gp_key,
+        "degradationFit": deg_diag,
+        "fieldSimulation": {
+            "simulations": int(field_simulations),
+            "nearestCompetitors": int(nearest_competitors),
+        },
+        "featureSummary": {
+            "driverDegCompositeMean": round(float(df["DriverDegComposite"].mean()), 4),
+            "undercutEdgeMean": round(float(df["UndercutEdgeAhead"].mean()), 4),
+            "drsProbMean": round(float(df["DRSOvertakeProbAhead"].mean()), 4),
+            "volatilityMean": round(float(df["FieldPositionVolatility"].mean()), 4),
+        },
+    }
+    return df, diagnostics
+
+def _simulate_stint(base_lap_time, compound, laps, fuel_effect=0.05,
+                    profile_overrides=None, rng=None):
     """Simulate lap times for a single stint on one compound.
 
     Parameters
@@ -72,10 +575,12 @@ def _simulate_stint(base_lap_time, compound, laps, fuel_effect=0.05):
     -------
     list[float] – lap times for each lap of the stint
     """
-    profile = COMPOUND_PROFILES.get(compound, COMPOUND_PROFILES["MEDIUM"])
+    profile = _resolve_compound_profile(compound, profile_overrides)
     pace_offset = profile["pace_offset"]
     deg_rate = profile["deg_rate"]
     cliff_lap = profile["cliff_lap"]
+    if rng is None:
+        rng = np.random.default_rng()
 
     times = []
     for lap in range(1, laps + 1):
@@ -89,13 +594,14 @@ def _simulate_stint(base_lap_time, compound, laps, fuel_effect=0.05):
         # Fuel effect (lighter car = faster)
         t -= fuel_effect * lap / laps
         # Small random variation
-        t += np.random.normal(0, 0.08)
+        t += rng.normal(0.0, 0.08)
         times.append(round(t, 3))
     return times
 
 
 def simulate_pit_strategy(base_lap_time, total_laps, strategies, pit_loss=22.0,
-                          n_simulations=100, fuel_effect=0.05):
+                          n_simulations=100, fuel_effect=0.05,
+                          compound_profile_overrides=None, rng=None):
     """Monte-Carlo simulation of different pit stop strategies.
 
     Parameters
@@ -112,6 +618,9 @@ def simulate_pit_strategy(base_lap_time, total_laps, strategies, pit_loss=22.0,
     -------
     dict – strategy results with mean times, std, and lap-by-lap data
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     results = {}
     for strat in strategies:
         name = strat["name"]
@@ -123,8 +632,14 @@ def simulate_pit_strategy(base_lap_time, total_laps, strategies, pit_loss=22.0,
         for _ in range(n_simulations):
             race_laps = []
             for compound, stint_laps in stints:
-                stint = _simulate_stint(base_lap_time, compound, stint_laps,
-                                       fuel_effect)
+                stint = _simulate_stint(
+                    base_lap_time,
+                    compound,
+                    stint_laps,
+                    fuel_effect,
+                    profile_overrides=compound_profile_overrides,
+                    rng=rng,
+                )
                 race_laps.extend(stint)
             # Add pit stop time losses (in-lap penalty)
             pit_laps = []

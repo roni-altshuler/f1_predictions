@@ -22,7 +22,9 @@ Outputs:
         round_01/*.png           ← prediction + FastF1 visualisations
 """
 
-import argparse, json, os, sys, math
+import argparse, json, os, sys, math, unicodedata
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
 import numpy as np
 import pandas as pd
 
@@ -555,7 +557,12 @@ def export_season_metadata():
 # ═════════════════════════════════════════════════════════════════════════
 
 def export_round_data(round_num, return_merged=False, use_lstm=False,
-                      use_weather_api=False, use_telemetry=False):
+                      use_weather_api=False, use_telemetry=False,
+                      enable_game_theory=True,
+                      game_theory_field_sims=700,
+                      game_theory_neighbors=2,
+                      persist_output=True,
+                      generate_visualizations=True):
     """Run prediction pipeline for one round; export JSON + visualisations.
     If return_merged=True, returns (round_data, merged_df) for advanced models.
     If use_lstm=True, computes LSTM grid predictions and feeds them into
@@ -606,6 +613,31 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
                                             temperature_c=weather["temp"],
                                             fallback_times=quali_estimates)
 
+    game_theory_diag = {"enabled": False, "reason": "disabled"}
+    game_theory_flag = str(os.getenv("ENABLE_GAME_THEORY_ENHANCEMENTS", "1")).strip().lower()
+    game_theory_enabled = bool(enable_game_theory and game_theory_flag not in {"0", "false", "no", "off"})
+
+    if game_theory_enabled:
+        try:
+            from advanced_models import apply_game_theory_enhancements
+            merged, game_theory_diag = apply_game_theory_enhancements(
+                merged,
+                round_num=round_num,
+                gp_key=gp_key,
+                total_laps=info.get("laps", 58),
+                season_year=SEASON_YEAR,
+                field_simulations=int(game_theory_field_sims),
+                nearest_competitors=int(game_theory_neighbors),
+            )
+            print(
+                "  🧠  Game-theory features enabled "
+                f"(deg source: {game_theory_diag.get('degradationFit', {}).get('source', 'fallback')}, "
+                f"field sims: {game_theory_diag.get('fieldSimulation', {}).get('simulations', game_theory_field_sims)})"
+            )
+        except Exception as e:
+            game_theory_diag = {"enabled": False, "reason": f"error: {e}"}
+            print(f"  ⚠️  Game-theory feature generation failed: {e}")
+
     # ── LSTM Grid Predictions (v3: true ensemble member) ──
     lstm_preds = None
     if use_lstm:
@@ -634,22 +666,26 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         print(f"  ⚠️  Could not save predicted result: {e}")
 
     # ── Generate visualisations ──
-    round_viz_dir = os.path.join(VIZ_DIR, f"round_{round_num:02d}")
-    os.makedirs(round_viz_dir, exist_ok=True)
-    viz_filenames = _export_visualizations(results, merged, classification,
-                                           round_viz_dir, gp_name)
+    if generate_visualizations:
+        round_viz_dir = os.path.join(VIZ_DIR, f"round_{round_num:02d}")
+        os.makedirs(round_viz_dir, exist_ok=True)
+        viz_filenames = _export_visualizations(results, merged, classification,
+                                               round_viz_dir, gp_name)
 
-    # ── Import any existing local visualisations ──
-    local_viz = _import_local_visualizations(round_num, gp_name)
-    for fname in local_viz:
-        if fname not in viz_filenames:
-            viz_filenames.append(fname)
+        # ── Import any existing local visualisations ──
+        local_viz = _import_local_visualizations(round_num, gp_name)
+        for fname in local_viz:
+            if fname not in viz_filenames:
+                viz_filenames.append(fname)
 
-    if ensure_track_map_asset(round_num, gp_key) and "track_map.png" not in viz_filenames:
-        viz_filenames.append("track_map.png")
+        if ensure_track_map_asset(round_num, gp_key) and "track_map.png" not in viz_filenames:
+            viz_filenames.append("track_map.png")
 
-    viz_filenames = _dedupe_preserve_order(viz_filenames)
-    viz_details = _build_visualization_details(viz_filenames)
+        viz_filenames = _dedupe_preserve_order(viz_filenames)
+        viz_details = _build_visualization_details(viz_filenames)
+    else:
+        viz_filenames = []
+        viz_details = []
 
     # ── Classification → ClassificationEntry[] ──
     classification_data = []
@@ -768,9 +804,23 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
             "source":           weather_full.get("source", "static") if weather_full else "static",
         },
         "predictionInsights": prediction_insights,
+        "modelConfig": {
+            "lstmEnabled": bool(use_lstm),
+            "gameTheoryEnhancements": _json_safe(game_theory_diag),
+        },
     }
 
     round_data.update(_get_round_preserved_fields(round_num, existing_round))
+
+    # Keep round-level actual outcomes aligned with the official standings source.
+    live_round_results_flag = str(os.getenv("F1_USE_LIVE_ROUND_RESULTS", "1")).strip().lower()
+    use_live_round_results = live_round_results_flag not in {"0", "false", "no", "off"}
+    has_actual_results = bool(isinstance(round_data.get("actualResults"), dict) and round_data["actualResults"])
+    should_try_live_round_results = use_live_round_results and (persist_output or not has_actual_results)
+    if should_try_live_round_results:
+        official_actual_results = _fetch_live_round_actual_results(round_num, SEASON_YEAR)
+        if isinstance(official_actual_results, dict) and official_actual_results:
+            round_data["actualResults"] = official_actual_results
 
     # ── Telemetry: speed traps & sector times from FastF1 ──
     if use_telemetry:
@@ -782,7 +832,8 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         except Exception as e:
             print(f"  ⚠️  Telemetry extraction failed: {e}")
 
-    _sync_tracker_data(round_num, round_data)
+    if persist_output:
+        _sync_tracker_data(round_num, round_data)
 
     # Ensure accuracy is refreshed for rounds with actual results even without tracker writes.
     if isinstance(round_data.get("actualResults"), dict) and round_data["actualResults"]:
@@ -793,8 +844,11 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
         if local_accuracy:
             round_data["accuracy"] = local_accuracy
 
-    _write_json(path, round_data)
-    print(f"✅ Round {round_num} data → {path}")
+    if persist_output:
+        _write_json(path, round_data)
+        print(f"✅ Round {round_num} data → {path}")
+    else:
+        print(f"✅ Round {round_num} benchmark payload generated (not persisted)")
     if return_merged:
         return round_data, merged
     return round_data
@@ -1255,6 +1309,391 @@ def _import_local_visualizations(round_num, gp_name):
     return imported
 
 
+JOLPICA_BASE_URL = "https://api.jolpi.ca/ergast/f1"
+
+TEAM_NAME_ALIASES = {
+    "red bull": "Red Bull Racing",
+    "red bull racing": "Red Bull Racing",
+    "oracle red bull racing": "Red Bull Racing",
+    "racing bulls": "Racing Bulls",
+    "rb f1 team": "Racing Bulls",
+    "visa cash app rb": "Racing Bulls",
+    "haas": "Haas",
+    "haas f1 team": "Haas",
+    "moneygram haas f1 team": "Haas",
+    "alpine": "Alpine",
+    "alpine f1 team": "Alpine",
+    "bwt alpine f1 team": "Alpine",
+    "aston martin": "Aston Martin",
+    "aston martin aramco": "Aston Martin",
+    "aston martin aramco mercedes": "Aston Martin",
+    "ferrari": "Ferrari",
+    "scuderia ferrari": "Ferrari",
+    "mclaren": "McLaren",
+    "mercedes": "Mercedes",
+    "williams": "Williams",
+    "williams mercedes": "Williams",
+    "audi": "Audi",
+    "sauber": "Audi",
+    "kick sauber": "Audi",
+    "stake f1 team kick sauber": "Audi",
+    "cadillac": "Cadillac",
+    "cadillac f1 team": "Cadillac",
+}
+
+
+def _normalize_text(value):
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    text = text.encode("ascii", "ignore").decode("ascii")
+    return " ".join(text.lower().strip().split())
+
+
+def _as_int(value, default=0):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return int(default)
+
+
+def _as_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _as_points(value, default=0.0):
+    pts = _as_float(value, default)
+    if abs(pts - round(pts)) < 1e-9:
+        return int(round(pts))
+    return round(pts, 1)
+
+
+def _normalize_team_name(raw_team):
+    raw = str(raw_team or "Unknown").strip()
+    key = _normalize_text(raw)
+    if key in TEAM_NAME_ALIASES:
+        return TEAM_NAME_ALIASES[key]
+    for alias, canonical in TEAM_NAME_ALIASES.items():
+        if alias in key:
+            return canonical
+    return raw
+
+
+def _build_driver_code_lookups():
+    by_full = {}
+    by_last = {}
+    by_id = {}
+
+    for code, full_name in DRIVER_FULL_NAMES.items():
+        normalized = _normalize_text(full_name)
+        by_full[normalized] = code
+        parts = normalized.split()
+        if parts:
+            by_last[parts[-1]] = code
+            by_id[parts[-1].replace("-", "")] = code
+
+    by_id.update(
+        {
+            "antonelli": "ANT",
+            "kimiantonelli": "ANT",
+            "stroll": "STR",
+            "verstappen": "VER",
+            "hamilton": "HAM",
+            "russell": "RUS",
+            "leclerc": "LEC",
+            "norris": "NOR",
+            "piastri": "PIA",
+            "hadjar": "HAD",
+            "lawson": "LAW",
+            "lindblad": "LIN",
+            "gasly": "GAS",
+            "colapinto": "COL",
+            "ocon": "OCO",
+            "albon": "ALB",
+            "sainz": "SAI",
+            "hulkenberg": "HUL",
+            "huelkenberg": "HUL",
+            "bortoleto": "BOR",
+            "bearman": "BEA",
+            "perez": "PER",
+            "bottas": "BOT",
+            "alonso": "ALO",
+        }
+    )
+    return by_full, by_last, by_id
+
+
+def _resolve_driver_code(driver_obj, by_full, by_last, by_id):
+    if not isinstance(driver_obj, dict):
+        return ""
+
+    code = str(driver_obj.get("code") or "").upper().strip()
+    if code in DRIVER_TEAM:
+        return code
+
+    given = _normalize_text(driver_obj.get("givenName"))
+    family = _normalize_text(driver_obj.get("familyName"))
+    full_name = " ".join(x for x in (given, family) if x)
+    if full_name in by_full:
+        return by_full[full_name]
+    if family in by_last:
+        return by_last[family]
+
+    driver_id = _normalize_text(driver_obj.get("driverId")).replace("_", "").replace("-", "")
+    if driver_id in by_id:
+        return by_id[driver_id]
+
+    if family:
+        fallback = family[:3].upper()
+        if fallback:
+            return fallback
+    return code
+
+
+def _fetch_jolpica_json(path):
+    url = f"{JOLPICA_BASE_URL}/{str(path).strip('/')}"
+    with urlopen(url, timeout=20) as response:
+        return json.load(response)
+
+
+def _extract_standings_lists(payload):
+    return (
+        payload.get("MRData", {})
+        .get("StandingsTable", {})
+        .get("StandingsLists", [])
+    )
+
+
+def _normalize_history(values, target_len, final_value):
+    history = [_as_points(v, 0.0) for v in values]
+    if target_len <= 0:
+        return history
+    if not history:
+        history = [_as_points(final_value, 0.0)] * target_len
+    while len(history) < target_len:
+        history.append(history[-1])
+    return history[:target_len]
+
+
+def _fetch_live_standings_from_jolpica(season_year=SEASON_YEAR):
+    """Fetch official standings from Jolpica/Ergast, including per-round history."""
+    by_full, by_last, by_id = _build_driver_code_lookups()
+    try:
+        driver_payload = _fetch_jolpica_json(f"{season_year}/driverStandings.json")
+        constructor_payload = _fetch_jolpica_json(f"{season_year}/constructorStandings.json")
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as e:
+        print(f"  ⚠️  Live standings fetch failed: {e}")
+        return None
+
+    driver_lists = _extract_standings_lists(driver_payload)
+    constructor_lists = _extract_standings_lists(constructor_payload)
+    if not driver_lists or not constructor_lists:
+        return None
+
+    driver_rows = driver_lists[0].get("DriverStandings", [])
+    constructor_rows = constructor_lists[0].get("ConstructorStandings", [])
+    if not driver_rows or not constructor_rows:
+        return None
+
+    last_round = max(
+        _as_int(driver_lists[0].get("round"), 0),
+        _as_int(constructor_lists[0].get("round"), 0),
+    )
+
+    driver_entries = []
+    driver_points_history = {}
+    driver_podiums = {}
+    for row in driver_rows:
+        driver_obj = row.get("Driver", {})
+        code = _resolve_driver_code(driver_obj, by_full, by_last, by_id)
+        if not code:
+            continue
+
+        constructors = row.get("Constructors") or []
+        raw_team = constructors[0].get("name") if constructors and isinstance(constructors[0], dict) else "Unknown"
+        team = _normalize_team_name(raw_team)
+        if code in DRIVER_TEAM and (team == "Unknown" or not team):
+            team = DRIVER_TEAM[code]
+
+        full_name = DRIVER_FULL_NAMES.get(code)
+        if not full_name:
+            full_name = " ".join(
+                x for x in [driver_obj.get("givenName", ""), driver_obj.get("familyName", "")] if x
+            ).strip() or code
+
+        entry = {
+            "position": _as_int(row.get("position"), len(driver_entries) + 1),
+            "driver": code,
+            "driverFullName": full_name,
+            "team": team,
+            "teamColor": TEAM_COLOURS.get(team, "#888"),
+            "points": _as_points(row.get("points"), 0.0),
+            "wins": _as_int(row.get("wins"), 0),
+        }
+        driver_entries.append(entry)
+        driver_points_history[code] = []
+        driver_podiums[code] = 0
+
+    constructor_entries = []
+    constructor_points_history = {}
+    for row in constructor_rows:
+        constructor_obj = row.get("Constructor", {})
+        team = _normalize_team_name(constructor_obj.get("name"))
+        entry = {
+            "position": _as_int(row.get("position"), len(constructor_entries) + 1),
+            "team": team,
+            "teamColor": TEAM_COLOURS.get(team, "#888"),
+            "points": _as_points(row.get("points"), 0.0),
+            "wins": _as_int(row.get("wins"), 0),
+        }
+        constructor_entries.append(entry)
+        constructor_points_history[team] = []
+
+    # Build per-round cumulative points histories from official standings snapshots.
+    for rnd in range(1, last_round + 1):
+        driver_snapshot = {}
+        try:
+            payload = _fetch_jolpica_json(f"{season_year}/{rnd}/driverStandings.json")
+            lists = _extract_standings_lists(payload)
+            rows = lists[0].get("DriverStandings", []) if lists else []
+            for row in rows:
+                code = _resolve_driver_code(row.get("Driver", {}), by_full, by_last, by_id)
+                if code:
+                    driver_snapshot[code] = _as_points(row.get("points"), 0.0)
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+            driver_snapshot = {}
+
+        for code, hist in driver_points_history.items():
+            prev = hist[-1] if hist else 0.0
+            hist.append(driver_snapshot.get(code, prev))
+
+        constructor_snapshot = {}
+        try:
+            payload = _fetch_jolpica_json(f"{season_year}/{rnd}/constructorStandings.json")
+            lists = _extract_standings_lists(payload)
+            rows = lists[0].get("ConstructorStandings", []) if lists else []
+            for row in rows:
+                team = _normalize_team_name(row.get("Constructor", {}).get("name"))
+                constructor_snapshot[team] = _as_points(row.get("points"), 0.0)
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+            constructor_snapshot = {}
+
+        for team, hist in constructor_points_history.items():
+            prev = hist[-1] if hist else 0.0
+            hist.append(constructor_snapshot.get(team, prev))
+
+    # Podiums are not part of standings endpoints, so pull them from classified race results.
+    for rnd in range(1, last_round + 1):
+        try:
+            payload = _fetch_jolpica_json(f"{season_year}/{rnd}/results.json")
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+            continue
+        races = payload.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+        if not races:
+            continue
+        for result in races[0].get("Results", []):
+            pos = _as_int(result.get("position"), 99)
+            if pos > 3:
+                continue
+            code = _resolve_driver_code(result.get("Driver", {}), by_full, by_last, by_id)
+            if code in driver_podiums:
+                driver_podiums[code] += 1
+
+    driver_entries.sort(key=lambda x: x["position"])
+    constructor_entries.sort(key=lambda x: x["position"])
+
+    driver_list = []
+    for row in driver_entries:
+        code = row["driver"]
+        row["pointsHistory"] = _normalize_history(
+            driver_points_history.get(code, []),
+            last_round,
+            row["points"],
+        )
+        row["podiums"] = int(driver_podiums.get(code, 0))
+        driver_list.append(row)
+
+    constructor_list = []
+    for row in constructor_entries:
+        team = row["team"]
+        row["drivers"] = [d["driver"] for d in driver_list if d["team"] == team]
+        row["pointsHistory"] = _normalize_history(
+            constructor_points_history.get(team, []),
+            last_round,
+            row["points"],
+        )
+        constructor_list.append(row)
+
+    # Estimate maximum possible points left, accounting for sprint weekends.
+    max_remaining_pts = 0
+    for rnd in range(last_round + 1, len(CALENDAR) + 1):
+        is_sprint = bool(CALENDAR.get(rnd, {}).get("sprint", False))
+        max_remaining_pts += 34 if is_sprint else 26
+
+    leader_pts_val = driver_list[0]["points"] if driver_list else 0
+    wdc_possibility = []
+    for d in driver_list:
+        max_possible = d["points"] + max_remaining_pts
+        wdc_possibility.append(
+            {
+                "driver": d["driver"],
+                "driverFullName": d["driverFullName"],
+                "team": d["team"],
+                "teamColor": d["teamColor"],
+                "currentPoints": d["points"],
+                "maxPossiblePoints": max_possible,
+                "canStillWin": bool(max_possible >= leader_pts_val),
+            }
+        )
+
+    standings = {
+        "lastUpdatedRound": int(last_round),
+        "drivers": driver_list,
+        "constructors": constructor_list,
+        "wdcPossibility": wdc_possibility,
+    }
+    print(f"  📡  Official standings loaded from Jolpica (season {season_year}, round {last_round}).")
+    return standings
+
+
+def _fetch_live_round_actual_results(round_num, season_year=SEASON_YEAR):
+    """Fetch official classified race order for a single round from Jolpica."""
+    by_full, by_last, by_id = _build_driver_code_lookups()
+    try:
+        payload = _fetch_jolpica_json(f"{season_year}/{int(round_num)}/results.json")
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as e:
+        print(f"  ⚠️  Live round {round_num} results fetch failed: {e}")
+        return None
+
+    races = payload.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+    if not races:
+        return None
+
+    results_rows = races[0].get("Results", [])
+    if not results_rows:
+        return None
+
+    actual_results = {}
+    for idx, row in enumerate(results_rows, start=1):
+        code = _resolve_driver_code(row.get("Driver", {}), by_full, by_last, by_id)
+        if not code:
+            continue
+        pos = _as_int(row.get("position"), idx)
+        if pos <= 0:
+            pos = idx
+        actual_results[code] = int(pos)
+
+    if not actual_results:
+        return None
+
+    print(
+        f"  📡  Official round {round_num} classified results loaded "
+        f"({len(actual_results)} drivers)."
+    )
+    return actual_results
+
+
 # ═════════════════════════════════════════════════════════════════════════
 # standings.json  →  StandingsData
 # ═════════════════════════════════════════════════════════════════════════
@@ -1262,6 +1701,17 @@ def _import_local_visualizations(round_num, gp_name):
 def export_standings():
     """Export cumulative standings matching the StandingsData TS interface."""
     _ensure_dirs()
+
+    live_flag = str(os.getenv("F1_USE_LIVE_STANDINGS", "1")).strip().lower()
+    use_live_standings = live_flag not in {"0", "false", "no", "off"}
+    if use_live_standings:
+        live_standings = _fetch_live_standings_from_jolpica(SEASON_YEAR)
+        if isinstance(live_standings, dict) and live_standings.get("drivers"):
+            path = os.path.join(DATA_DIR, "standings.json")
+            _write_json(path, live_standings)
+            print(f"✅ Standings → {path} (official API)")
+            return live_standings
+        print("  ⚠️  Falling back to local round-file standings reconstruction.")
 
     def _ensure_team(team_name):
         if team_name not in constructor_pts:
@@ -1467,6 +1917,12 @@ def main():
                         help="Extract speed trap and sector time data from FastF1")
     parser.add_argument("--fastf1-year", type=int, default=2024,
                         help="Year for FastF1 historical data (default 2024)")
+    parser.add_argument("--disable-game-theory", action="store_true",
+                        help="Disable game-theory strategy enhancements")
+    parser.add_argument("--game-theory-sims", type=int, default=700,
+                        help="Field simulation count for game-theory features (default 700)")
+    parser.add_argument("--game-theory-neighbors", type=int, default=2,
+                        help="Nearest competitors considered in local battle simulation (default 2)")
     args = parser.parse_args()
 
     if args.round:
@@ -1474,7 +1930,10 @@ def main():
                                                 return_merged=True,
                                                 use_lstm=args.advanced,
                                                 use_weather_api=args.weather,
-                                                use_telemetry=args.telemetry)
+                                                use_telemetry=args.telemetry,
+                                                enable_game_theory=not args.disable_game_theory,
+                                                game_theory_field_sims=args.game_theory_sims,
+                                                game_theory_neighbors=args.game_theory_neighbors)
         if args.fastf1:
             gp_key = CALENDAR[args.round]["gp_key"]
             extra = _generate_fastf1_viz(args.round, gp_key, args.fastf1_year)
@@ -1504,7 +1963,10 @@ def main():
                 rd, merged = export_round_data(rnd, return_merged=True,
                                                 use_lstm=args.advanced,
                                                 use_weather_api=args.weather,
-                                                use_telemetry=args.telemetry)
+                                                use_telemetry=args.telemetry,
+                                                enable_game_theory=not args.disable_game_theory,
+                                                game_theory_field_sims=args.game_theory_sims,
+                                                game_theory_neighbors=args.game_theory_neighbors)
                 if args.fastf1:
                     gp_key = CALENDAR[rnd]["gp_key"]
                     extra = _generate_fastf1_viz(rnd, gp_key, args.fastf1_year)

@@ -1,10 +1,12 @@
-# 🏎️ F1 Race Predictions — 2026 Season (v3.0)
+# 🏎️ F1 Race Predictions — 2026 Season (v3.1)
 
 A **modular, scalable** machine-learning framework that predicts Formula 1 Grand Prix
 race results using historical telemetry from the [FastF1](https://docs.fastf1.dev/) API,
 an ensemble regression approach, and an interactive **Next.js website** for visualisation.
 
 > **Current season:** All 24 rounds of the 2026 calendar — prediction scripts ready for every Grand Prix.
+>
+> **Live data sync:** Official standings and completed-round classified results are pulled from Jolpica/Ergast-compatible APIs with local fallback.
 
 ---
 
@@ -24,6 +26,8 @@ f1_predictions/
 ├── f1_prediction_utils.py           ← Core ML framework (model, data, viz, reports)
 ├── advanced_models.py               ← Pit strategy, tyre deg, LSTM, season tracker
 ├── export_website_data.py           ← Data pipeline: ML → JSON + PNG for website
+├── benchmark_game_theory_upgrades.py← Baseline vs enhanced benchmarking on completed rounds
+├── optimize_game_theory_postprocessing.py ← Scale search for postprocessing calibration
 ├── generate_fastf1_viz.py           ← FastF1 historical visualisations (track map, etc.)
 ├── report_results.py                ← Detailed race report + HTML generator
 ├── create_season_races.py           ← Script that generates all 24 race files
@@ -55,13 +59,14 @@ f1_predictions/
 
 ---
 
-## ✨ What's New in v3
+## ✨ What's New in v3.1
 
 ### Website Dashboard
 - **Next.js 16** + React 19 + Tailwind CSS v4 + Recharts
 - Dark-themed F1 aesthetic with team colours, flag emojis, responsive layout
 - Pages: Home, Calendar (24 races), Race Detail, Standings (Drivers / Constructors / WDC), About
 - Visualization gallery with lightbox for all generated plots
+- Race-detail visualizations upgraded into an analytics command-center layout with featured chart focus, KPI tiles, category chips, and analyst-ready sections
 
 ### Advanced Models (`advanced_models.py`)
 - **Pit Strategy Simulator** — Monte-Carlo simulation of 1/2/3-stop strategies with compound modelling
@@ -71,8 +76,15 @@ f1_predictions/
 
 ### Data Pipeline (`export_website_data.py`)
 - Single command exports JSON + PNG for the entire website
-- Flags: `--round N`, `--all`, `--fastf1`, `--advanced`, `--metadata`
+- Flags: `--round N`, `--all`, `--fastf1`, `--advanced`, `--metadata`, `--disable-game-theory`, `--game-theory-sims`, `--game-theory-neighbors`
 - Generates `season.json`, `standings.json`, `round_XX.json`, and all PNG visualisations
+- `standings.json` now defaults to official Jolpica standings (`F1_USE_LIVE_STANDINGS=1`)
+- Completed round files can now refresh `actualResults` directly from official classified race results (`F1_USE_LIVE_ROUND_RESULTS=1`)
+
+### Calibration & Benchmarking
+- `benchmark_game_theory_upgrades.py` compares baseline vs enhanced game-theory variants across completed rounds
+- `optimize_game_theory_postprocessing.py` performs scale search and validation passes, writing JSON reports under `reports/`
+- Default `F1_GAME_THEORY_POSTPROCESS_SCALE` is tuned to `1.2` (env override supported)
 
 ### FastF1 Visualisations (`generate_fastf1_viz.py`)
 - Circuit track maps (coloured by speed)
@@ -179,6 +191,33 @@ python export_website_data.py --all --fastf1 --advanced
 
 # Metadata only (season.json + standings.json)
 python export_website_data.py --metadata
+
+# Round export with game-theory overrides
+python export_website_data.py --round 3 --game-theory-sims 900 --game-theory-neighbors 3
+```
+
+### Benchmark & tune game-theory enhancements
+
+```bash
+# Compare baseline vs enhanced behavior on completed rounds
+python benchmark_game_theory_upgrades.py --rounds 1 2 3 --field-sims 700 --neighbors 2
+
+# Sweep postprocessing scales and save tuning report
+python optimize_game_theory_postprocessing.py --rounds 1 2 3 \
+  --scales 0.6,0.8,1.0,1.2,1.4 --search-field-sims 180 --validate-field-sims 700
+```
+
+### Runtime environment toggles
+
+```bash
+# Official data source toggles
+export F1_USE_LIVE_STANDINGS=1
+export F1_USE_LIVE_ROUND_RESULTS=1
+
+# Game-theory feature and postprocess controls
+export ENABLE_GAME_THEORY_ENHANCEMENTS=1
+export F1_GAME_THEORY_POSTPROCESS_SCALE=1.2
+export F1_GAME_THEORY_UNCERTAINTY_SCALE=1.2
 ```
 
 ### Start the website
@@ -296,12 +335,14 @@ Each round generates up to **10+ visualisations**:
 ## 📌 Roadmap
 
 - [x] Live qualifying data integration (auto-fetch on race weekends)
-- [ ] Weather API integration for real-time forecasts
+- [x] Weather API integration for real-time forecasts (optional `--weather`)
 - [x] Sprint race predictions
 - [x] Deploy website to GitHub Pages
 - [x] Automated prediction pipeline via GitHub Actions
 - [x] Circuit-specific features (DRS zones, safety car, altitude, pit stops)
-- [ ] Add telemetry-based features (speed traps, sector times)
+- [x] Add telemetry-based features (speed traps, sector times) via optional `--telemetry`
+- [x] Official standings + completed-round classified results sync (Jolpica + fallback)
+- [x] Benchmark + tuning harness for game-theory postprocessing
 - [ ] Multi-season accuracy tracking dashboard
 
 ---

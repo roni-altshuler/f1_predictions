@@ -1276,35 +1276,142 @@ export default function RaceDetailPage({ round }: Props) {
         const loadableBettor = bettorViz.filter(v => !failedImages.has(v.filename));
         const loadableOther = otherViz.filter(v => !failedImages.has(v.filename));
 
+        const sourceCounts = loadableViz.reduce<Record<string, number>>((acc, detail) => {
+          const source = detail.source || "model";
+          acc[source] = (acc[source] || 0) + 1;
+          return acc;
+        }, {});
+
+        const categoryTotals = [
+          { id: "ml", label: "Model", count: loadableMl.length, color: "#E10600" },
+          { id: "bettor", label: "Probabilities", count: loadableBettor.length, color: "#FF8000" },
+          { id: "advanced", label: "Strategy", count: loadableAdvanced.length, color: "#14B8A6" },
+          { id: "fastf1", label: "Historical", count: loadableFastf1.length, color: "#3B82F6" },
+          { id: "other", label: "Additional", count: loadableOther.length, color: "#9CA3AF" },
+        ].filter((entry) => entry.count > 0);
+
+        const featuredPriority = [
+          "predicted_laptimes.png",
+          "finish_probability_heatmap.png",
+          "risk_reward_matrix.png",
+          "win_probability_board.png",
+          "feature_importance.png",
+        ];
+
+        const featuredViz = featuredPriority
+          .map((filename) => loadableViz.find((viz) => viz.filename === filename))
+          .filter((viz): viz is (typeof loadableViz)[number] => viz != null)
+          .slice(0, 2);
+
+        const featuredSet = new Set(featuredViz.map((v) => v.filename));
+        const sectionMl = loadableMl.filter((v) => !featuredSet.has(v.filename));
+        const sectionFastf1 = loadableFastf1.filter((v) => !featuredSet.has(v.filename));
+        const sectionAdvanced = loadableAdvanced.filter((v) => !featuredSet.has(v.filename));
+        const sectionBettor = loadableBettor.filter((v) => !featuredSet.has(v.filename));
+        const sectionOther = loadableOther.filter((v) => !featuredSet.has(v.filename));
+
+        const highConfidenceCalls =
+          data.predictionInsights?.highConfidenceCount ??
+          data.classification.filter((entry) => entry.confidence === "High").length;
+        const lowConfidenceCalls =
+          data.predictionInsights?.lowConfidenceCount ??
+          data.classification.filter((entry) => entry.confidence === "Low").length;
+
+        const widestBand = data.classification
+          .filter((entry) => entry.finishRangeLow != null && entry.finishRangeHigh != null)
+          .sort(
+            (a, b) =>
+              (b.finishRangeHigh! - b.finishRangeLow!) -
+              (a.finishRangeHigh! - a.finishRangeLow!)
+          )[0];
+
+        const analystNotes = [
+          data.predictionInsights
+            ? `Most likely winner: ${data.predictionInsights.mostLikelyWinner} (${data.predictionInsights.winnerProbability?.toFixed(1) ?? "—"}% win probability).`
+            : null,
+          data.predictionInsights
+            ? `Closest projected battle: ${data.predictionInsights.closestBattle.drivers.join(" vs ")} at ${data.predictionInsights.closestBattle.gap.toFixed(3)}s.`
+            : null,
+          widestBand
+            ? `${widestBand.driver} has the widest finish range (${`P${widestBand.finishRangeLow}-P${widestBand.finishRangeHigh}`}).`
+            : null,
+          data.weatherData
+            ? `Weather risk: ${Math.round(data.weatherData.rainProbability * 100)}% rain probability with ${Math.round(data.weatherData.temperatureC)}°C ambient.`
+            : null,
+          `Circuit profile: ${Math.round(data.circuitInfo.overtaking * 100)}% overtaking index, ${Math.round((data.circuitInfo.safetyCarLikelihood || 0.4) * 100)}% safety-car likelihood.`,
+        ].filter((note): note is string => Boolean(note));
+
+        const sourceStyle = (source?: string) => {
+          if (source === "fastf1") {
+            return { background: "rgba(59,130,246,0.14)", color: "#60A5FA" };
+          }
+          if (source === "advanced") {
+            return { background: "rgba(20,184,166,0.14)", color: "#14B8A6" };
+          }
+          if (source === "bettor") {
+            return { background: "rgba(245,158,11,0.16)", color: "#F59E0B" };
+          }
+          return { background: "rgba(225,6,0,0.14)", color: "#E10600" };
+        };
+
         const renderVizCard = (detail: {
           filename: string;
           title: string;
           description: string;
           source?: string;
-        }) => {
+        }, options?: { featured?: boolean; rank?: number }) => {
           const src = getVisualizationPath(round, detail.filename);
+          const isFeatured = options?.featured ?? false;
+          const tone = sourceStyle(detail.source);
           return (
-            <div key={detail.filename} className="card p-3 cursor-pointer group" onClick={() => setLightboxImg(src)}>
-              <img src={src} alt={detail.title} className="viz-image w-full" loading="lazy" onError={() => handleImageError(detail.filename)} />
-              <div className="mt-2 px-1">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text)" }}>
+            <div
+              key={detail.filename}
+              className={`viz-card-pro ${isFeatured ? "viz-card-featured" : ""}`}
+              onClick={() => setLightboxImg(src)}
+            >
+              <div className="viz-card-media-wrap">
+                <img
+                  src={src}
+                  alt={detail.title}
+                  className="viz-image viz-card-media"
+                  loading="lazy"
+                  onError={() => handleImageError(detail.filename)}
+                />
+              </div>
+              <div className="viz-card-body">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--text)" }}>
                     {detail.title}
                   </p>
+                  {isFeatured && options?.rank != null && (
+                    <span className="viz-rank-chip">#{options.rank}</span>
+                  )}
                   {detail.source && (
                     <span
-                      className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                      style={{
-                        background: detail.source === "fastf1" ? "rgba(59,130,246,0.12)" : detail.source === "advanced" ? "rgba(255,128,0,0.12)" : "rgba(225,6,0,0.12)",
-                        color: detail.source === "fastf1" ? "#3B82F6" : detail.source === "advanced" ? "#FF8000" : "#E10600",
-                      }}
+                      className="text-[10px] font-bold uppercase tracking-[0.12em] px-2 py-0.5 rounded-full"
+                      style={tone}
                     >
                       {detail.source}
                     </span>
                   )}
                 </div>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{detail.description}</p>
-                <p className="text-[11px] mt-1" style={{ color: "#E10600" }}>Click to enlarge</p>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{detail.description}</p>
+                <p className="text-[11px] mt-1.5" style={{ color: "#E10600" }}>Click to enlarge</p>
+              </div>
+            </div>
+          );
+        };
+
+        const renderCategorySection = (title: string, items: typeof loadableViz) => {
+          if (!items.length) return null;
+          return (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="section-heading mb-0">{title}</h3>
+                <span className="viz-count-pill">{items.length} charts</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {items.map((detail) => renderVizCard(detail))}
               </div>
             </div>
           );
@@ -1314,46 +1421,77 @@ export default function RaceDetailPage({ round }: Props) {
           <motion.div className="space-y-8" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
             {hasViz ? (
               <>
-                {loadableMl.length > 0 && (
+                <div className="viz-command-center p-6 sm:p-7">
+                  <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
+                    <div>
+                      <p className="viz-kicker">Grand Prix Analytics Studio</p>
+                      <h3 className="text-2xl font-black" style={{ color: "var(--text)" }}>
+                        Visual Intelligence Board
+                      </h3>
+                      <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+                        Curated visuals and statistical narratives for race pace, strategy, and finish-probability analysis.
+                      </p>
+                    </div>
+                    <span className="status-pill status-pill-red">{loadableViz.length} Charts Ready</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="viz-metric-tile">
+                      <p className="viz-metric-label">High Confidence Calls</p>
+                      <p className="viz-metric-value">{highConfidenceCalls}</p>
+                    </div>
+                    <div className="viz-metric-tile">
+                      <p className="viz-metric-label">Low Confidence Calls</p>
+                      <p className="viz-metric-value">{lowConfidenceCalls}</p>
+                    </div>
+                    <div className="viz-metric-tile">
+                      <p className="viz-metric-label">Avg Uncertainty</p>
+                      <p className="viz-metric-value">{data.metrics.avgUncertainty?.toFixed(2) ?? "—"}s</p>
+                    </div>
+                    <div className="viz-metric-tile">
+                      <p className="viz-metric-label">Data Sources</p>
+                      <p className="viz-metric-value">{Object.keys(sourceCounts).length}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {categoryTotals.map((entry) => (
+                      <span
+                        key={entry.id}
+                        className="viz-category-chip"
+                        style={{ borderColor: `${entry.color}55`, color: entry.color }}
+                      >
+                        {entry.label}: {entry.count}
+                      </span>
+                    ))}
+                  </div>
+
+                  {analystNotes.length > 0 && (
+                    <ul className="viz-insight-list">
+                      {analystNotes.slice(0, 4).map((note, idx) => (
+                        <li key={`note-${idx}`} className="viz-insight-item">{note}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {featuredViz.length > 0 && (
                   <div>
-                    <h3 className="section-heading">Model Predictions</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {loadableMl.map(renderVizCard)}
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="section-heading mb-0">Featured Visuals</h3>
+                      <span className="viz-count-pill">Most actionable views</span>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                      {featuredViz.map((detail, idx) => renderVizCard(detail, { featured: true, rank: idx + 1 }))}
                     </div>
                   </div>
                 )}
-                {loadableFastf1.length > 0 && (
-                  <div>
-                    <h3 className="section-heading">FastF1 Historical Data</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {loadableFastf1.map(renderVizCard)}
-                    </div>
-                  </div>
-                )}
-                {loadableAdvanced.length > 0 && (
-                  <div>
-                    <h3 className="section-heading">Strategy Analysis</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {loadableAdvanced.map(renderVizCard)}
-                    </div>
-                  </div>
-                )}
-                {loadableBettor.length > 0 && (
-                  <div>
-                    <h3 className="section-heading">Bettor Analytics</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {loadableBettor.map(renderVizCard)}
-                    </div>
-                  </div>
-                )}
-                {loadableOther.length > 0 && (
-                  <div>
-                    <h3 className="section-heading">Additional Visualizations</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {loadableOther.map(renderVizCard)}
-                    </div>
-                  </div>
-                )}
+
+                {renderCategorySection("Model Predictions", sectionMl)}
+                {renderCategorySection("FastF1 Historical Data", sectionFastf1)}
+                {renderCategorySection("Strategy Analysis", sectionAdvanced)}
+                {renderCategorySection("Probability & Market Views", sectionBettor)}
+                {renderCategorySection("Additional Visualizations", sectionOther)}
               </>
             ) : (
               <div>
@@ -1364,8 +1502,8 @@ export default function RaceDetailPage({ round }: Props) {
                   </h3>
                   <p className="text-sm max-w-lg mx-auto mb-4" style={{ color: "var(--text-muted)" }}>
                     {allFailed
-                      ? "The visualization images for this round haven't been generated yet."
-                      : "Run the data pipeline to generate up to 10+ visualizations for this round."
+                      ? "The chart image assets for this round were not found in public/visualizations."
+                      : "Run the pipeline to generate the full analytics package for this Grand Prix."
                     }
                   </p>
                   <div className="inline-block px-4 py-2 rounded-lg text-sm font-mono" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>

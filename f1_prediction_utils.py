@@ -346,6 +346,15 @@ DEFAULT_FEATURE_COLS: list[str] = [
     "PositionTrend",
     "DriverPredictionBias",
     "TeamPredictionBias",
+    "DriverDegComposite",
+    "DriverDegDeltaField",
+    "UndercutEdgeAhead",
+    "OvercutEdgeBehind",
+    "TeamOrderPressure",
+    "TeammateConflictRisk",
+    "FieldPositionVolatility",
+    "LocalBattleIntensity",
+    "DRSOvertakeProbAhead",
 ]
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -977,6 +986,23 @@ def _zscore(series):
     return (values - values.mean()) / std
 
 
+def _env_float(name, default, min_value=None, max_value=None):
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        value = float(default)
+    else:
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            value = float(default)
+
+    if min_value is not None:
+        value = max(float(min_value), value)
+    if max_value is not None:
+        value = min(float(max_value), value)
+    return value
+
+
 def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=0.0):
     """Transform baseline lap-time predictions into more realistic race outcomes."""
     char = CIRCUIT_CHARACTERISTICS.get(circuit_key, {})
@@ -1005,6 +1031,16 @@ def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=
     consistency_weight /= weight_total
     strategy_weight /= weight_total
 
+    # Optional runtime tuning knobs for game-theory postprocessing influence.
+    # Default was calibrated with optimize_game_theory_postprocessing.py on completed rounds 1-3.
+    game_theory_scale = _env_float("F1_GAME_THEORY_POSTPROCESS_SCALE", 1.2, 0.0, 2.5)
+    uncertainty_scale = _env_float(
+        "F1_GAME_THEORY_UNCERTAINTY_SCALE",
+        game_theory_scale,
+        0.0,
+        2.5,
+    )
+
     merged = merged.copy()
     driver_bias_term = (
         _zscore(merged["DriverPredictionBias"])
@@ -1021,6 +1057,41 @@ def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=
         if "TeamFormDelta" in merged.columns
         else 0.0
     )
+    undercut_term = (
+        _zscore(merged["UndercutEdgeAhead"])
+        if "UndercutEdgeAhead" in merged.columns
+        else 0.0
+    )
+    overcut_term = (
+        _zscore(merged["OvercutEdgeBehind"])
+        if "OvercutEdgeBehind" in merged.columns
+        else 0.0
+    )
+    team_order_term = (
+        _zscore(merged["TeamOrderPressure"])
+        if "TeamOrderPressure" in merged.columns
+        else 0.0
+    )
+    teammate_conflict_term = (
+        _zscore(merged["TeammateConflictRisk"])
+        if "TeammateConflictRisk" in merged.columns
+        else 0.0
+    )
+    drs_term = (
+        _zscore(merged["DRSOvertakeProbAhead"])
+        if "DRSOvertakeProbAhead" in merged.columns
+        else 0.0
+    )
+    battle_term = (
+        _zscore(merged["LocalBattleIntensity"])
+        if "LocalBattleIntensity" in merged.columns
+        else 0.0
+    )
+    field_volatility_term = (
+        _zscore(merged["FieldPositionVolatility"])
+        if "FieldPositionVolatility" in merged.columns
+        else 0.0
+    )
 
     merged["RaceProjectionScore"] = (
         _zscore(merged["PredictedLapTime"]) * pace_weight +
@@ -1031,11 +1102,18 @@ def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=
         _zscore(merged["ConsistencyScore"]) * consistency_weight +
         _zscore(merged["PitTimeLoss"]) * strategy_weight +
         _zscore(merged["TyreDegFactor"]) * (strategy_weight * 0.55) -
+        undercut_term * (strategy_weight * 0.30 * game_theory_scale) -
+        overcut_term * (strategy_weight * 0.22 * game_theory_scale) -
+        team_order_term * (0.035 * game_theory_scale) +
+        drs_term * (-0.04 * game_theory_scale) +
+        battle_term * (0.025 * game_theory_scale) +
         _zscore(merged["SeasonMomentum"]) * 0.05 +
         _zscore(merged["GridAdvantage"]) * -0.08 -
         driver_bias_term * 0.07 -
         team_bias_term * 0.05 -
-        team_form_term * 0.04
+        team_form_term * 0.04 +
+        teammate_conflict_term * (0.022 * game_theory_scale) +
+        field_volatility_term * (0.028 * game_theory_scale)
     )
     merged["RaceProjectionTime"] = (
         merged["PredictedLapTime"].min() + 1.15 + _zscore(merged["RaceProjectionScore"]) * 0.85
@@ -1053,6 +1131,9 @@ def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=
         np.abs(merged["PositionTrend"]).fillna(0.0) * 0.18 +
         np.abs(merged.get("DriverPredictionBias", 0.0)) * 0.06 +
         np.abs(merged.get("TeamPredictionBias", 0.0)) * 0.08 +
+        np.abs(merged.get("FieldPositionVolatility", 0.0)) * (0.10 * uncertainty_scale) +
+        np.abs(merged.get("LocalBattleIntensity", 0.0)) * (0.15 * uncertainty_scale) +
+        np.abs(merged.get("TeammateConflictRisk", 0.0)) * (0.08 * uncertainty_scale) +
         volatility
     )
     uncertainty_floor = max(float(np.nanpercentile(raw_uncertainty, 20)), 0.45)
@@ -1073,7 +1154,8 @@ def apply_race_postprocessing(merged, circuit_key="Australia", rain_probability=
     merged["WinProbability"] = (win_weights / max(win_weights.sum(), 1e-9) * 100).round(1)
     print(
         f"✅ Race-aware postprocessing applied "
-        f"(quali={quali_lock_in:.0%}, pace={pace_weight:.0%}, form={form_weight:.0%})."
+        f"(quali={quali_lock_in:.0%}, pace={pace_weight:.0%}, form={form_weight:.0%}, "
+        f"gt-scale={game_theory_scale:.2f})."
     )
     return merged
 

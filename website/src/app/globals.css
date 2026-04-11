@@ -301,6 +301,143 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
+.viz-command-center {
+  border-radius: 22px;
+  border: 1px solid rgba(225, 6, 0, 0.2);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(225, 6, 0, 0.14), transparent 34%),
+    radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.12), transparent 38%),
+    var(--bg-card);
+}
+
+.viz-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #e10600;
+  margin-bottom: 0.35rem;
+}
+
+.viz-metric-tile {
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 14px;
+}
+
+.viz-metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.viz-metric-value {
+  margin-top: 2px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.viz-category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 0.38rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.viz-count-pill {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+}
+
+.viz-insight-list {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.viz-insight-item {
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.55rem 0.75rem;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.viz-card-pro {
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+  padding: 0.7rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.viz-card-pro:hover {
+  transform: translateY(-2px);
+  border-color: rgba(225, 6, 0, 0.24);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.22);
+}
+
+.viz-card-featured {
+  border-color: rgba(225, 6, 0, 0.28);
+  background:
+    linear-gradient(135deg, rgba(225, 6, 0, 0.08), transparent 42%),
+    var(--bg-card);
+}
+
+.viz-card-media-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.viz-card-media {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.viz-card-featured .viz-card-media {
+  min-height: 240px;
+  max-height: 340px;
+}
+
+.viz-card-body {
+  padding: 0.6rem 0.25rem 0.3rem;
+}
+
+.viz-rank-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #111827;
+  background: linear-gradient(135deg, #ffd166, #ff9f1c);
+}
+
 /* Lightbox */
 .lightbox-overlay {
   position: fixed;
