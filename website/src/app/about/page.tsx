@@ -1,3 +1,5 @@
+const ACTIVE_SEASON_YEAR = process.env.NEXT_PUBLIC_F1_SEASON_YEAR || "2026";
+
 export default function AboutPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -15,7 +17,7 @@ export default function AboutPage() {
           About This Project
         </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          How we predict every race of the 2026 Formula 1 season
+          How we predict every race of the {ACTIVE_SEASON_YEAR} Formula 1 season
         </p>
       </div>
 
@@ -23,7 +25,7 @@ export default function AboutPage() {
         <section className="card p-6 sm:p-8">
           <h2 className="section-heading">Overview</h2>
           <p className="leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            This website hosts machine learning-powered predictions for the 2026
+            This website hosts machine learning-powered predictions for the {ACTIVE_SEASON_YEAR}
             Formula 1 season. Every Grand Prix is predicted using an ensemble
             model trained on historical qualifying and race data from 2023-2025
             via the FastF1 API. The predictions include full race

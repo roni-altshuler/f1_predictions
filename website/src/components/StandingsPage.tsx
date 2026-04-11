@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { StandingsData, SeasonData } from "@/types";
 import { fetchStandingsData, fetchSeasonData } from "@/lib/data";
+import { getSeasonYear } from "@/lib/season";
 import StandingsChart from "@/components/charts/StandingsChart";
 
 type Tab = "drivers" | "constructors" | "wdc";
@@ -54,6 +55,8 @@ export default function StandingsPage() {
   }
 
   const completedRounds = season?.completedRounds || [];
+  const seasonYear = getSeasonYear(season);
+  const totalRounds = season?.totalRounds ?? 24;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
@@ -69,16 +72,16 @@ export default function StandingsPage() {
           className="text-3xl sm:text-4xl font-black tracking-tight mb-2"
           style={{ color: "var(--text)" }}
         >
-          2026 Standings
+          {seasonYear} Standings
         </h1>
         <p style={{ color: "var(--text-muted)" }}>
-          After Round {data.lastUpdatedRound} of 24
+          After Round {data.lastUpdatedRound} of {totalRounds}
         </p>
         <div className="progress-bar w-48 mx-auto mt-3 h-2">
           <div
             className="progress-bar-fill"
             style={{
-              width: `${(data.lastUpdatedRound / 24) * 100}%`,
+              width: `${(data.lastUpdatedRound / totalRounds) * 100}%`,
               background: "#E10600",
             }}
           />

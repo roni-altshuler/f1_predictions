@@ -48,7 +48,7 @@ export default function CalendarPage() {
       {/* Header */}
       <div className="text-center mb-4">
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2" style={{ color: "var(--text)" }}>
-          2026 Season Calendar
+          {season.season} Season Calendar
         </h1>
         <p style={{ color: "var(--text-muted)" }}>
           {season.totalRounds} Grand Prix • {completedCount} forecasts published • {officialCount} official result{officialCount !== 1 ? "s" : ""}

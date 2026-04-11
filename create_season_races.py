@@ -2,7 +2,7 @@
 """
 create_season_races.py
 ======================
-Generates a prediction script for each of the 24 rounds of the 2026 season.
+Generates a prediction script for each round of the configured season.
 
 Usage:
     python create_season_races.py
@@ -20,7 +20,7 @@ import sys
 # Add project root to path
 sys.path.insert(0, os.path.dirname(__file__))
 from f1_prediction_utils import (
-    CALENDAR_2026, CIRCUIT_CHARACTERISTICS, DRIVER_QUALI_OFFSET,
+    CALENDAR, SEASON_YEAR, CIRCUIT_CHARACTERISTICS, DRIVER_QUALI_OFFSET,
     generate_qualifying_estimates,
 )
 
@@ -102,7 +102,7 @@ def generate_race_file(round_num, info):
     quali_str += "}"
 
     content = f'''# %% [markdown]
-# # 🏁 2026 {name} — Prediction
+# # 🏁 {SEASON_YEAR} {name} — Prediction
 # **Round {round_num}** | Circuit: {info["circuit"]} | Date: {info["date"]}
 
 # %% — Setup
@@ -135,7 +135,7 @@ merged = build_training_dataset(grid, driver_stats,
                                 current_round=GP_ROUND)
 
 # %% — Get qualifying data (auto-fetch or estimates)
-qualifying_times = get_qualifying_or_estimates(2026, GP_NAME, QUALIFYING_ESTIMATES)
+qualifying_times = get_qualifying_or_estimates({SEASON_YEAR}, GP_NAME, QUALIFYING_ESTIMATES)
 merged = apply_qualifying_data(merged, qualifying_times,
                                rain_probability=RAIN_PROB,
                                temperature_c=TEMPERATURE)
@@ -165,9 +165,9 @@ print("\\n✅ {name} prediction complete!")
 
 def main():
     os.makedirs("races", exist_ok=True)
-    print("🏗️  Generating 2026 season prediction scripts …\n")
+    print(f"🏗️  Generating {SEASON_YEAR} season prediction scripts …\n")
 
-    for rnd, info in sorted(CALENDAR_2026.items()):
+    for rnd, info in sorted(CALENDAR.items()):
         fname = f"round_{rnd:02d}_{_safe(info['gp_key']).lower()}_gp.py"
         path  = os.path.join("races", fname)
         content = generate_race_file(rnd, info)
@@ -175,7 +175,7 @@ def main():
             f.write(content)
         print(f"  ✅ {path:<50s}  Round {rnd:>2}: {info['name']}")
 
-    print(f"\n🏁 24 race prediction scripts generated in ./races/")
+    print(f"\n🏁 {len(CALENDAR)} race prediction scripts generated in ./races/")
     print("   Run any race with:  python races/round_XX_<gp>_gp.py")
 
 

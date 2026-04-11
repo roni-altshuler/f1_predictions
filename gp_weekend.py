@@ -55,8 +55,14 @@ DATA_DIR = os.path.join(WEBSITE_DIR, "public", "data")
 
 def _load_calendar():
     """Load the calendar lazily from f1_prediction_utils."""
-    from f1_prediction_utils import CALENDAR_2026
-    return CALENDAR_2026
+    from f1_prediction_utils import CALENDAR
+    return CALENDAR
+
+
+def _season_year():
+    """Load the active season year lazily from f1_prediction_utils."""
+    from f1_prediction_utils import SEASON_YEAR
+    return int(SEASON_YEAR)
 
 
 def _utc_today():
@@ -170,14 +176,16 @@ def _detect_phase(round_num):
     enable_cache()
 
     if today >= race_date:
-        # Check if race data is available (2026)
-        if _session_available(2026, gp_key, "R"):
+        season_year = _season_year()
+        # Check if race data is available for the configured season.
+        if _session_available(season_year, gp_key, "R"):
             print("   ✅ Race data available → post-race")
             return "post-race"
 
-    # Check if qualifying data is available (2026)
+    # Check if qualifying data is available for the configured season.
     if today >= race_date - timedelta(days=1):
-        if _session_available(2026, gp_key, "Q"):
+        season_year = _season_year()
+        if _session_available(season_year, gp_key, "Q"):
             print("   ✅ Qualifying data available → post-quali")
             return "post-quali"
 
@@ -243,7 +251,7 @@ def run_post_qualifying(round_num, skip_build=False):
 
     from export_website_data import (
         export_round_data, export_standings, export_season_metadata,
-        _run_advanced, _generate_fastf1_viz, ROUNDS_DIR, CALENDAR_2026, VIZ_DIR
+        _run_advanced, _generate_fastf1_viz, ROUNDS_DIR, CALENDAR, VIZ_DIR
     )
     import json
 
@@ -260,9 +268,10 @@ def run_post_qualifying(round_num, skip_build=False):
 
     # Generate FastF1 historical visualizations
     print("\n🏎️  Generating FastF1 visualizations...")
-    gp_key = CALENDAR_2026[round_num]["gp_key"]
+    gp_key = CALENDAR[round_num]["gp_key"]
+    season_year = _season_year()
     try:
-        extra = _generate_fastf1_viz(round_num, gp_key, 2026)
+        extra = _generate_fastf1_viz(round_num, gp_key, season_year)
         if extra:
             round_data["visualizations"].extend(extra)
             path = os.path.join(ROUNDS_DIR, f"round_{round_num:02d}.json")
@@ -299,7 +308,7 @@ def run_post_race(round_num, skip_build=False):
     _print_banner(f"PHASE 3: POST-RACE RESULTS (Round {round_num})")
 
     from f1_prediction_utils import (
-        CALENDAR_2026, enable_cache, save_race_result
+        CALENDAR, enable_cache, save_race_result
     )
     from advanced_models import SeasonTracker
     from export_website_data import (
@@ -309,12 +318,12 @@ def run_post_race(round_num, skip_build=False):
     import pandas as pd
 
     enable_cache()
-    info = CALENDAR_2026[round_num]
+    info = CALENDAR[round_num]
     gp_key = info["gp_key"]
 
     # Fetch actual race results from FastF1
     print("🏁 Fetching actual race results from FastF1...")
-    actual_results = _fetch_actual_race_results(gp_key)
+    actual_results = _fetch_actual_race_results(gp_key, year=_season_year())
 
     if not actual_results:
         print("⚠️  Could not fetch race results. Session may not be available yet.")
@@ -390,15 +399,16 @@ def run_post_race(round_num, skip_build=False):
     return actual_results
 
 
-def _fetch_actual_race_results(gp_key):
+def _fetch_actual_race_results(gp_key, year=None):
     """Fetch actual race classification from FastF1."""
+    season_year = _season_year() if year is None else int(year)
     try:
         import fastf1
         import pandas as pd
         import concurrent.futures
 
         def _load():
-            s = fastf1.get_session(2026, gp_key, "R")
+            s = fastf1.get_session(season_year, gp_key, "R")
             s.load(laps=False, telemetry=False, weather=False, messages=False)
             return s
 

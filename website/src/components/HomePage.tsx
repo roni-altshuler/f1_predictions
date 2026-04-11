@@ -102,7 +102,7 @@ export default function HomePage() {
         <motion.section className="text-center mb-20" initial="hidden" animate="visible" variants={stagger}>
           <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold mb-8" style={{ background: "rgba(225,6,0,0.1)", color: "#E10600", border: "1px solid rgba(225,6,0,0.2)" }}>
             <span className="w-2 h-2 bg-f1-red rounded-full animate-pulse" />
-            2026 SEASON
+            {season.season} SEASON
           </motion.div>
           <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl lg:text-7xl font-black mb-6 tracking-tight leading-[0.95]">
             <span style={{ color: "var(--text)" }}>F1 Race</span>
@@ -376,7 +376,7 @@ export default function HomePage() {
           <motion.div variants={fadeUp} className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black" style={{ color: "var(--text)" }}>Season Calendar</h2>
-              <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>All {season.totalRounds} races in the 2026 season</p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>All {season.totalRounds} races in the {season.season} season</p>
             </div>
             <Link href="/calendar" className="text-f1-red text-sm font-bold hover:underline inline-flex items-center gap-1 group">
               View All <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>

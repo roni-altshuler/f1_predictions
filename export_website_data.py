@@ -35,7 +35,7 @@ WEBSITE_DIR = os.path.join(PROJECT_ROOT, "website")
 DATA_DIR   = os.path.join(WEBSITE_DIR, "public", "data")
 VIZ_DIR    = os.path.join(WEBSITE_DIR, "public", "visualizations")
 ROUNDS_DIR = os.path.join(DATA_DIR, "rounds")
-TRACKER_FILE = os.path.join(PROJECT_ROOT, "season_tracker_2026.json")
+TRACKER_FILE = os.path.join(PROJECT_ROOT, f"season_tracker_{SEASON_YEAR}.json")
 TRACKER_EXPORT_FILE = os.path.join(DATA_DIR, "season_tracker.json")
 
 VIZ_METADATA = {
@@ -248,10 +248,10 @@ def _compute_round_accuracy(classification_rows, actual_results):
 
 
 def _sanitize_telemetry_payload(telemetry):
-    """Drop telemetry rows for drivers outside the 2026 grid."""
+    """Drop telemetry rows for drivers outside the active season grid."""
     if not isinstance(telemetry, dict):
         return telemetry
-    valid = set(DRIVER_TEAM_2026.keys())
+    valid = set(DRIVER_TEAM.keys())
 
     def _filter_rows(rows):
         if not isinstance(rows, list):
@@ -479,7 +479,7 @@ def export_season_metadata():
 
     # ── Calendar (RaceCalendarEntry[]) ──
     calendar = []
-    for rnd, info in sorted(CALENDAR_2026.items()):
+    for rnd, info in sorted(CALENDAR.items()):
         char = CIRCUIT_CHARACTERISTICS.get(info["gp_key"], {})
         calendar.append({
             "round":        rnd,
@@ -507,11 +507,11 @@ def export_season_metadata():
 
     # ── Drivers (DriverInfo[]) ──
     drivers = []
-    for code, team in DRIVER_TEAM_2026.items():
+    for code, team in DRIVER_TEAM.items():
         drivers.append({
             "code":      code,
             "fullName":  DRIVER_FULL_NAMES.get(code, code),
-            "number":    DRIVER_NUMBERS_2026.get(code, 0),
+            "number":    DRIVER_NUMBERS.get(code, 0),
             "team":      team,
             "teamColor": TEAM_COLOURS.get(team, "#888888"),
         })
@@ -530,14 +530,14 @@ def export_season_metadata():
 
     # ── Completed rounds (detect from existing round files) ──
     completed = []
-    for rnd in range(1, 25):
+    for rnd in range(1, len(CALENDAR) + 1):
         path = os.path.join(ROUNDS_DIR, f"round_{rnd:02d}.json")
         if os.path.exists(path):
             completed.append(rnd)
 
     season = {
-        "season":          2026,
-        "totalRounds":     24,
+        "season":          SEASON_YEAR,
+        "totalRounds":     len(CALENDAR),
         "calendar":        calendar,
         "drivers":         drivers,
         "teams":           teams,
@@ -563,7 +563,7 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
     If use_weather_api=True, fetches real-time weather from Open-Meteo API.
     If use_telemetry=True, extracts speed trap and sector time data from FastF1."""
     _ensure_dirs()
-    info    = CALENDAR_2026[round_num]
+    info    = CALENDAR[round_num]
     gp_key  = info["gp_key"]
     gp_name = info["name"]
     weather = GP_WEATHER.get(gp_key, {"rain": 0.10, "temp": 22})
@@ -600,7 +600,7 @@ def export_round_data(round_num, return_merged=False, use_lstm=False,
                                              current_round=round_num,
                                              sprint=info.get("sprint", False))
     quali_estimates = generate_qualifying_estimates(gp_key)
-    quali           = get_qualifying_or_estimates(2026, gp_key, quali_estimates)
+    quali           = get_qualifying_or_estimates(SEASON_YEAR, gp_key, quali_estimates)
     merged          = apply_qualifying_data(merged, quali,
                                             rain_probability=weather["rain"],
                                             temperature_c=weather["temp"],
@@ -869,7 +869,7 @@ def _export_visualizations(results, merged, classification, out_dir, gp_name):
             unc = pd.Series(np.full(n, 0.8))
         unc = unc.clip(lower=0.20, upper=2.50).to_numpy(dtype=float)
 
-        rng = np.random.default_rng(2026 + (abs(hash(gp_name)) % 1000))
+        rng = np.random.default_rng(SEASON_YEAR + (abs(hash(gp_name)) % 1000))
         positions = np.zeros((n_sims, n), dtype=np.int16)
         for i in range(n_sims):
             sim_times = base + rng.normal(0.0, unc)
@@ -897,7 +897,7 @@ def _export_visualizations(results, merged, classification, out_dir, gp_name):
                    color=colours, edgecolor=theme["bg"], height=0.72, linewidth=0.4)
     _style_axis(
         ax,
-        f"2026 {gp_name} Race Pace Projection",
+        f"{SEASON_YEAR} {gp_name} Race Pace Projection",
         xlabel="Predicted Average Lap Time (s)",
         ylabel="Driver",
     )
@@ -1270,17 +1270,17 @@ def export_standings():
             constructor_pts_per_rnd[team_name] = []
 
     # Accumulators
-    driver_pts         = {code: 0 for code in DRIVER_TEAM_2026}
-    driver_wins        = {code: 0 for code in DRIVER_TEAM_2026}
-    driver_podiums     = {code: 0 for code in DRIVER_TEAM_2026}
-    driver_pts_per_rnd = {code: [] for code in DRIVER_TEAM_2026}
+    driver_pts         = {code: 0 for code in DRIVER_TEAM}
+    driver_wins        = {code: 0 for code in DRIVER_TEAM}
+    driver_podiums     = {code: 0 for code in DRIVER_TEAM}
+    driver_pts_per_rnd = {code: [] for code in DRIVER_TEAM}
     constructor_pts    = {team: 0 for team in TEAM_COLOURS}
     constructor_wins   = {team: 0 for team in TEAM_COLOURS}
     constructor_pts_per_rnd = {team: [] for team in TEAM_COLOURS}
     last_round = 0
 
     # Iterate over completed round files
-    for rnd in range(1, 25):
+    for rnd in range(1, len(CALENDAR) + 1):
         path = os.path.join(ROUNDS_DIR, f"round_{rnd:02d}.json")
         if not os.path.exists(path):
             continue
@@ -1292,7 +1292,7 @@ def export_standings():
         if isinstance(data.get("actualResults"), dict) and data["actualResults"]:
             actual_rows = sorted(data["actualResults"].items(), key=lambda x: x[1])
             for drv, pos in actual_rows:
-                team = DRIVER_TEAM_2026.get(drv, "Unknown")
+                team = DRIVER_TEAM.get(drv, "Unknown")
                 pts = F1_POINTS.get(int(pos), 0)
                 _ensure_team(team)
                 driver_pts[drv] = driver_pts.get(drv, 0) + pts
@@ -1318,17 +1318,17 @@ def export_standings():
                     driver_podiums[drv] = driver_podiums.get(drv, 0) + 1
 
         # Record cumulative snapshot after this round
-        for code in DRIVER_TEAM_2026:
+        for code in DRIVER_TEAM:
             driver_pts_per_rnd[code].append(driver_pts[code])
         for team in constructor_pts:
             constructor_pts_per_rnd[team].append(constructor_pts[team])
 
     # ── DriverStanding[] ──
     driver_list = []
-    sorted_drivers = sorted(DRIVER_TEAM_2026.keys(),
+    sorted_drivers = sorted(DRIVER_TEAM.keys(),
                             key=lambda d: (-driver_pts[d], -driver_wins[d]))
     for i, code in enumerate(sorted_drivers, start=1):
-        team = DRIVER_TEAM_2026[code]
+        team = DRIVER_TEAM[code]
         driver_list.append({
             "position":       i,
             "driver":         code,
@@ -1348,7 +1348,7 @@ def export_standings():
                                                 -constructor_wins[t]))
     for i, team in enumerate(sorted_constructors, start=1):
         team_drivers = [d for d in sorted_drivers
-                        if DRIVER_TEAM_2026[d] == team]
+                        if DRIVER_TEAM[d] == team]
         constructor_list.append({
             "position":      i,
             "team":          team,
@@ -1360,7 +1360,7 @@ def export_standings():
         })
 
     # ── WDCPossibility[] ──
-    remaining_rounds  = 24 - last_round
+    remaining_rounds  = max(len(CALENDAR) - last_round, 0)
     max_remaining_pts = remaining_rounds * 26  # 25 (win) + 1 (fastest lap)
     leader_pts_val    = driver_list[0]["points"] if driver_list else 0
     wdc_possibility   = []
@@ -1454,7 +1454,7 @@ def _run_advanced(round_data, merged):
 
 def main():
     parser = argparse.ArgumentParser(description="Export F1 prediction data for website")
-    parser.add_argument("--round",    type=int, help="Export specific round (1-24)")
+    parser.add_argument("--round",    type=int, help="Export specific round")
     parser.add_argument("--all",      action="store_true", help="Export all rounds")
     parser.add_argument("--metadata", action="store_true", help="Export season metadata only")
     parser.add_argument("--fastf1",   action="store_true",
@@ -1476,7 +1476,7 @@ def main():
                                                 use_weather_api=args.weather,
                                                 use_telemetry=args.telemetry)
         if args.fastf1:
-            gp_key = CALENDAR_2026[args.round]["gp_key"]
+            gp_key = CALENDAR[args.round]["gp_key"]
             extra = _generate_fastf1_viz(args.round, gp_key, args.fastf1_year)
             if extra:
                 round_data["visualizations"].extend(extra)
@@ -1491,7 +1491,7 @@ def main():
         if args.weather:
             try:
                 from weather_api import export_weather_for_website
-                export_weather_for_website(CALENDAR_2026)
+                export_weather_for_website(CALENDAR)
             except Exception as e:
                 print(f"  ⚠️  Weather export failed: {e}")
         export_standings()
@@ -1499,14 +1499,14 @@ def main():
     elif args.all:
         # Process rounds SEQUENTIALLY — each round's prediction feeds the
         # next round's race-to-race features (v3 architecture).
-        for rnd in range(1, 25):
+        for rnd in range(1, len(CALENDAR) + 1):
             try:
                 rd, merged = export_round_data(rnd, return_merged=True,
                                                 use_lstm=args.advanced,
                                                 use_weather_api=args.weather,
                                                 use_telemetry=args.telemetry)
                 if args.fastf1:
-                    gp_key = CALENDAR_2026[rnd]["gp_key"]
+                    gp_key = CALENDAR[rnd]["gp_key"]
                     extra = _generate_fastf1_viz(rnd, gp_key, args.fastf1_year)
                     if extra:
                         rd["visualizations"].extend(extra)
@@ -1523,7 +1523,7 @@ def main():
         if args.weather:
             try:
                 from weather_api import export_weather_for_website
-                export_weather_for_website(CALENDAR_2026)
+                export_weather_for_website(CALENDAR)
             except Exception as e:
                 print(f"  ⚠️  Weather export failed: {e}")
         export_standings()

@@ -1,7 +1,7 @@
 """
 report_results.py
 =================
-Generate a full race-results report for the 2026 Australian Grand Prix.
+Generate a full race-results report for the configured-season Australian Grand Prix.
 
 Outputs:
   1. Predicted finishing order with championship points (P1–P22)
@@ -36,7 +36,7 @@ QUALIFYING_ESTIMATES = {
     "OCO": 76.10, "BEA": 76.00, "HUL": 76.20, "BOR": 76.60,
     "PER": 75.40, "BOT": 76.35,
 }
-quali   = get_qualifying_or_estimates(2026, GP_NAME, QUALIFYING_ESTIMATES)
+quali   = get_qualifying_or_estimates(SEASON_YEAR, GP_NAME, QUALIFYING_ESTIMATES)
 merged  = apply_qualifying_data(merged, quali, rain_probability=0.10, temperature_c=25.0)
 
 results = train_ensemble(merged, max_spread_s=3.5)  # v2: calibrated spread
@@ -57,7 +57,7 @@ constructor_pts.columns = ["Team", "Points"]
 constructor_pts.index += 1
 constructor_pts.index.name = "Pos"
 
-print("\n  🏗️  CONSTRUCTOR STANDINGS — 2026 AUSTRALIAN GP")
+print(f"\n  🏗️  CONSTRUCTOR STANDINGS — {SEASON_YEAR} AUSTRALIAN GP")
 print("  " + "-" * 40)
 for pos, row in constructor_pts.iterrows():
     print(f"  {pos:>3}.  {row['Team']:<18s}  {row['Points']:>3} pts")

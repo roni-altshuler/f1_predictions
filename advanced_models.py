@@ -37,10 +37,10 @@ warnings.filterwarnings("ignore")
 
 # Import constants from the base utils
 from f1_prediction_utils import (
-    TEAM_COLOURS, DRIVER_TEAM_2026, DRIVER_FULL_NAMES,
-    CALENDAR_2026, CIRCUIT_CHARACTERISTICS, TEAM_PIT_SPEED,
+    TEAM_COLOURS, DRIVER_TEAM, DRIVER_FULL_NAMES,
+    CALENDAR, CIRCUIT_CHARACTERISTICS, TEAM_PIT_SPEED,
     F1_POINTS,
-    WEBSITE_DATA_DIR,
+    WEBSITE_DATA_DIR, SEASON_YEAR,
 )
 
 
@@ -230,7 +230,7 @@ def plot_pit_strategy_comparison(strategy_results, gp_name, out_dir,
 
     ax.set_xlabel("Lap", fontsize=13, color="white")
     ax.set_ylabel("Lap Time (s)", fontsize=13, color="white")
-    ax.set_title(f"Pit Strategy Comparison — 2026 {gp_name}",
+    ax.set_title(f"Pit Strategy Comparison — {SEASON_YEAR} {gp_name}",
                  fontsize=16, fontweight="bold", color="white")
     ax.legend(fontsize=10, facecolor="#1a1a2e", edgecolor="white",
               labelcolor="white", loc="upper right")
@@ -340,7 +340,7 @@ def plot_tyre_degradation_curves(curves, gp_name, out_dir, total_laps):
     ax.set_xlabel("Lap Number", fontsize=13, color="white")
     ax.set_ylabel("Degradation (s slower than fresh tyre)", fontsize=13,
                   color="white")
-    ax.set_title(f"Tyre Degradation Model — 2026 {gp_name}",
+    ax.set_title(f"Tyre Degradation Model — {SEASON_YEAR} {gp_name}",
                  fontsize=16, fontweight="bold", color="white")
     ax.legend(fontsize=11, facecolor="#1a1a2e", edgecolor="white",
               labelcolor="white")
@@ -779,7 +779,7 @@ def compute_lstm_grid_predictions(merged, gp_key, years=[2023, 2024, 2025],
     This function is the bridge that makes LSTM a true ensemble member.
     It loads historical race data from FastF1, builds per-driver feature
     sequences across years, trains the LSTM, and predicts qualifying times
-    for the 2026 grid.
+    for the configured season grid.
 
     Parameters
     ----------
@@ -880,7 +880,7 @@ def compute_lstm_grid_predictions(merged, gp_key, years=[2023, 2024, 2025],
     if info is None:
         return _analytical_lstm_fallback(merged)
 
-    # Predict for 2026 grid: build feature sequences for each driver
+    # Predict for configured season grid: build feature sequences for each driver
     predictions = np.zeros(len(merged))
     for i, row in merged.iterrows():
         drv = row["Driver"]
@@ -963,7 +963,7 @@ class SeasonTracker:
     """
 
     PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-    TRACKER_FILE = os.path.join(PROJECT_ROOT, "season_tracker_2026.json")
+    TRACKER_FILE = os.path.join(PROJECT_ROOT, f"season_tracker_{SEASON_YEAR}.json")
     WEBSITE_TRACKER_FILE = os.path.join(WEBSITE_DATA_DIR, "season_tracker.json")
 
     def __init__(self):
@@ -1013,7 +1013,7 @@ class SeasonTracker:
                     continue
                 drv = entry.get("driver")
                 pos = entry.get("position")
-                team = entry.get("team", DRIVER_TEAM_2026.get(drv, "Unknown"))
+                team = entry.get("team", DRIVER_TEAM.get(drv, "Unknown"))
                 try:
                     self.data["rounds"][rnd]["predicted"][str(drv)] = {
                         "position": int(pos),
@@ -1060,7 +1060,7 @@ class SeasonTracker:
                 continue
             drv = entry.get("driver")
             pos = entry.get("position")
-            team = entry.get("team", DRIVER_TEAM_2026.get(drv, "Unknown"))
+            team = entry.get("team", DRIVER_TEAM.get(drv, "Unknown"))
             try:
                 self.data["rounds"][rnd]["predicted"][str(drv)] = {
                     "position": int(pos),
@@ -1133,7 +1133,7 @@ class SeasonTracker:
             p_pos = int(predicted[drv]["position"])
             a_pos = int(actual[drv]["position"])
             delta = p_pos - a_pos
-            team = predicted[drv].get("team") or DRIVER_TEAM_2026.get(drv, "Unknown")
+            team = predicted[drv].get("team") or DRIVER_TEAM.get(drv, "Unknown")
             rows.append({
                 "driver": drv,
                 "team": team,
@@ -1181,7 +1181,7 @@ class SeasonTracker:
 
         return {
             "round": int(round_num),
-            "name": CALENDAR_2026.get(int(round_num), {}).get("name", f"Round {round_num}"),
+            "name": CALENDAR.get(int(round_num), {}).get("name", f"Round {round_num}"),
             "comparedDrivers": len(rows),
             "meanError": round(float(np.mean(diffs)), 2),
             "medianError": round(float(np.median(diffs)), 2),
@@ -1320,7 +1320,7 @@ def generate_advanced_features(round_num, classification_data, merged,
     dict with keys: extra_visualizations (list[str]), strategy_data, tyre_data,
                     lstm_data, tracker_data
     """
-    info = CALENDAR_2026[round_num]
+    info = CALENDAR[round_num]
     gp_key = info["gp_key"]
     total_laps = info["laps"]
     if gp_name is None:
@@ -1339,7 +1339,7 @@ def generate_advanced_features(round_num, classification_data, merged,
         p1_driver = classification_data[0]["driver"]
         p1_time = classification_data[0]["predictedTime"]
         pit_loss = TEAM_PIT_SPEED.get(
-            DRIVER_TEAM_2026.get(p1_driver, ""), 2.5) + 20.0  # pit lane + stop
+            DRIVER_TEAM.get(p1_driver, ""), 2.5) + 20.0  # pit lane + stop
 
         strategies = get_default_strategies(total_laps, gp_key)
         strategy_results = simulate_pit_strategy(

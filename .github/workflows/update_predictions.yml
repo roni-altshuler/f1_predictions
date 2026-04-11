@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       round:
-        description: "Round number (1-24), or 'next' for upcoming round"
+        description: "Round number, or 'next' for upcoming round"
         required: true
         default: "next"
       phase:
@@ -33,6 +33,9 @@ permissions:
   contents: write
   pages: write
   id-token: write
+
+env:
+  F1_SEASON_YEAR: ${{ vars.F1_SEASON_YEAR || '2026' }}
 
 jobs:
   predict:
@@ -124,17 +127,26 @@ jobs:
 
       - name: Generate labeled circuit maps for all rounds
         if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
-        run: python generate_fastf1_viz.py --all-circuits --year 2026
+        run: |
+          SEASON_YEAR="${F1_SEASON_YEAR:-2026}"
+          python generate_fastf1_viz.py --all-circuits --year "$SEASON_YEAR"
 
       - name: Commit updated data
         if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          SEASON_YEAR="${F1_SEASON_YEAR:-2026}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f website/public/data/ website/public/visualizations/ \
-                     predicted_results_2026.json
+          git add -f website/public/data/ website/public/visualizations/
+          for f in "predicted_results_${SEASON_YEAR}.json" \
+                   "season_results_${SEASON_YEAR}.json" \
+                   "season_tracker_${SEASON_YEAR}.json"; do
+            if [ -f "$f" ]; then
+              git add -f "$f"
+            fi
+          done
           git add races/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No changes to commit"

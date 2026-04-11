@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { SeasonTrackerData, SeasonData } from "@/types";
 import { fetchSeasonTrackerData, fetchSeasonData } from "@/lib/data";
+import { getSeasonYear } from "@/lib/season";
 
 export default function AccuracyDashboardPage() {
   const [tracker, setTracker] = useState<SeasonTrackerData | null>(null);
@@ -70,6 +71,7 @@ export default function AccuracyDashboardPage() {
   const roundsWithoutActual = tracker.rounds.filter((r) => !r.hasActual);
   const hasActualResults = roundsWithActual.length > 0;
   const gpReports = tracker.gpReports || [];
+  const seasonYear = getSeasonYear(season);
 
   const getRoundName = (round: number) => {
     if (!season) return `Round ${round}`;
@@ -100,7 +102,7 @@ export default function AccuracyDashboardPage() {
         </h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
           Track how our ML model predictions compare to actual race results
-          across the 2026 season
+          across the {seasonYear} season
         </p>
       </motion.div>
 

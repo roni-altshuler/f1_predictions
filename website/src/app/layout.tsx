@@ -4,10 +4,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
 
+const ACTIVE_SEASON_YEAR = process.env.NEXT_PUBLIC_F1_SEASON_YEAR || "2026";
+
 export const metadata: Metadata = {
-  title: "F1 2026 Predictions | AI-Powered Race Forecasts",
+  title: `F1 ${ACTIVE_SEASON_YEAR} Predictions | AI-Powered Race Forecasts`,
   description:
-    "AI and machine learning-powered Formula 1 2026 season predictions. " +
+    `AI and machine learning-powered Formula 1 ${ACTIVE_SEASON_YEAR} season predictions. ` +
     "Race classifications, championship standings, pit strategy simulations, " +
     "and professional visualizations for every Grand Prix.",
 };

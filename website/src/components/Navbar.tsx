@@ -7,6 +7,7 @@ import { useTheme } from "./ThemeProvider";
 import { SeasonData, SeasonTrackerData } from "@/types";
 import CountryFlag from "@/components/CountryFlag";
 import { fetchSeasonData, fetchSeasonTrackerData, getRoundLifecycle, getRoundStatusMeta } from "@/lib/data";
+import { DEFAULT_SEASON_YEAR } from "@/lib/season";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -67,7 +68,7 @@ export default function Navbar() {
             </div>
             <div className="hidden sm:block">
               <p className="text-sm font-bold leading-tight" style={{ color: "var(--text)" }}>
-                2026 PREDICTIONS
+                {season?.season ?? DEFAULT_SEASON_YEAR} PREDICTIONS
               </p>
               <p className="text-[10px] uppercase tracking-widest leading-tight" style={{ color: "var(--text-muted)" }}>
                 AI-Powered Forecasts

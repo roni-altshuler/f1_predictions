@@ -25,6 +25,7 @@ import {
   getRoundLifecycle,
   getRoundStatusMeta,
 } from "@/lib/data";
+import { DEFAULT_SEASON_YEAR } from "@/lib/season";
 
 type Tab = "classification" | "analysis" | "strategy" | "visualizations";
 
@@ -75,8 +76,8 @@ const VIZ_CATEGORIES = [
   },
 ];
 
-function getYouTubeSearchUrl(raceName: string, type: string): string {
-  const q = encodeURIComponent(`Formula 1 2026 ${raceName} ${type} highlights`);
+function getYouTubeSearchUrl(raceName: string, type: string, seasonYear: number): string {
+  const q = encodeURIComponent(`Formula 1 ${seasonYear} ${raceName} ${type} highlights`);
   return `https://www.youtube.com/results?search_query=${q}`;
 }
 
@@ -108,6 +109,7 @@ export default function RaceDetailPage({ round }: Props) {
   }
 
   const seasonRace = season?.calendar.find((r) => r.round === round) || null;
+  const seasonYear = season?.season ?? DEFAULT_SEASON_YEAR;
   const liveMeta = seasonRace
     ? getRoundStatusMeta(getRoundLifecycle(seasonRace, !!data, !!data?.actualResults))
     : null;
@@ -177,7 +179,7 @@ export default function RaceDetailPage({ round }: Props) {
             {["Free Practice", "Qualifying", "Race"].map((type) => (
               <a
                 key={type}
-                href={getYouTubeSearchUrl(raceName, type)}
+                href={getYouTubeSearchUrl(raceName, type, seasonYear)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:scale-[1.03]"
@@ -199,7 +201,7 @@ export default function RaceDetailPage({ round }: Props) {
       <div className="max-w-6xl mx-auto px-4 py-20 text-center">
         <div className="text-5xl mb-6">🏁</div>
         <h1 className="text-3xl font-black mb-4" style={{ color: "var(--text)" }}>Race Not Found</h1>
-        <p className="mb-6" style={{ color: "var(--text-muted)" }}>Round {round} is outside the 2026 calendar.</p>
+        <p className="mb-6" style={{ color: "var(--text-muted)" }}>Round {round} is outside the {seasonYear} calendar.</p>
         <Link href="/calendar" className="text-f1-red font-bold hover:underline">← Back to Calendar</Link>
       </div>
     );
@@ -505,7 +507,7 @@ export default function RaceDetailPage({ round }: Props) {
         ].map((yt) => (
           <a
             key={yt.label}
-            href={getYouTubeSearchUrl(data.name, yt.type)}
+            href={getYouTubeSearchUrl(data.name, yt.type, seasonYear)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:scale-[1.03]"

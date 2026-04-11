@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DEFAULT_SEASON_YEAR } from "@/lib/season";
 
 const NEWS_OUTLETS = [
   { name: "Formula1.com", url: "https://www.formula1.com/en/latest" },
@@ -40,7 +41,7 @@ export default function Footer() {
                   className="text-sm font-bold"
                   style={{ color: "var(--text)" }}
                 >
-                  2026 Predictions
+                  {DEFAULT_SEASON_YEAR} Predictions
                 </p>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                   AI-Powered Forecasts
@@ -178,7 +179,7 @@ export default function Footer() {
           }}
         >
           <span>
-            &copy; 2026 F1 Predictions. Not affiliated with Formula 1.
+            &copy; {DEFAULT_SEASON_YEAR} F1 Predictions. Not affiliated with Formula 1.
           </span>
           <div className="flex items-center gap-4">
             <span>Data via FastF1 API</span>

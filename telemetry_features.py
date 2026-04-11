@@ -10,8 +10,8 @@ These are exported as JSON fields inside each round file
 for the website to display.
 
 Usage:
-    python telemetry_features.py --round 1 --year 2025
-    python telemetry_features.py --all --year 2025
+    python telemetry_features.py --round 1 --year <season-year>
+    python telemetry_features.py --all --year <season-year>
 """
 
 import argparse
@@ -26,10 +26,11 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, os.path.dirname(__file__))
 from f1_prediction_utils import (
-    CALENDAR_2026,
+    CALENDAR,
     TEAM_COLOURS,
-    DRIVER_TEAM_2026,
+    DRIVER_TEAM,
     DRIVER_FULL_NAMES,
+    SEASON_YEAR,
 )
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -71,7 +72,7 @@ def extract_speed_traps(year: int, gp_key: str, session_type: str = "Q") -> list
     drivers = session.laps["Driver"].unique()
 
     for driver in drivers:
-        if driver not in DRIVER_TEAM_2026:
+        if driver not in DRIVER_TEAM:
             continue
         driver_laps = session.laps.pick_drivers(driver)
         fastest = driver_laps.pick_fastest()
@@ -85,7 +86,7 @@ def extract_speed_traps(year: int, gp_key: str, session_type: str = "Q") -> list
         except Exception:
             continue
 
-        team = DRIVER_TEAM_2026.get(driver, "Unknown")
+        team = DRIVER_TEAM.get(driver, "Unknown")
         team_color = TEAM_COLOURS.get(team, "#888888")
 
         # Divide telemetry into approximate thirds for sectors
@@ -135,7 +136,7 @@ def extract_sector_times(year: int, gp_key: str, session_type: str = "Q") -> lis
     drivers = session.laps["Driver"].unique()
 
     for driver in drivers:
-        if driver not in DRIVER_TEAM_2026:
+        if driver not in DRIVER_TEAM:
             continue
         driver_laps = session.laps.pick_drivers(driver)
 
@@ -153,7 +154,7 @@ def extract_sector_times(year: int, gp_key: str, session_type: str = "Q") -> lis
         best_s3 = s3_times.min().total_seconds()
         ideal_lap = best_s1 + best_s2 + best_s3
 
-        team = DRIVER_TEAM_2026.get(driver, "Unknown")
+        team = DRIVER_TEAM.get(driver, "Unknown")
         team_color = TEAM_COLOURS.get(team, "#888888")
 
         sector_times.append({
@@ -195,7 +196,7 @@ def extract_stint_timeline(year: int, gp_key: str, session_type: str = "R") -> l
 
     output = []
     for driver in laps["Driver"].dropna().unique():
-        if driver not in DRIVER_TEAM_2026:
+        if driver not in DRIVER_TEAM:
             continue
         dl = laps.pick_drivers(driver)
         if dl is None or dl.empty:
@@ -217,7 +218,7 @@ def extract_stint_timeline(year: int, gp_key: str, session_type: str = "R") -> l
             })
 
         if stints:
-            team = DRIVER_TEAM_2026.get(driver, "Unknown")
+            team = DRIVER_TEAM.get(driver, "Unknown")
             output.append({
                 "driver": driver,
                 "team": team,
@@ -291,13 +292,13 @@ def extract_pit_stop_impact(year: int, gp_key: str, session_type: str = "R") -> 
 
     output = []
     for driver in laps["Driver"].dropna().unique():
-        if driver not in DRIVER_TEAM_2026:
+        if driver not in DRIVER_TEAM:
             continue
         dl = laps.pick_drivers(driver).sort_values("LapNumber")
         if dl.empty:
             continue
 
-        team = DRIVER_TEAM_2026.get(driver, "Unknown")
+        team = DRIVER_TEAM.get(driver, "Unknown")
         team_color = TEAM_COLOURS.get(team, "#888888")
 
         for i in range(1, len(dl)):
@@ -427,7 +428,7 @@ def extract_race_control_events(year: int, gp_key: str, session_type: str = "R")
 
 def extract_telemetry_for_round(
     round_num: int,
-    year: int = 2025,
+    year: int = SEASON_YEAR,
     session_type: str = "Q",
 ) -> dict | None:
     """
@@ -436,12 +437,12 @@ def extract_telemetry_for_round(
     Returns dict ready for inclusion in round JSON:
       { speedTraps: [...], sectorTimes: [...] }
     """
-    if round_num not in CALENDAR_2026:
+    if round_num not in CALENDAR:
         print(f"  ⚠️  Round {round_num} not in calendar")
         return None
 
-    gp_key = CALENDAR_2026[round_num]["gp_key"]
-    print(f"\n📡 Extracting telemetry for Round {round_num}: {CALENDAR_2026[round_num]['name']}")
+    gp_key = CALENDAR[round_num]["gp_key"]
+    print(f"\n📡 Extracting telemetry for Round {round_num}: {CALENDAR[round_num]['name']}")
 
     try:
         speed_traps = extract_speed_traps(year, gp_key, session_type)
@@ -537,7 +538,7 @@ def main():
     parser = argparse.ArgumentParser(description="Extract telemetry features from FastF1")
     parser.add_argument("--round", type=int, help="Round number")
     parser.add_argument("--all", action="store_true", help="Process all rounds")
-    parser.add_argument("--year", type=int, default=2025, help="Year for historical data (default: 2025)")
+    parser.add_argument("--year", type=int, default=SEASON_YEAR, help=f"Year for session data (default: {SEASON_YEAR})")
     parser.add_argument("--session", default="Q", choices=["Q", "R", "FP1", "FP2", "FP3"],
                         help="Session type (default: Q for qualifying)")
     parser.add_argument("--inject", action="store_true",
@@ -546,7 +547,7 @@ def main():
 
     enable_cache()
 
-    rounds = list(CALENDAR_2026.keys()) if args.all else [args.round] if args.round else []
+    rounds = list(CALENDAR.keys()) if args.all else [args.round] if args.round else []
 
     if not rounds:
         parser.print_help()

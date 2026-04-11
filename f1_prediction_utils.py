@@ -47,7 +47,7 @@ plt.rcParams.update({"figure.dpi": 120, "figure.figsize": (12, 6)})
 
 
 # ==========================================================================
-# 2. 2026 SEASON CONSTANTS
+# 2. SEASON CONSTANTS (2026 BASELINE DATA)
 # ==========================================================================
 
 # ---- 2026 Official F1 Grid (11 teams, 22 drivers) -----------------------
@@ -205,6 +205,84 @@ TEAM_CHANGES_2026: dict[str, tuple] = {
     "BOR": (None,       "Audi"),           # rookie
 }
 
+
+# ---- Active season configuration -----------------------------------------
+DEFAULT_SEASON_YEAR = 2026
+
+
+def _parse_year(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(default)
+
+
+SEASON_YEAR = _parse_year(os.getenv("F1_SEASON_YEAR"), DEFAULT_SEASON_YEAR)
+
+
+def _available_season_years(prefix: str) -> list[int]:
+    years = []
+    token = f"{prefix}_"
+    for name in globals():
+        if not name.startswith(token):
+            continue
+        suffix = name[len(token):]
+        if suffix.isdigit():
+            years.append(int(suffix))
+    return sorted(set(years))
+
+
+def _season_constant(prefix: str, year: int | None = None, *, required: bool = True, default=None):
+    target_year = _parse_year(year, SEASON_YEAR)
+    symbol = f"{prefix}_{target_year}"
+    value = globals().get(symbol)
+    if value is not None:
+        return value
+
+    if not required:
+        return default
+
+    available = _available_season_years(prefix)
+    available_str = ", ".join(map(str, available)) if available else "none"
+    raise ValueError(
+        f"No {prefix} data found for season {target_year}. "
+        f"Available seasons: {available_str}. "
+        "Set F1_SEASON_YEAR or add the missing season constants."
+    )
+
+
+def get_season_year() -> int:
+    return int(SEASON_YEAR)
+
+
+def get_calendar(year: int | None = None):
+    return _season_constant("CALENDAR", year)
+
+
+def get_driver_team_map(year: int | None = None):
+    return _season_constant("DRIVER_TEAM", year)
+
+
+def get_driver_numbers_map(year: int | None = None):
+    return _season_constant("DRIVER_NUMBERS", year)
+
+
+def get_team_changes_map(year: int | None = None):
+    return _season_constant("TEAM_CHANGES", year, required=False, default={})
+
+
+# Generic active-season aliases.
+CALENDAR = get_calendar()
+DRIVER_TEAM = get_driver_team_map()
+DRIVER_NUMBERS = get_driver_numbers_map()
+TEAM_CHANGES = get_team_changes_map()
+
+# Backward-compatible aliases for legacy call sites.
+CALENDAR_2026 = CALENDAR
+DRIVER_TEAM_2026 = DRIVER_TEAM
+DRIVER_NUMBERS_2026 = DRIVER_NUMBERS
+TEAM_CHANGES_2026 = TEAM_CHANGES
+
 # ---- Driver qualifying offset from pole (fraction, smaller = faster) -----
 # Used to auto-generate qualifying estimates for any circuit.
 DRIVER_QUALI_OFFSET: dict[str, float] = {
@@ -268,12 +346,12 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 WEBSITE_DATA_DIR = os.path.join(PROJECT_ROOT, "website", "public", "data")
 
 # Canonical state files (absolute paths so CWD does not matter)
-SEASON_RESULTS_FILE = os.path.join(PROJECT_ROOT, "season_results_2026.json")
-PREDICTED_RESULTS_FILE = os.path.join(PROJECT_ROOT, "predicted_results_2026.json")
+SEASON_RESULTS_FILE = os.path.join(PROJECT_ROOT, f"season_results_{SEASON_YEAR}.json")
+PREDICTED_RESULTS_FILE = os.path.join(PROJECT_ROOT, f"predicted_results_{SEASON_YEAR}.json")
 
 # Mirrored state files under website/public/data for transparency/debugging
-SEASON_RESULTS_WEBSITE_FILE = os.path.join(WEBSITE_DATA_DIR, "season_results_2026.json")
-PREDICTED_RESULTS_WEBSITE_FILE = os.path.join(WEBSITE_DATA_DIR, "predicted_results_2026.json")
+SEASON_RESULTS_WEBSITE_FILE = os.path.join(WEBSITE_DATA_DIR, f"season_results_{SEASON_YEAR}.json")
+PREDICTED_RESULTS_WEBSITE_FILE = os.path.join(WEBSITE_DATA_DIR, f"predicted_results_{SEASON_YEAR}.json")
 
 
 def _read_json_file(path):
@@ -322,12 +400,12 @@ def _load_season_position_maps(current_round=None):
     pred_candidates = [
         PREDICTED_RESULTS_FILE,
         PREDICTED_RESULTS_WEBSITE_FILE,
-        "predicted_results_2026.json",
+        f"predicted_results_{SEASON_YEAR}.json",
     ]
     actual_candidates = [
         SEASON_RESULTS_FILE,
         SEASON_RESULTS_WEBSITE_FILE,
-        "season_results_2026.json",
+        f"season_results_{SEASON_YEAR}.json",
     ]
 
     predicted = {}
@@ -389,7 +467,7 @@ def _add_dynamic_team_form(merged, combined_results=None, current_round=1):
             continue
         weight = float(np.exp(0.25 * rnd))
         for drv, pos in rnd_data.items():
-            team = DRIVER_TEAM_2026.get(drv)
+            team = DRIVER_TEAM.get(drv)
             if team is None:
                 continue
             weighted_points[team] += F1_POINTS.get(int(pos), 0) * weight
@@ -427,8 +505,8 @@ def _add_prediction_bias_features(merged, predicted_results, actual_results):
     """Add driver/team bias features from historical prediction residuals."""
     merged = merged.copy()
 
-    driver_sum = {drv: 0.0 for drv in DRIVER_TEAM_2026}
-    driver_weight = {drv: 0.0 for drv in DRIVER_TEAM_2026}
+    driver_sum = {drv: 0.0 for drv in DRIVER_TEAM}
+    driver_weight = {drv: 0.0 for drv in DRIVER_TEAM}
 
     for rnd_str, pred_round in predicted_results.items():
         actual_round = actual_results.get(rnd_str, {})
@@ -448,13 +526,13 @@ def _add_prediction_bias_features(merged, predicted_results, actual_results):
 
     driver_bias = {
         drv: (driver_sum[drv] / driver_weight[drv]) if driver_weight[drv] > 0 else 0.0
-        for drv in DRIVER_TEAM_2026
+        for drv in DRIVER_TEAM
     }
 
     team_sum = {team: 0.0 for team in TEAM_PERFORMANCE_SCORE}
     team_count = {team: 0 for team in TEAM_PERFORMANCE_SCORE}
     for drv, bias in driver_bias.items():
-        team = DRIVER_TEAM_2026.get(drv)
+        team = DRIVER_TEAM.get(drv)
         if team is None:
             continue
         team_sum[team] += bias
@@ -546,12 +624,12 @@ def aggregate_driver_stats(laps):
 
 
 def build_grid_dataframe():
-    """Create a 22-row DataFrame of the 2026 grid with enriched features."""
+    """Create a season-grid DataFrame with enriched features."""
     grid = pd.DataFrame(
-        [{"Driver": c, "Team": t} for c, t in DRIVER_TEAM_2026.items()]
+        [{"Driver": c, "Team": t} for c, t in DRIVER_TEAM.items()]
     )
     grid["DriverName"]           = grid["Driver"].map(DRIVER_FULL_NAMES)
-    grid["DriverNumber"]         = grid["Driver"].map(DRIVER_NUMBERS_2026)
+    grid["DriverNumber"]         = grid["Driver"].map(DRIVER_NUMBERS)
     grid["TeamPerformanceScore"] = grid["Team"].map(TEAM_PERFORMANCE_SCORE)
     grid["CleanAirPace"]         = grid["Driver"].map(CLEAN_AIR_PACE)
     grid["WetPerformance"]       = grid["Driver"].map(WET_PERFORMANCE)
@@ -572,9 +650,9 @@ def _apply_team_change_adjustment(merged):
     ROOKIE = 1.02   # +2 % penalty for no historical data
 
     factors = {}
-    for drv, team_2026 in DRIVER_TEAM_2026.items():
-        if drv in TEAM_CHANGES_2026:
-            old_team, new_team = TEAM_CHANGES_2026[drv]
+    for drv, _team in DRIVER_TEAM.items():
+        if drv in TEAM_CHANGES:
+            old_team, new_team = TEAM_CHANGES[drv]
             if old_team is None:
                 factors[drv] = ROOKIE            # rookie
             else:
@@ -636,10 +714,10 @@ def _add_circuit_context_features(merged, circuit_key="Australia", sprint=False)
 
 
 def _add_current_season_form(merged, current_round=1, combined_results=None):
-    """Incorporate results from earlier 2026 races (predicted or actual).
+    """Incorporate results from earlier races in the active season (predicted or actual).
 
-    v3: Reads from both actual results (season_results_2026.json) and
-    predicted results (predicted_results_2026.json).  Actual results take
+    v3: Reads from both actual and predicted season result files. Actual
+    results take
     priority when available.  This makes the model truly scalable
     race-to-race — each round's predictions auto-feed the next.
 
@@ -652,7 +730,7 @@ def _add_current_season_form(merged, current_round=1, combined_results=None):
         _, _, combined_results = _load_season_position_maps(current_round=current_round)
 
     if combined_results and current_round > 1:
-        for drv in DRIVER_TEAM_2026:
+        for drv in DRIVER_TEAM:
             positions = []
             weights   = []
             for rnd_str, rnd_data in combined_results.items():
@@ -666,7 +744,7 @@ def _add_current_season_form(merged, current_round=1, combined_results=None):
             else:
                 form[drv] = 11.0   # neutral default (mid-grid)
     else:
-        for drv in DRIVER_TEAM_2026:
+        for drv in DRIVER_TEAM:
             form[drv] = 11.0       # no data for round 1
 
     merged["CurrentForm"] = merged["Driver"].map(form)
@@ -693,7 +771,7 @@ def _add_race_to_race_features(merged, current_round=1, combined_results=None):
     momentum = {}
     trend = {}
 
-    for drv in DRIVER_TEAM_2026:
+    for drv in DRIVER_TEAM:
         # Gather all positions for this driver before current_round
         positions_by_round = []
         for rnd in range(1, current_round):
@@ -802,7 +880,7 @@ def build_training_dataset(grid, driver_stats, circuit_key="Australia",
 def fetch_qualifying_data(year, grand_prix):
     """Try to fetch qualifying data from FastF1 (with date guard + timeout)."""
     from datetime import date as _date
-    for info in CALENDAR_2026.values():
+    for info in CALENDAR.values():
         if grand_prix.lower() in info["name"].lower() or \
            grand_prix.lower() == info.get("gp_key", "").lower():
             if _date.today() < _date.fromisoformat(info["date"]):
@@ -1364,7 +1442,7 @@ def plot_predicted_laptimes(merged, gp_name="Grand Prix", save=True):
     bars = ax.barh(data["Driver"], data["PredictedLapTime"],
                    color=colours, edgecolor="white")
     ax.set_xlabel("Predicted Avg Lap Time (s)")
-    ax.set_title(f"🏁 2026 {gp_name} — Predicted Race Performance")
+    ax.set_title(f"🏁 {SEASON_YEAR} {gp_name} — Predicted Race Performance")
     ax.invert_yaxis()
     for bar, val in zip(bars, data["PredictedLapTime"]):
         ax.text(bar.get_width() + 0.02, bar.get_y() + bar.get_height()/2,
@@ -1386,7 +1464,7 @@ def plot_team_vs_pace(merged, gp_name="Grand Prix", save=True):
     plt.colorbar(sc, ax=ax, label="Qualifying Time (s)")
     ax.set_xlabel("Team Performance Score")
     ax.set_ylabel("Predicted Avg Lap Time (s)")
-    ax.set_title(f"Team Strength vs. Pace — 2026 {gp_name}")
+    ax.set_title(f"Team Strength vs. Pace — {SEASON_YEAR} {gp_name}")
     plt.tight_layout()
     if save: _save(fig, os.path.join(_viz_dir(gp_name), "team_vs_pace.png"))
     plt.close(fig)
@@ -1404,7 +1482,7 @@ def plot_pace_vs_predicted(merged, gp_name="Grand Prix", save=True):
     plt.colorbar(sc, ax=ax, label="Team Perf. Score")
     ax.set_xlabel("Clean Air Race Pace (s)")
     ax.set_ylabel("Predicted Avg Lap Time (s)")
-    ax.set_title(f"Clean Air Pace vs. Predicted — 2026 {gp_name}")
+    ax.set_title(f"Clean Air Pace vs. Predicted — {SEASON_YEAR} {gp_name}")
     plt.tight_layout()
     if save: _save(fig, os.path.join(_viz_dir(gp_name), "pace_vs_predicted.png"))
     plt.close(fig)
@@ -1430,7 +1508,7 @@ def _plot_team_driver_comparison(team_data, team, gp_name, save=True):
     axes[2].bar(x+w/2, team_data["PredictedLapTime_XGB"], w, label="XGB", color="#E8002D")
     axes[2].set_xticks(x); axes[2].set_xticklabels(team_data["Driver"])
     axes[2].set_ylabel("Pred. Time (s)"); axes[2].set_title("GB vs XGB"); axes[2].legend()
-    fig.suptitle(f"{team} — 2026 {gp_name}", fontsize=14, fontweight="bold")
+    fig.suptitle(f"{team} — {SEASON_YEAR} {gp_name}", fontsize=14, fontweight="bold")
     plt.tight_layout()
     if save: _save(fig, os.path.join(_viz_dir(gp_name, team), "driver_comparison.png"))
     plt.close(fig)
@@ -1448,7 +1526,7 @@ def _plot_team_summary_card(team_data, team, gp_name, all_merged, save=True):
         if drv in team_drivers:
             bar.set_color(colour); bar.set_edgecolor("black"); bar.set_linewidth(1.5)
     ax.set_xlabel("Predicted Avg Lap Time (s)")
-    ax.set_title(f"{team} highlighted — 2026 {gp_name}")
+    ax.set_title(f"{team} highlighted — {SEASON_YEAR} {gp_name}")
     plt.tight_layout()
     if save: _save(fig, os.path.join(_viz_dir(gp_name, team), "grid_position.png"))
     plt.close(fig)
@@ -1488,7 +1566,7 @@ def generate_html_report(classification, metrics, results, merged,
     Saved to  reports/<GP>/race_report.html
     """
     char = CIRCUIT_CHARACTERISTICS.get(circuit_key, {})
-    cal  = CALENDAR_2026.get(gp_round, {})
+    cal  = CALENDAR.get(gp_round, {})
     viz  = _viz_dir(gp_name)
 
     # Build table rows
@@ -1540,7 +1618,7 @@ def generate_html_report(classification, metrics, results, merged,
 
     html = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
-<title>{gp_name} — 2026 Prediction Report</title>
+<title>{gp_name} — {SEASON_YEAR} Prediction Report</title>
 <style>
   body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
          max-width: 1100px; margin: 40px auto; padding: 0 20px; color: #1a1a2e; }}
@@ -1564,7 +1642,7 @@ def generate_html_report(classification, metrics, results, merged,
   .img-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }}
   .img-grid img {{ width: 100%; border-radius: 8px; border: 1px solid #ddd; }}
 </style></head><body>
-<h1>🏁 {gp_name} — 2026 Prediction Report</h1>
+<h1>🏁 {gp_name} — {SEASON_YEAR} Prediction Report</h1>
 <p class="meta">Circuit: {cal.get('circuit', char.get('type',''))} |
    Laps: {cal.get('laps', '—')} | Date: {cal.get('date', '—')} |
    Expected pit stops: {char.get('expected_stops','—')} |

@@ -15,7 +15,7 @@ export_website_data.GP_WEATHER when the API is unavailable.
 Usage:
     from weather_api import WeatherService
     ws = WeatherService()
-    forecast = ws.get_race_forecast("Australia", "2026-03-08")
+    forecast = ws.get_race_forecast("Australia", "YYYY-MM-DD")
     # => {"rain_probability": 0.12, "temperature_c": 26, "humidity": 55, ...}
 """
 
@@ -126,7 +126,7 @@ class WeatherService:
         gp_key : str
             GP key (e.g. "Australia", "Monaco")
         race_date : str
-            ISO date string (e.g. "2026-03-08")
+            ISO date string (e.g. "YYYY-MM-DD")
 
         Returns
         -------
@@ -287,7 +287,7 @@ class WeatherService:
         Parameters
         ----------
         calendar : dict
-            CALENDAR_2026 format: {round_num: {"gp_key": ..., "date": ...}}
+            CALENDAR format: {round_num: {"gp_key": ..., "date": ...}}
 
         Returns
         -------
@@ -328,7 +328,7 @@ def export_weather_for_website(calendar: dict, out_path: str = None) -> dict:
     Parameters
     ----------
     calendar : dict
-        CALENDAR_2026 format
+        CALENDAR format
     out_path : str, optional
         Path to write weather.json. Defaults to website/public/data/weather.json
 
@@ -382,27 +382,28 @@ if __name__ == "__main__":
     import argparse
     import sys
     sys.path.insert(0, os.path.dirname(__file__))
-    from f1_prediction_utils import CALENDAR_2026
+    from f1_prediction_utils import CALENDAR, SEASON_YEAR
 
     parser = argparse.ArgumentParser(description="Fetch F1 race weather data")
     parser.add_argument("--gp", type=str, help="GP key (e.g. Australia)")
     parser.add_argument("--date", type=str, help="Race date (YYYY-MM-DD)")
-    parser.add_argument("--all", action="store_true", help="Fetch all 2026 races")
+    parser.add_argument("--all", action="store_true", help=f"Fetch all {SEASON_YEAR} races")
     parser.add_argument("--export", action="store_true",
                         help="Export weather.json for website")
     args = parser.parse_args()
 
     if args.export or args.all:
-        export_weather_for_website(CALENDAR_2026)
+        export_weather_for_website(CALENDAR)
     elif args.gp:
         ws = WeatherService()
-        date = args.date or "2026-03-08"
+        default_date = next(iter(CALENDAR.values()))["date"] if CALENDAR else datetime.now().date().isoformat()
+        date = args.date or default_date
         forecast = ws.get_race_forecast(args.gp, date)
         print(json.dumps(forecast, indent=2))
     else:
         # Default: show weather for next race
         ws = WeatherService()
-        for rnd, info in sorted(CALENDAR_2026.items()):
+        for rnd, info in sorted(CALENDAR.items()):
             forecast = ws.get_race_forecast(info["gp_key"], info["date"])
             status = "🌧️" if forecast["rain_probability"] > 0.5 else "☀️"
             print(f"  R{rnd:02d} {info['gp_key']:16s} {status} "
