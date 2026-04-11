@@ -1,7 +1,9 @@
 import { SeasonData } from "@/types";
 
+const envSeasonYear = process.env.NEXT_PUBLIC_F1_SEASON_YEAR;
+
 export const DEFAULT_SEASON_YEAR = Number(
-  process.env.NEXT_PUBLIC_F1_SEASON_YEAR || "2026"
+  envSeasonYear || new Date().getUTCFullYear()
 );
 
 export function getSeasonYear(

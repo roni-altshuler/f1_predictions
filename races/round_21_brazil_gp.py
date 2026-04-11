@@ -1,5 +1,5 @@
 # %% [markdown]
-# # 🏁 2026 São Paulo Grand Prix — Prediction
+# # 🏁 São Paulo Grand Prix — Prediction
 # **Round 21** | Circuit: Interlagos | Date: 2026-11-08
 
 # %% — Setup
@@ -55,7 +55,7 @@ merged = build_training_dataset(grid, driver_stats,
                                 current_round=GP_ROUND)
 
 # %% — Get qualifying data (auto-fetch or estimates)
-qualifying_times = get_qualifying_or_estimates(2026, GP_NAME, QUALIFYING_ESTIMATES)
+qualifying_times = get_qualifying_or_estimates(SEASON_YEAR, GP_NAME, QUALIFYING_ESTIMATES)
 merged = apply_qualifying_data(merged, qualifying_times,
                                rain_probability=RAIN_PROB,
                                temperature_c=TEMPERATURE)

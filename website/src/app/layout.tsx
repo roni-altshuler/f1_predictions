@@ -3,8 +3,9 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
+import { DEFAULT_SEASON_YEAR } from "@/lib/season";
 
-const ACTIVE_SEASON_YEAR = process.env.NEXT_PUBLIC_F1_SEASON_YEAR || "2026";
+const ACTIVE_SEASON_YEAR = String(DEFAULT_SEASON_YEAR);
 
 export const metadata: Metadata = {
   title: `F1 ${ACTIVE_SEASON_YEAR} Predictions | AI-Powered Race Forecasts`,

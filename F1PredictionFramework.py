@@ -9,10 +9,10 @@
 # ---
 
 # %% [markdown]
-# # 🏎️ F1 Prediction Framework — 2026 Season
+# # 🏎️ F1 Prediction Framework — Configured Season
 #
 # This notebook documents the **shared prediction framework** (`f1_prediction_utils.py`)
-# used to predict Formula 1 Grand Prix race results for the 2026 season.
+# used to predict Formula 1 Grand Prix race results for the configured season.
 #
 # ---
 #
@@ -45,9 +45,9 @@ from f1_prediction_utils import *
 print("✅ f1_prediction_utils loaded successfully.")
 
 # %% [markdown]
-# ## 2. The 2026 F1 Grid
+# ## 2. The Active F1 Grid
 #
-# The module contains the official 2026 grid: **11 teams, 22 drivers**.
+# The module contains the active configured grid: **11 teams, 22 drivers**.
 #
 # Key changes from 2025:
 # - **Cadillac** enters as the 11th team (Sergio Pérez & Valtteri Bottas)
@@ -57,7 +57,7 @@ print("✅ f1_prediction_utils loaded successfully.")
 # - **Isack Hadjar** promoted to Red Bull Racing
 
 # %%
-# Display the full 2026 grid
+# Display the active configured grid
 grid = build_grid_dataframe()
 grid[["DriverNumber", "Driver", "DriverName", "Team", "TeamPerformanceScore"]].sort_values("Team")
 
@@ -72,7 +72,7 @@ grid[["DriverNumber", "Driver", "DriverName", "Team", "TeamPerformanceScore"]].s
 # ```python
 # # In your race notebook, just call:
 # quali_times = get_qualifying_or_estimates(
-#     year=2026,
+#     year=SEASON_YEAR,
 #     grand_prix="Australia",
 #     estimates=MY_ESTIMATES,   # fallback if qualifying hasn't happened
 # )
@@ -106,7 +106,7 @@ grid[["DriverNumber", "Driver", "DriverName", "Team", "TeamPerformanceScore"]].s
 #
 # # ── 3. Qualifying data (auto-fetch or estimate) ───────────
 # estimates = {"VER": 74.80, "NOR": 74.95, ...}  # your estimates
-# quali = get_qualifying_or_estimates(2026, "Australia", estimates)
+# quali = get_qualifying_or_estimates(SEASON_YEAR, "Australia", estimates)
 # merged = apply_qualifying_data(merged, quali,
 #                                rain_probability=0.10,
 #                                temperature_c=25.0)
@@ -131,28 +131,28 @@ grid[["DriverNumber", "Driver", "DriverName", "Team", "TeamPerformanceScore"]].s
 #
 # | Constant | Type | Description |
 # |----------|------|-------------|
-# | `DRIVER_TEAM_2026` | `dict[str, str]` | Driver code → team name |
+# | `DRIVER_TEAM` | `dict[str, str]` | Driver code → team name |
 # | `DRIVER_FULL_NAMES` | `dict[str, str]` | Driver code → full name |
-# | `DRIVER_NUMBERS_2026` | `dict[str, int]` | Driver code → car number |
+# | `DRIVER_NUMBERS` | `dict[str, int]` | Driver code → car number |
 # | `CONSTRUCTOR_POINTS_2025` | `dict[str, int]` | Team → 2025 championship points |
 # | `TEAM_PERFORMANCE_SCORE` | `dict[str, float]` | Team → normalised [0, 1] score |
 # | `WET_PERFORMANCE` | `dict[str, float]` | Driver code → wet-weather factor |
 # | `CLEAN_AIR_PACE` | `dict[str, float]` | Driver code → avg race pace (s) |
-# | `CALENDAR_2026` | `dict[int, dict]` | Round → race metadata |
+# | `CALENDAR` | `dict[int, dict]` | Round → race metadata |
 # | `TEAM_COLOURS` | `dict[str, str]` | Team → hex colour code |
 # | `DEFAULT_FEATURE_COLS` | `list[str]` | Default model features |
 
 # %%
-# Quick peek at the 2026 calendar (rounds added so far)
+# Quick peek at the active calendar (rounds added so far)
 import pandas as pd
-cal_df = pd.DataFrame(CALENDAR_2026).T
+cal_df = pd.DataFrame(CALENDAR).T
 cal_df.index.name = "Round"
 cal_df
 
 # %% [markdown]
 # ## 6. Running a Race Prediction
 #
-# All 24 rounds of the 2026 season have pre-generated prediction scripts in the `races/` folder.
+# All rounds in the active season have pre-generated prediction scripts in the `races/` folder.
 #
 # ```bash
 # python races/round_01_australia_gp.py

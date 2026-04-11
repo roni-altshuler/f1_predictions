@@ -1,7 +1,7 @@
 """
 f1_prediction_utils.py  —  v2.0
 ================================
-Shared utility module for the 2026 Formula 1 Grand Prix prediction project.
+Shared utility module for the Formula 1 prediction project.
 
 **v2.0 improvements over v1:**
   - StandardScaler prevents single-feature dominance
@@ -11,7 +11,7 @@ Shared utility module for the 2026 Formula 1 Grand Prix prediction project.
   - Prediction calibration → realistic F1 gaps (≤ 3-4 s spread)
   - Current-season form tracking (earlier results feed later predictions)
   - Driver experience & qualifying-rank features
-  - Complete 2026 calendar (24 rounds)
+    - Complete configured-season calendar
   - HTML race-report generation
 
 Import in any race-specific script:
@@ -25,6 +25,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import os, json
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import fastf1
@@ -207,19 +208,6 @@ TEAM_CHANGES_2026: dict[str, tuple] = {
 
 
 # ---- Active season configuration -----------------------------------------
-DEFAULT_SEASON_YEAR = 2026
-
-
-def _parse_year(value, default):
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return int(default)
-
-
-SEASON_YEAR = _parse_year(os.getenv("F1_SEASON_YEAR"), DEFAULT_SEASON_YEAR)
-
-
 def _available_season_years(prefix: str) -> list[int]:
     years = []
     token = f"{prefix}_"
@@ -230,6 +218,24 @@ def _available_season_years(prefix: str) -> list[int]:
         if suffix.isdigit():
             years.append(int(suffix))
     return sorted(set(years))
+
+
+def _default_season_year() -> int:
+    available = _available_season_years("CALENDAR")
+    return max(available) if available else int(datetime.utcnow().year)
+
+
+DEFAULT_SEASON_YEAR = _default_season_year()
+
+
+def _parse_year(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return int(default)
+
+
+SEASON_YEAR = _parse_year(os.getenv("F1_SEASON_YEAR"), DEFAULT_SEASON_YEAR)
 
 
 def _season_constant(prefix: str, year: int | None = None, *, required: bool = True, default=None):

@@ -35,7 +35,7 @@ permissions:
   id-token: write
 
 env:
-  F1_SEASON_YEAR: ${{ vars.F1_SEASON_YEAR || '2026' }}
+  F1_SEASON_YEAR: ${{ vars.F1_SEASON_YEAR }}
 
 jobs:
   predict:
@@ -128,7 +128,7 @@ jobs:
       - name: Generate labeled circuit maps for all rounds
         if: github.event_name != 'schedule' || steps.check.outputs.is_race_weekend == 'true'
         run: |
-          SEASON_YEAR="${F1_SEASON_YEAR:-2026}"
+          SEASON_YEAR="${F1_SEASON_YEAR:-$(date -u +%Y)}"
           python generate_fastf1_viz.py --all-circuits --year "$SEASON_YEAR"
 
       - name: Commit updated data
@@ -136,7 +136,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          SEASON_YEAR="${F1_SEASON_YEAR:-2026}"
+          SEASON_YEAR="${F1_SEASON_YEAR:-$(date -u +%Y)}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -f website/public/data/ website/public/visualizations/

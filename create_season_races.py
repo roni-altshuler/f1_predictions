@@ -102,7 +102,7 @@ def generate_race_file(round_num, info):
     quali_str += "}"
 
     content = f'''# %% [markdown]
-# # 🏁 {SEASON_YEAR} {name} — Prediction
+# # 🏁 {name} — Prediction
 # **Round {round_num}** | Circuit: {info["circuit"]} | Date: {info["date"]}
 
 # %% — Setup
@@ -135,7 +135,7 @@ merged = build_training_dataset(grid, driver_stats,
                                 current_round=GP_ROUND)
 
 # %% — Get qualifying data (auto-fetch or estimates)
-qualifying_times = get_qualifying_or_estimates({SEASON_YEAR}, GP_NAME, QUALIFYING_ESTIMATES)
+qualifying_times = get_qualifying_or_estimates(SEASON_YEAR, GP_NAME, QUALIFYING_ESTIMATES)
 merged = apply_qualifying_data(merged, qualifying_times,
                                rain_probability=RAIN_PROB,
                                temperature_c=TEMPERATURE)
