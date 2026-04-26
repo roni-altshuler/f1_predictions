@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 /**
  * CountryFlag — renders a flag image from flagcdn.com instead of emoji
  * (emoji flags render as two-letter abbreviations on Windows).
@@ -68,15 +70,15 @@ export default function CountryFlag({
   }
 
   return (
-    <img
+    <Image
       src={`https://flagcdn.com/w80/${code}.png`}
-      srcSet={`https://flagcdn.com/w160/${code}.png 2x`}
       width={size}
       height={Math.round(size * 0.75)}
       alt={`${country} flag`}
       className={`inline-block object-cover rounded-sm ${className}`}
       style={{ width: size, height: Math.round(size * 0.75) }}
       loading="lazy"
+      unoptimized
     />
   );
 }

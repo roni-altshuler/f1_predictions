@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 type Theme = "dark" | "light";
 
@@ -18,30 +18,39 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-export default function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem("f1-theme") as Theme | null;
-    if (stored) {
-      setTheme(stored);
-      document.documentElement.setAttribute("data-theme", stored);
+function getInitialTheme(): Theme {
+  if (typeof document !== "undefined") {
+    const attrTheme = document.documentElement.getAttribute("data-theme");
+    if (attrTheme === "dark" || attrTheme === "light") {
+      return attrTheme;
     }
-  }, []);
+  }
+
+  if (typeof window !== "undefined") {
+    const storedTheme = window.localStorage.getItem("f1-theme");
+    if (storedTheme === "dark" || storedTheme === "light") {
+      return storedTheme;
+    }
+  }
+
+  return "dark";
+}
+
+export default function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    localStorage.setItem("f1-theme", next);
-    document.documentElement.setAttribute("data-theme", next);
+    setTheme((currentTheme) => {
+      const nextTheme = currentTheme === "dark" ? "light" : "dark";
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("f1-theme", nextTheme);
+      }
+      if (typeof document !== "undefined") {
+        document.documentElement.setAttribute("data-theme", nextTheme);
+      }
+      return nextTheme;
+    });
   };
-
-  // Prevent flash — render nothing until mounted
-  if (!mounted) {
-    return <div className="min-h-screen bg-[#0F1117]" />;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

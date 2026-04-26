@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   ResponsiveContainer,
@@ -156,11 +157,15 @@ export default function RaceDetailPage({ round }: Props) {
                 <h3 className="section-heading mb-0">Circuit Plot</h3>
                 <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Corners Labeled</span>
               </div>
-              <img
+              <Image
                 src={previewTrackMapSrc}
                 alt={`${raceName} circuit plot`}
                 className="viz-image w-full"
+                width={1600}
+                height={900}
+                style={{ width: "100%", height: "auto" }}
                 onError={() => handleImageError("track_map.png")}
+                unoptimized
               />
             </div>
           )}
@@ -329,7 +334,15 @@ export default function RaceDetailPage({ round }: Props) {
           >
             ✕
           </button>
-          <img src={lightboxImg} alt="Visualization" className="lightbox-image" onClick={e => e.stopPropagation()} />
+          <Image
+            src={lightboxImg}
+            alt="Visualization"
+            className="lightbox-image"
+            width={2000}
+            height={1200}
+            onClick={(e) => e.stopPropagation()}
+            unoptimized
+          />
         </div>
       )}
 
@@ -483,12 +496,16 @@ export default function RaceDetailPage({ round }: Props) {
             <h3 className="section-heading mb-0">Circuit Plot</h3>
             <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Corners Labeled</span>
           </div>
-          <img
+          <Image
             src={trackMapSrc}
             alt={`${data.name} circuit plot`}
             className="viz-image w-full cursor-pointer"
+            width={1600}
+            height={900}
+            style={{ width: "100%", height: "auto" }}
             onClick={() => setLightboxImg(trackMapSrc)}
             onError={() => handleImageError("track_map.png")}
+            unoptimized
           />
         </motion.div>
       )}
@@ -786,12 +803,16 @@ export default function RaceDetailPage({ round }: Props) {
           {trackMapSrc && (
             <div className="card p-6">
               <h3 className="section-heading">Circuit Plot</h3>
-              <img
+              <Image
                 src={trackMapSrc}
                 alt={`${data.name} track map`}
                 className="viz-image w-full cursor-pointer"
+                width={1600}
+                height={900}
+                style={{ width: "100%", height: "auto" }}
                 onClick={() => setLightboxImg(trackMapSrc)}
                 onError={() => handleImageError("track_map.png")}
+                unoptimized
               />
             </div>
           )}
@@ -1370,12 +1391,15 @@ export default function RaceDetailPage({ round }: Props) {
               onClick={() => setLightboxImg(src)}
             >
               <div className="viz-card-media-wrap">
-                <img
+                <Image
                   src={src}
                   alt={detail.title}
                   className="viz-image viz-card-media"
-                  loading="lazy"
+                  width={1400}
+                  height={850}
+                  style={{ width: "100%", height: "auto" }}
                   onError={() => handleImageError(detail.filename)}
+                  unoptimized
                 />
               </div>
               <div className="viz-card-body">

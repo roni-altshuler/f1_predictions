@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { StandingsData, SeasonData } from "@/types";
 import { fetchStandingsData, fetchSeasonData } from "@/lib/data";
 import { getSeasonYear } from "@/lib/season";
@@ -9,19 +9,21 @@ import StandingsChart from "@/components/charts/StandingsChart";
 
 type Tab = "drivers" | "constructors" | "wdc";
 
+function parseTab(value: string | null): Tab {
+  if (value === "constructors" || value === "wdc") {
+    return value;
+  }
+  return "drivers";
+}
+
 export default function StandingsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [data, setData] = useState<StandingsData | null>(null);
   const [season, setSeason] = useState<SeasonData | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>("drivers");
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab === "drivers" || tab === "constructors" || tab === "wdc") {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
+  const activeTab = parseTab(searchParams.get("tab"));
 
   useEffect(() => {
     fetchStandingsData().then(setData).catch(() => setError(true));
@@ -57,6 +59,16 @@ export default function StandingsPage() {
   const completedRounds = season?.completedRounds || [];
   const seasonYear = getSeasonYear(season);
   const totalRounds = season?.totalRounds ?? 24;
+  const handleTabChange = (tab: Tab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === "drivers") {
+      params.delete("tab");
+    } else {
+      params.set("tab", tab);
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
@@ -99,7 +111,7 @@ export default function StandingsPage() {
         ).map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabChange(tab.key)}
             className={`tab-button ${activeTab === tab.key ? "active" : ""}`}
           >
             {tab.label}
